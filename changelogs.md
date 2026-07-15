@@ -1,3 +1,7 @@
+#2.0.9
+- Updated game data to palworld v1.0.1
+- Bumped version to 2.0.9
+
 #2.0.8
 - **Fixed `LocalData.sav` parsing** — `PalLocalWorldSaveGame` saves now load correctly (fixes parser under-consumption that skipped subsequent properties)
 - **Bulk Sync (All Pals)** — sync stats/IVs/skills from any pal to all others across Party/Palbox/DPS. Work suitabilities are no longer copied cross-pal — each target keeps its natural suitabilities maxed to 10

@@ -2,9 +2,9 @@ import os, sys, subprocess, configparser
 from palsav import json_tools
 from resource_resolver import get_base_dir, get_src_dir, get_resources_dir, resource_path, get_user_config_dir
 APP_NAME = 'PalworldSaveTools'
-APP_VERSION = '2.0.8'
-TESTING_VER = '2.0.8'
-GAME_VERSION = '1.0.0'
+APP_VERSION = '2.0.9'
+TESTING_VER = '2.0.9'
+GAME_VERSION = '1.0.1'
 def get_base_directory():
     return get_base_dir()
 def get_src_directory():
