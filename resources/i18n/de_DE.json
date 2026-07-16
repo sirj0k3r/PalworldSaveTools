@@ -1865,5 +1865,7 @@
     "edit_pals.import_pal.success": "{count} Kumpel(s) importiert",
     "edit_pals.show_npc": "NPC",
     "edit_pals.search_placeholder": "Geben Sie ein, um Freunde zu filtern...",
-    "edit_pals.nickname_placeholder": "Optional"
+    "edit_pals.nickname_placeholder": "Optional",
+    "deletion.menu.repair_items": "Reparieren Sie alle Artikel",
+    "deletion.items_repaired": "Reparierte {repaired} Artikel."
 }

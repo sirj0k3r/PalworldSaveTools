@@ -1823,5 +1823,7 @@
     "edit_pals.import_pal.success": "{count} copain(s) importé(s)",
     "edit_pals.show_npc": "PNJ",
     "edit_pals.search_placeholder": "Tapez pour filtrer les amis...",
-    "edit_pals.nickname_placeholder": "Facultatif"
+    "edit_pals.nickname_placeholder": "Facultatif",
+    "deletion.menu.repair_items": "Réparer tous les éléments",
+    "deletion.items_repaired": "Objets {réparés} réparés."
 }

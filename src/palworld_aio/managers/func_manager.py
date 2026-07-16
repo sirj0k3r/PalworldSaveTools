@@ -1677,6 +1677,85 @@ def repair_structures(parent=None):
             continue
     skipped = total_structures - repaired_structures
     return {'repaired': repaired_structures, 'skipped': skipped}
+def repair_items(parent=None):
+    if not constants.loaded_level_json:
+        return None
+    try:
+        wsd = constants.loaded_level_json['properties']['worldSaveData']['value']
+    except KeyError:
+        return None
+    import uuid
+    from palworld_aio.inventory.dynamic_item_manager import get_item_type, get_item_durability
+    item_containers = wsd.get('ItemContainerSaveData', {}).get('value', [])
+    dynamic_items = wsd.get('DynamicItemSaveData', {}).get('value', {}).get('values', [])
+    old_ids = set()
+    new_slot_entries = []
+    repaired_count = 0
+    for cont in item_containers:
+        try:
+            slots = cont.get('value', {}).get('Slots', {}).get('value', {}).get('values', [])
+        except:
+            continue
+        for slot in slots:
+            try:
+                raw = slot.get('RawData', {}).get('value', {})
+                item = raw.get('item', {})
+                if not item or not isinstance(item, dict):
+                    items_array = raw.get('items', {}).get('value', {}).get('values', [])
+                    for it in items_array:
+                        it_raw = it.get('RawData', {})
+                        if not isinstance(it_raw, dict):
+                            continue
+                        sid = it_raw.get('static_id', '')
+                        if not sid or get_item_type(sid) not in ('weapon', 'armor', 'egg'):
+                            continue
+                        did = it_raw.get('dynamic_id', {})
+                        if not isinstance(did, dict):
+                            continue
+                        lid = did.get('local_id_in_created_world', '')
+                        ls = str(lid).replace('-', '').lower()
+                        nu = uuid.uuid4()
+                        ns = str(nu)
+                        z = '00000000000000000000000000000000'
+                        if ls and ls != z:
+                            old_ids.add(ls)
+                        did['local_id_in_created_world'] = ns
+                        did['created_world_id'] = '00000000-0000-0000-0000-000000000000'
+                        new_slot_entries.append((ns, sid))
+                        repaired_count += 1
+                    continue
+                static_id = item.get('static_id', '')
+                if not static_id or get_item_type(static_id) not in ('weapon', 'armor', 'egg'):
+                    continue
+                dynamic_id = item.get('dynamic_id', {})
+                if not isinstance(dynamic_id, dict):
+                    continue
+                local_id = dynamic_id.get('local_id_in_created_world', '')
+                local_id_str = str(local_id).replace('-', '').lower()
+                new_uuid = uuid.uuid4()
+                new_id_str = str(new_uuid)
+                zero_str = '00000000000000000000000000000000'
+                if local_id_str and local_id_str != zero_str:
+                    old_ids.add(local_id_str)
+                dynamic_id['local_id_in_created_world'] = new_id_str
+                dynamic_id['created_world_id'] = '00000000-0000-0000-0000-000000000000'
+                new_slot_entries.append((new_id_str, static_id))
+                repaired_count += 1
+            except:
+                continue
+    if repaired_count == 0:
+        return {'repaired': 0}
+    dynamic_items[:] = [di for di in dynamic_items if str(di.get('RawData', {}).get('value', {}).get('id', {}).get('local_id_in_created_world', '')).replace('-', '').lower() not in old_ids]
+    from palworld_aio.inventory.dynamic_item_manager import dynamic_item_manager
+    for new_id_str, static_id in new_slot_entries:
+        new_entry = dynamic_item_manager.create_dynamic_item(static_id, None, uuid.UUID(new_id_str))
+        dynamic_items.append(new_entry)
+    constants.invalidate_container_lookup()
+    from palworld_aio.inventory.base_inventory_manager import BaseInventoryManager
+    manager = BaseInventoryManager.get_instance()
+    if manager:
+        manager.invalidate_cache()
+    return {'repaired': repaired_count}
 def delete_orphaned_dynamic_items(parent=None):
     if not constants.loaded_level_json:
         return 0

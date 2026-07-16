@@ -1843,5 +1843,7 @@
     "edit_pals.import_pal.success": "导入了 {count} 个好友",
     "edit_pals.show_npc": "全国人大",
     "edit_pals.search_placeholder": "输入以过滤好友...",
-    "edit_pals.nickname_placeholder": "选修的"
+    "edit_pals.nickname_placeholder": "选修的",
+    "deletion.menu.repair_items": "修复所有物品",
+    "deletion.items_repaired": "修复了{repaired}项目。"
 }

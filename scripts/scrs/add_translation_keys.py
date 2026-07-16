@@ -15,6 +15,8 @@ LANGUAGES = {'zh_CN': {'name': 'Simplified Chinese', 'code': 'zh-CN'}, 'de_DE': 
 NEW_TRANSLATIONS = {
     'edit_pals.search_placeholder': 'Type to filter pals...',
     'edit_pals.nickname_placeholder': 'Optional',
+    'deletion.menu.repair_items': 'Repair All Items',
+    'deletion.items_repaired': 'Repaired {repaired} items.',
 }
 OLD_KEYS = []
 def _clean_uv_locks():

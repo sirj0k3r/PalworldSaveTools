@@ -1841,5 +1841,7 @@
     "edit_pals.import_pal.success": "{count} 人の友達をインポートしました",
     "edit_pals.show_npc": "NPC",
     "edit_pals.search_placeholder": "友達をフィルタリングするには入力してください...",
-    "edit_pals.nickname_placeholder": "オプション"
+    "edit_pals.nickname_placeholder": "オプション",
+    "deletion.menu.repair_items": "すべてのアイテムを修理する",
+    "deletion.items_repaired": "{repaired} アイテムを修理しました。"
 }

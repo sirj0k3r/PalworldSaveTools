@@ -1839,5 +1839,7 @@
     "edit_pals.import_pal.success": "Импортировано друзей: {count}",
     "edit_pals.show_npc": "НПС",
     "edit_pals.search_placeholder": "Введите, чтобы отфильтровать друзей...",
-    "edit_pals.nickname_placeholder": "Необязательный"
+    "edit_pals.nickname_placeholder": "Необязательный",
+    "deletion.menu.repair_items": "Отремонтировать все предметы",
+    "deletion.items_repaired": "Отремонтированные {repaired} элементы."
 }

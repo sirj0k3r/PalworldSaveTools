@@ -1840,5 +1840,7 @@
     "edit_pals.import_pal.success": "가져온 친구 {count}명",
     "edit_pals.show_npc": "NPC",
     "edit_pals.search_placeholder": "친구를 필터링하려면 입력하세요...",
-    "edit_pals.nickname_placeholder": "선택 과목"
+    "edit_pals.nickname_placeholder": "선택 과목",
+    "deletion.menu.repair_items": "모든 품목 수리",
+    "deletion.items_repaired": "수리된 {수리된} 품목."
 }
