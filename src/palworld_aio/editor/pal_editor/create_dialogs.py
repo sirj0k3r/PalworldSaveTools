@@ -806,7 +806,7 @@ class PalCreateDialog(QDialog):
         show_predator = self._show_predator_chk.isChecked() if hasattr(self, '_show_predator_chk') else False
         show_boss = self._show_boss_chk.isChecked() if hasattr(self, '_show_boss_chk') else False
         self.pal_list.clear()
-        for asset, name in sorted(PalFrame._NAMEMAP.items(), key=lambda kv: (kv[1], kv[0])):
+        for asset, name in sorted(PalFrame._PALMAP.items(), key=lambda kv: (kv[1], kv[0])):
             asset_lower = asset.lower()
             if search_text and search_text not in name.lower() and (search_text not in asset.lower()):
                 continue

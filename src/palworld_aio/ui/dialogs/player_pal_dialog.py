@@ -292,7 +292,7 @@ class PlayerPalActionDialog(QDialog):
             query = self.pal_search_input.text()
         query_lower = query.lower()
         self.pal_list.clear()
-        for asset, name in sorted(PalFrame._NAMEMAP.items(), key=lambda x: x[1]):
+        for asset, name in sorted(PalFrame._PALMAP.items(), key=lambda x: x[1]):
             asset_lower = asset.lower()
             is_predator = asset.upper().startswith('PREDATOR_')
             is_boss = any((asset.upper().startswith(p) for p in _BOSS_PREFIXES)) and not is_predator
