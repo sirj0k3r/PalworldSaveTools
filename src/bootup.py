@@ -503,8 +503,17 @@ def backend_worker(venv_py: Path, signals: 'WorkerSignals'):
                 traceback.print_exc()
     rc_final = 0
     try:
-        cmd_upg = ['uv', 'pip', 'install', '--upgrade', 'pip', 'setuptools', 'wheel']
-        rc = run_and_watch(cmd_upg, update_callback=emit_raw)
+        needs_upgrade = True
+        try:
+            pip_ver = version('pip')
+            setuptools_ver = version('setuptools')
+            wheel_ver = version('wheel')
+            needs_upgrade = False
+        except PackageNotFoundError:
+            needs_upgrade = True
+        if needs_upgrade:
+            cmd_upg = ['uv', 'pip', 'install', '--upgrade', 'pip', 'setuptools', 'wheel']
+            rc = run_and_watch(cmd_upg, update_callback=emit_raw)
         all_req_satisfied = True
         try:
             if REQ_FILE.exists():
@@ -700,7 +709,7 @@ def main():
                         pass
                 if get_config_value('checkstartlogs', False):
                     input('Press Enter to continue to palworld_aio...')
-                QTimer.singleShot(350, lambda: spawn_aio_and_exit(venv_py))
+                QTimer.singleShot(30, lambda: spawn_aio_and_exit(venv_py))
             _signals.finished.connect(on_finished)
             _worker_thread = threading.Thread(target=backend_worker, args=(venv_py, _signals), daemon=True)
             _worker_thread.start()
@@ -710,8 +719,17 @@ def main():
                     print_small(f'> {raw_line}')
             rc_final = 0
             try:
-                cmd_upg = ['uv', 'pip', 'install', '--upgrade', 'pip', 'setuptools', 'wheel']
-                rc = run_and_watch(cmd_upg, update_callback=lambda r, p: emit_raw_console(r, p))
+                needs_upgrade = True
+                try:
+                    version('pip')
+                    version('setuptools')
+                    version('wheel')
+                    needs_upgrade = False
+                except PackageNotFoundError:
+                    pass
+                if needs_upgrade:
+                    cmd_upg = ['uv', 'pip', 'install', '--upgrade', 'pip', 'setuptools', 'wheel']
+                    rc = run_and_watch(cmd_upg, update_callback=lambda r, p: emit_raw_console(r, p))
                 all_req_satisfied = True
                 try:
                     if REQ_FILE.exists():

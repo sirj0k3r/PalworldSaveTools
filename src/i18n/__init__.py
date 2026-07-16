@@ -18,15 +18,22 @@ try:
 except Exception:
     _LANG: str = 'en_US'
 _RES: Dict[str, Dict[str, str]] = {}
+_loaded_langs: set = set()
 def _load_json(path: str) -> Dict[str, Any]:
     try:
         return json_tools.load(path)
     except Exception:
         return {}
+def _ensure_lang(lang: str) -> None:
+    if lang not in _loaded_langs:
+        _RES[lang] = _load_json(os.path.join(_RESOURCES_BASE, 'i18n', f'{lang}.json'))
+        _loaded_langs.add(lang)
 def load_resources(lang: str | None=None) -> None:
-    global _RES, _LANG
+    global _RES, _LANG, _loaded_langs
+    _loaded_langs.clear()
     for l in _SUPPORTED_LANGS:
         _RES[l] = _load_json(os.path.join(_RESOURCES_BASE, 'i18n', f'{l}.json'))
+        _loaded_langs.add(l)
     if lang:
         _LANG = lang
 def get_language() -> str:
@@ -37,6 +44,7 @@ def set_language(lang: str) -> None:
         return
     if lang == _LANG:
         return
+    _ensure_lang(lang)
     _LANG = lang
     try:
         os.makedirs(os.path.dirname(_CFG), exist_ok=True)
@@ -62,13 +70,14 @@ def set_config_value(key: str, value: Any) -> None:
     except Exception:
         pass
 def init_language(default_lang: str='zh_CN') -> None:
-    global _RES, _LANG
+    global _RES, _LANG, _loaded_langs
     lang = default_lang
     cfg_path = _CFG if os.path.exists(_CFG) else _BUNDLED_CFG
     if os.path.exists(cfg_path):
         cfg = _load_json(cfg_path)
         lang = cfg.get('lang', default_lang)
-    load_resources(lang)
+    _ensure_lang(lang)
+    _ensure_lang('en_US')
     _LANG = lang
 _DEF = object()
 def t(key: str, default: str | object=_DEF, **fmt) -> str:

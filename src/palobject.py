@@ -1,4 +1,8 @@
-from import_libs import *
+import ctypes
+from typing import Any
+from multiprocessing import shared_memory
+from palsav.archive import FArchiveReader, FArchiveWriter, UUID
+from palsav.paltypes import PALWORLD_CUSTOM_PROPERTIES, PALWORLD_TYPE_HINTS
 try:
     import msgpack
 except ImportError:
@@ -114,7 +118,7 @@ class MPMapProperty(list):
                 v_s = k_s + self.key_size[item]
                 key_bytes = bytearray(self.shm.buf[k_s:v_s])
                 value_bytes = bytearray(self.shm.buf[v_s:v_s + self.value_size[item]])
-                result = MPMapObject(key_bytes, value_bytes)
+                result = {'key': msgpack.unpackb(key_bytes, object_hook=decode_uuid, raw=False), 'value': msgpack.unpackb(value_bytes, object_hook=decode_uuid, raw=False)}
             else:
                 v_e = k_s + self.value_size[item]
                 value_bytes = bytearray(self.shm.buf[k_s:v_e])

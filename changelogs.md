@@ -1,4 +1,5 @@
 #2.1.0
+- **Faster startup** — app now loads ~2–4s faster by deferring heavy modules until needed. Language files load on demand, unused engine modules skip import, and non-visible tabs are created only when you navigate to them
 - **Sidebar collapse/expand** — collapse shows icons only, expand reveals labels. Toggle button at top (>>/<<). State persists across sessions
 - **Stats editor revamped** — hero stats (Health, Stamina, Attack, Work Speed, Weight) now show correct in-game computed values, capped at 50 points, with a "Max All Stats" button. Relic abilities integrated into the same tab. Defense stat now editable
 - **Weight formula fix** — carry weight now calculates correctly using the game's real formula

@@ -304,18 +304,20 @@ class MainWindow(QMainWindow):
         self.splitter = QSplitter(Qt.Horizontal)
         self.splitter.setChildrenCollapsible(False)
         self.stacked_widget = QStackedWidget()
-        self._setup_tools_tab()
-        self._setup_base_inventory_tab()
-        self._setup_inventory_tab()
-        self._setup_pal_editor_tab()
-        self._setup_players_tab()
-        self._setup_guilds_tab()
-        self._setup_bases_tab()
-        self._setup_map_tab()
-        self._setup_exclusions_tab()
-        self._setup_json_editor_tab()
-        self._setup_docs_tab()
-        self._setup_breeding_tab()
+        self._tab_created = set()
+        self._lazy_tab_map = {}
+        for idx in range(12):
+            placeholder = QWidget()
+            self.stacked_widget.addWidget(placeholder)
+            self._lazy_tab_map[idx] = placeholder
+        self._ensure_tab(0)
+        self._ensure_tab(4)
+        self._ensure_tab(5)
+        self._ensure_tab(6)
+        self._ensure_tab(8)
+        self.stacked_widget.setCurrentIndex(0)
+        self.stacked_widget.currentWidget().update()
+        self.stacked_widget.repaint()
         self.splitter.addWidget(self.stacked_widget)
         from .chrome.results_widget import ResultsWidget
         self.results_widget = ResultsWidget()
@@ -331,6 +333,34 @@ class MainWindow(QMainWindow):
         self.status_bar.setFixedHeight(0)
         self.status_bar.hide()
         self.setStatusBar(self.status_bar)
+    _TAB_SETUP = {
+        0: '_setup_tools_tab',
+        1: '_setup_base_inventory_tab',
+        2: '_setup_inventory_tab',
+        3: '_setup_pal_editor_tab',
+        4: '_setup_players_tab',
+        5: '_setup_guilds_tab',
+        6: '_setup_bases_tab',
+        7: '_setup_map_tab',
+        8: '_setup_exclusions_tab',
+        9: '_setup_json_editor_tab',
+        10: '_setup_docs_tab',
+        11: '_setup_breeding_tab',
+    }
+    def _ensure_tab(self, index: int):
+        method_name = self._TAB_SETUP.get(index)
+        if method_name is None:
+            return
+        placeholder = self._lazy_tab_map.pop(index, None)
+        if placeholder is not None:
+            idx = self.stacked_widget.indexOf(placeholder)
+            self.stacked_widget.removeWidget(placeholder)
+            placeholder.deleteLater()
+            getattr(self, method_name)()
+            widget = self.stacked_widget.widget(self.stacked_widget.count() - 1)
+            self.stacked_widget.removeWidget(widget)
+            self.stacked_widget.insertWidget(idx, widget)
+            self._tab_created.add(index)
     def _setup_players_tab(self):
         players_tab = QWidget()
         layout = QVBoxLayout(players_tab)
@@ -488,6 +518,8 @@ class MainWindow(QMainWindow):
         msg_box.exec()
     def _on_nav_changed(self, button_id):
         page_index = {'tools': 0, 'base_inventory': 1, 'player_inventory': 2, 'pal_editor': 3, 'players': 4, 'guilds': 5, 'bases': 6, 'map': 7, 'exclusions': 8, 'json_editor': 9, 'docs': 10, 'breeding': 11}[button_id]
+        if page_index not in self._tab_created:
+            self._ensure_tab(page_index)
         self.stacked_widget.setCurrentIndex(page_index)
     def _load_user_settings(self):
         from boot_paths import CONFIG_DIR, USER_CONFIG_DIR

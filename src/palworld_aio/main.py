@@ -91,7 +91,6 @@ try:
         from palworld_aio import constants
         from palworld_aio.ui import MainWindow
         from palworld_aio.managers.save_manager import save_manager
-        from palworld_aio.managers.func_manager import remove_invalid_items_from_save, remove_invalid_pals_from_save, remove_invalid_passives_from_save, delete_invalid_structure_map_objects, delete_unreferenced_data, delete_non_base_map_objects, fix_illegal_pals_in_save
         from loading_manager import show_error_screen
 except Exception:
     from PySide6.QtWidgets import QApplication
@@ -102,7 +101,6 @@ except Exception:
     from palworld_aio import constants
     from palworld_aio.ui import MainWindow
     from palworld_aio.managers.save_manager import save_manager
-    from palworld_aio.managers.func_manager import remove_invalid_items_from_save, remove_invalid_pals_from_save, remove_invalid_passives_from_save, delete_invalid_structure_map_objects, delete_unreferenced_data, delete_non_base_map_objects, fix_illegal_pals_in_save
     from loading_manager import show_error_screen
 def qt_message_handler(mode, context, message):
     if 'QThreadStorage' in str(message) and 'destroyed before end of thread' in str(message):
@@ -228,6 +226,7 @@ def run_aio():
             save_manager._process_scan_log(data_source, playerdir, log_folder, guild_name_map, base_path)
             print('Logs generated successfully')
         if options['fix']:
+            from palworld_aio.managers.func_manager import remove_invalid_items_from_save, remove_invalid_pals_from_save, remove_invalid_passives_from_save, delete_invalid_structure_map_objects, delete_unreferenced_data, delete_non_base_map_objects, fix_illegal_pals_in_save
             print('Running cleanup operations...')
             remove_invalid_items_from_save()
             remove_invalid_pals_from_save()

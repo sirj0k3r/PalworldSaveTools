@@ -4,6 +4,7 @@ import os
 from typing import Dict, Any
 _LANG: str = 'zh_CN'
 _RES: Dict[str, Dict[str, str]] = {}
+_loaded_langs: set = set()
 import sys as _sys
 import os as _os
 def _compute_user_config_dir():
@@ -25,10 +26,16 @@ def _load_json(path: str) -> Dict[str, Any]:
             return json.load(f)
     except Exception:
         return {}
+def _ensure_lang(lang: str) -> None:
+    if lang not in _loaded_langs:
+        _RES[lang] = _load_json(os.path.join(_BASE, f'{lang}.json'))
+        _loaded_langs.add(lang)
 def load_resources(lang: str | None=None) -> None:
-    global _RES, _LANG
+    global _RES, _LANG, _loaded_langs
+    _loaded_langs.clear()
     for l in _SUPPORTED_LANGS:
         _RES[l] = _load_json(os.path.join(_BASE, f'{l}.json'))
+        _loaded_langs.add(l)
     if lang:
         _LANG = lang
 def get_language() -> str:
@@ -37,6 +44,7 @@ def set_language(lang: str) -> None:
     global _LANG
     if lang not in _SUPPORTED_LANGS:
         lang = 'zh_CN'
+    _ensure_lang(lang)
     _LANG = lang
     try:
         os.makedirs(os.path.dirname(_CFG), exist_ok=True)
@@ -62,12 +70,14 @@ def set_config_value(key: str, value: Any) -> None:
     except Exception:
         pass
 def init_language(default_lang: str='zh_CN') -> None:
+    global _LANG, _loaded_langs
     lang = default_lang
     if os.path.exists(_CFG):
         cfg = _load_json(_CFG)
         lang = cfg.get('lang', default_lang)
-    load_resources(lang)
-    set_language(lang)
+    _ensure_lang(lang)
+    _ensure_lang('en_US')
+    _LANG = lang
 _DEF = object()
 def t(key: str, default: str | object=_DEF, **fmt) -> str:
     src = _RES.get(_LANG, {})

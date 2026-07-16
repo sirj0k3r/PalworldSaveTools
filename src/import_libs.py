@@ -6,6 +6,8 @@ from multiprocessing import shared_memory
 from PySide6.QtWidgets import QApplication, QWidget, QMainWindow, QDialog, QMessageBox, QFileDialog, QInputDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QLineEdit, QComboBox, QTextEdit, QTreeWidget, QTreeWidgetItem, QProgressBar, QCheckBox, QRadioButton, QGroupBox, QTabWidget, QTableWidget, QTableWidgetItem, QHeaderView, QSplitter, QScrollArea, QFrame, QMenuBar, QMenu, QStatusBar, QSystemTrayIcon, QStyle, QCommonStyle, QStylePainter, QStyleOptionButton
 from PySide6.QtGui import QPixmap, QIcon, QFont, QPainter, QPen, QBrush, QColor, QAction, QFontMetrics
 from PySide6.QtCore import Qt, QTimer, QThread, Signal, QObject, QEvent, QSize, QPoint, QRect
+from i18n import init_language, t, set_language, get_language, load_resources
+from collections import defaultdict
 class NerdBtn(QPushButton):
     def paintEvent(self, event):
         sp = QStylePainter(self)
@@ -24,18 +26,76 @@ class NerdBtn(QPushButton):
         y = (self.height() - br.height()) / 2 - br.y()
         p.drawText(int(x), int(y), self.text())
         p.end()
-from i18n import init_language, t, set_language, get_language, load_resources
-from palsav.archive import *
-from palsav.paltypes import *
-import palsav.rawdata.group as palworld_save_group
-from palobject import *
-from palsav.gvas import *
-from palsav.json_tools import *
-from palworld_coord import sav_to_map
-from common import ICON_PATH
-from collections import defaultdict
-from common import *
-from loading_manager import *
+
+_LAZY_SOURCE_MODULES = [
+    'palsav.archive',
+    'palsav.paltypes',
+    'palobject',
+    'palsav.gvas',
+    'palsav.json_tools',
+    'common',
+    'loading_manager',
+]
+_LAZY_ALIASES = {
+    'palworld_save_group': 'palsav.rawdata.group',
+    'sav_to_map': ('palworld_coord', 'sav_to_map'),
+    'ICON_PATH': ('common', 'ICON_PATH'),
+}
+_LAZY_CACHE = {}
+_LAZY_ALL = None
+
+def __getattr__(name):
+    if name in _LAZY_CACHE:
+        return _LAZY_CACHE[name]
+    if name in _LAZY_ALIASES:
+        target = _LAZY_ALIASES[name]
+        import importlib
+        if isinstance(target, tuple):
+            mod = importlib.import_module(target[0])
+            val = getattr(mod, target[1])
+        else:
+            val = importlib.import_module(target)
+        _LAZY_CACHE[name] = val
+        globals()[name] = val
+        return val
+    import importlib
+    for mod_name in _LAZY_SOURCE_MODULES:
+        try:
+            mod = importlib.import_module(mod_name)
+            if hasattr(mod, name):
+                val = getattr(mod, name)
+                _LAZY_CACHE[name] = val
+                globals()[name] = val
+                return val
+        except Exception:
+            continue
+    raise AttributeError(f"module 'import_libs' has no attribute {name!r}")
+
+def __dir__():
+    names = set(dir(__import__(__name__)))
+    names.update(_LAZY_ALIASES.keys())
+    import importlib
+    for mod_name in _LAZY_SOURCE_MODULES:
+        try:
+            mod = importlib.import_module(mod_name)
+            names.update(n for n in dir(mod) if not n.startswith('_'))
+        except Exception:
+            continue
+    return sorted(names)
+
+def _compute_all():
+    names = set(globals().keys())
+    names.update(_LAZY_ALIASES.keys())
+    import importlib
+    for mod_name in _LAZY_SOURCE_MODULES:
+        try:
+            mod = importlib.import_module(mod_name)
+            names.update(n for n in dir(mod) if not n.startswith('_'))
+        except Exception:
+            continue
+    return sorted(names)
+__all__ = _compute_all()
+
 def backup_whole_directory(source_folder, backup_folder):
     import os, sys, shutil, datetime as dt
     from resource_resolver import get_data_base

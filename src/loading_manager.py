@@ -2,7 +2,7 @@ import sys, os, time, random, subprocess, threading, json, traceback
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QFrame, QLabel, QPushButton, QTextEdit, QGraphicsOpacityEffect, QMessageBox, QProgressBar, QDialog
 from PySide6.QtCore import Qt, QTimer, QThread, Signal, QPropertyAnimation, QPoint, QSize
 from PySide6.QtGui import QPixmap, QFont, QCursor
-from import_libs import *
+from i18n import t, init_language
 from resource_resolver import get_base_dir, get_resources_dir, resource_path
 _result_data = {'status': 'idle', 'data': None}
 def get_base_directory():
