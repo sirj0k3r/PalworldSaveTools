@@ -179,6 +179,13 @@ class GuildItemPickerDialog(QDialog):
                 continue
             if item['asset'].startswith('PalEgg_'):
                 continue
+            icon_path = item.get('icon', '')
+            if not icon_path:
+                continue
+            resolved = ItemData._resolve_icon_path(icon_path)
+            lower_basename = os.path.basename(resolved).lower()
+            if 'unknown' in lower_basename or 'dummy' in lower_basename or not os.path.exists(resolved):
+                continue
             name = item.get('name', 'Unknown')
             asset = item.get('asset', '')
             list_item = QListWidgetItem(name)
@@ -192,11 +199,9 @@ class GuildItemPickerDialog(QDialog):
                 cleaned = _clean_desc_for_tooltip(item_desc)
                 tip += f'<br><br>{wrap_tooltip_text(cleaned)}'
             list_item.setToolTip(tip)
-            icon_path = item.get('icon', '')
-            if icon_path:
-                pixmap = ItemData.get_item_icon(icon_path, QSize(48, 48))
-                if not pixmap.isNull():
-                    list_item.setIcon(QIcon(pixmap))
+            pixmap = ItemData.get_item_icon(icon_path, QSize(48, 48))
+            if not pixmap.isNull():
+                list_item.setIcon(QIcon(pixmap))
             list_item.setSizeHint(QSize(80, 80))
             self.results_list.addItem(list_item)
     def _filter_items(self, query: str):
@@ -486,20 +491,23 @@ class GuildStructurePickerDialog(QDialog):
             desc = s.get('description', '')
             if name == '---' or not asset or name == 'en Text':
                 continue
+            icon_rel = s.get('icon', '')
+            if not icon_rel:
+                continue
+            icon_clean = icon_rel.lstrip('/')
+            icon_abs = resource_path(base_path, 'game_data', icon_clean)
+            lower_basename = os.path.basename(icon_abs).lower()
+            if 'unknown' in lower_basename or 'dummy' in lower_basename or not os.path.exists(icon_abs):
+                continue
             list_item = QListWidgetItem(name)
             list_item.setData(Qt.UserRole, asset)
             list_item.setData(Qt.UserRole + 1, name)
             item_desc = s.get('description', '')
             list_item.setData(Qt.UserRole + 3, item_desc)
-            icon_rel = s.get('icon', '')
-            if icon_rel:
-                icon_clean = icon_rel.lstrip('/')
-                icon_abs = resource_path(base_path, 'game_data', icon_clean)
-                if os.path.exists(icon_abs):
-                    pixmap = QPixmap(icon_abs)
-                    if not pixmap.isNull():
-                        scaled = pixmap.scaled(48, 48, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                        list_item.setIcon(QIcon(scaled))
+            pixmap = QPixmap(icon_abs)
+            if not pixmap.isNull():
+                scaled = pixmap.scaled(48, 48, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                list_item.setIcon(QIcon(scaled))
             tip = f'<b>{name}</b><br>({asset})'
             if item_desc:
                 cleaned = _clean_desc_for_tooltip(item_desc)

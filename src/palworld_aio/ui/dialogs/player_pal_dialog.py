@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt, Signal, QSize, QTimer, QPoint
 from PySide6.QtGui import QPixmap, QIcon, QPainter, QColor, QCursor, QFont, QFontMetrics
 from i18n import t
 from palworld_aio import constants
-from palworld_aio.editor.edit_pals import PalFrame, _get_boss_alpha_pixmap, _composite_badge, _BOSS_PREFIXES, _get_element_pixmap, _ensure_element_data, _resolve_partner_desc, _partner_desc_to_html, _get_cached_pixmap, PalInfoWidget
+from palworld_aio.editor.edit_pals import PalFrame, _get_boss_alpha_pixmap, _composite_badge, _BOSS_PREFIXES, _get_element_pixmap, _ensure_element_data, _resolve_partner_desc, _partner_desc_to_html, _get_cached_pixmap, _get_pal_icon_path, PalInfoWidget
 from palworld_aio.editor.pal_editor.widgets import PassiveEffectOverlay
 from palworld_aio.editor.pal_editor import data as _pedata
 from palworld_aio.ui.dialogs.skill_picker import SkillPicker
@@ -277,11 +277,7 @@ class PlayerPalActionDialog(QDialog):
         except:
             pass
     def _get_pal_icon(self, pal_id):
-        asset = pal_id.lower()
-        icon_path = self._pal_icon_map.get(asset)
-        if not icon_path:
-            base_dir = constants.get_base_path()
-            icon_path = resource_path(base_dir, 'game_data', 'icons', 'T_icon_unknown.webp')
+        icon_path = _get_pal_icon_path(pal_id)
         if icon_path in self._icon_pixmap_cache:
             return self._icon_pixmap_cache[icon_path]
         if os.path.exists(icon_path):
@@ -310,6 +306,10 @@ class PlayerPalActionDialog(QDialog):
             if (not is_predator and not is_boss and not is_npc) and not self._show_standard_chk.isChecked():
                 continue
             if query_lower and query_lower not in name.lower() and (query_lower not in asset.lower()):
+                continue
+            pal_icon_path = _get_pal_icon_path(asset)
+            lower_basename = os.path.basename(pal_icon_path).lower()
+            if 'unknown' in lower_basename or 'dummy' in lower_basename:
                 continue
             list_item = QListWidgetItem(name)
             list_item.setData(Qt.UserRole, asset)

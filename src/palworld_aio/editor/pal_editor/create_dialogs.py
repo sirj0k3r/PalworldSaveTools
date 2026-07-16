@@ -834,9 +834,13 @@ class PalCreateDialog(QDialog):
                 continue
             if (not is_predator and not is_boss and not is_npc) and not show_standard:
                 continue
+            pal_icon_path = _icons._get_pal_icon_path(asset)
+            lower_basename = os.path.basename(pal_icon_path).lower()
+            if not pal_icon_path or 'unknown' in lower_basename or 'dummy' in lower_basename:
+                continue
             li = QListWidgetItem(name)
             li.setData(Qt.UserRole, asset)
-            pix = _icons._get_cached_pixmap(_icons._get_pal_icon_path(asset), 48)
+            pix = _icons._get_cached_pixmap(pal_icon_path, 48)
             if pix:
                 li.setIcon(QIcon(pix))
             pdesc = self._pal_descs_cache.get(asset.lower(), '')

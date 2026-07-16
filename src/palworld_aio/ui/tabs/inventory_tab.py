@@ -1025,6 +1025,13 @@ class ItemPickerDialog(QDialog):
                     continue
             if 'en_text' in item.get('name', '').lower():
                 continue
+            icon_path = item.get('icon', '')
+            if not icon_path:
+                continue
+            resolved = ItemData._resolve_icon_path(icon_path)
+            lower_basename = os.path.basename(resolved).lower()
+            if 'unknown' in lower_basename or 'dummy' in lower_basename or not os.path.exists(resolved):
+                continue
             list_item = QListWidgetItem(item.get('name', 'Unknown'))
             list_item.setData(Qt.UserRole, item.get('asset', ''))
             list_item.setData(Qt.UserRole + 2, item.get('rarity', 0))
