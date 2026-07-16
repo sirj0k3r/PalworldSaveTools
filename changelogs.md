@@ -1,3 +1,11 @@
+#2.1.1
+- **Character Transfer: dynamic data loss fix** — restored 3 orphaned fixes from `feat/av-hardened-nuitka-build` that were never merged to main. Container slots now scan both `ItemContainerSaveData` and `CharacterContainerSaveData` for in-use dynamic IDs before merging. Session-level dedup prevents duplicate entries on repeated transfers. ID remapping accumulates across multi-player sessions so slot references stay consistent. When a source dynamic ID collides with an in-use target ID, a new unique ID is generated and all container slot references are rewritten to match
+- **NPC/pal discrimination fix** — monster-row-based pal detection; NPCs no longer leak into pal pickers, breeding lists, or pal search/delete dialogs. Pal pickers source from `_PALMAP` instead of `_NAMEMAP` so generic Human/NPC templates are excluded
+- **Breeding picker cleanup** — candidates sourced directly from `breedingdata.json` pal_info instead of merged npc list. Manual prefix/otomo/zukan-index dedup heuristics removed (superseded by game data)
+- **Convert SteamID dialog** — starts empty instead of auto-fetching; no stale data shown before user action
+- **Flamethrower gear fix** — items with empty descriptions now show correctly in pickers (no longer hidden)
+- Bumped version to 2.1.1
+
 #2.1.0
 - **Faster startup** — app now loads ~2–4s faster by deferring heavy modules until needed. Language files load on demand, unused engine modules skip import, and non-visible tabs are created only when you navigate to them
 - **Sidebar collapse/expand** — collapse shows icons only, expand reveals labels. Toggle button at top (>>/<<). State persists across sessions
