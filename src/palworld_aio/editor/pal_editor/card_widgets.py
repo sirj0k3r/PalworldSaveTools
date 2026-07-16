@@ -232,7 +232,7 @@ class PalIcon(QFrame):
             pred_badge.setStyleSheet('color: #EF4444; font-size: 11px; font-weight: bold; background: transparent; border: none;')
             pred_badge.setFixedSize(18, 18)
             pred_badge.setAlignment(Qt.AlignCenter)
-            pred_badge.move(22, 2)
+            pred_badge.move(2, 2)
             pred_badge.setAttribute(Qt.WA_TransparentForMouseEvents)
             try:
                 import nerdfont as _nf

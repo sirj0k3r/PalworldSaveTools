@@ -613,7 +613,7 @@ class _PalSlotDelegate(QStyledItemDelegate):
                 font.setPointSize(10)
                 font.setBold(True)
                 painter.setFont(font)
-                painter.drawText(option.rect.x() + 6, option.rect.y() + 6, 18, 18, Qt.AlignCenter, paw)
+                painter.drawText(option.rect.x() + 2, option.rect.y() + 2, 18, 18, Qt.AlignCenter, paw)
                 painter.restore()
             else:
                 badge = _get_boss_alpha_pixmap(14)
