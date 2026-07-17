@@ -427,7 +427,7 @@ def run_with_loading(callback, func, *args, parent=None, **kwargs):
                     cleanup()
             else:
                 cleanup()
-            QTimer.singleShot(1000, lambda: (callback(res) if callback else None, cleanup(), _dequeue_next()))
+            QTimer.singleShot(1000, lambda: (cleanup(), callback(res) if callback else None, _dequeue_next()))
     QTimer.singleShot(100, monitor)
 def _dequeue_next():
     global _queued_next
