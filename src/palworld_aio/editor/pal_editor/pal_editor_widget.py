@@ -1008,7 +1008,7 @@ class PalEditorWidget(QWidget, BulkOperationMixin):
             tr['Rank_Attack'] = {'id': None, 'type': 'ByteProperty', 'value': {'type': 'None', 'value': soul_cap}}
             tr['Rank_Defence'] = {'id': None, 'type': 'ByteProperty', 'value': {'type': 'None', 'value': soul_cap}}
             tr['Rank_CraftSpeed'] = {'id': None, 'type': 'ByteProperty', 'value': {'type': 'None', 'value': soul_cap}}
-            rank_cap = 255 if cheat else 5
+            rank_cap = 5
             tr['Rank'] = {'id': None, 'type': 'ByteProperty', 'value': {'type': 'None', 'value': rank_cap}}
             tr['FriendshipPoint'] = {'id': None, 'type': 'IntProperty', 'value': 200000}
             tr['bIsAwakening'] = {'id': None, 'type': 'BoolProperty', 'value': True}
