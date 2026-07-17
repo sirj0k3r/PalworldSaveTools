@@ -495,13 +495,19 @@ def pick_xgp_world(parent=None, title='Select GamePass Save') -> tuple[str, str,
     (container_path, save_id, index) or None if cancelled."""
     from PySide6.QtWidgets import QDialog, QVBoxLayout, QListWidget, QPushButton, QHBoxLayout
     from PySide6.QtCore import Qt
+    from i18n import t
+    from loading_manager import show_critical, show_warning
     containers = find_container_paths()
     if not containers:
+        show_critical(parent, t('xgp.no_saves_found.title', default='No GamePass Saves Found'),
+                      t('xgp.no_saves_found.msg', default='Could not find any GamePass save files.\n\nPossible reasons:\n• You have not created a world yet on Xbox Game Pass\n• The save files are in an unreadable format\n\nTry logging into your world on Xbox Game Pass and updating to the latest Palworld version, then try again.'))
         return None
     cpath = containers[0]
     try:
         index = read_container_index(cpath)
     except Exception:
+        show_critical(parent, t('xgp.save_unreadable.title', default='Save Data Unreadable'),
+                      t('xgp.save_unreadable.msg', default='Your GamePass save data could not be read.\n\nThe container index may be corrupted or from an incompatible version.\n\nTry logging into your world on Xbox Game Pass and updating to the latest Palworld version, then try again.'))
         return None
     saves = get_save_names(index, cpath)
     def _has_required(sid):
@@ -515,6 +521,8 @@ def pick_xgp_world(parent=None, title='Select GamePass Save') -> tuple[str, str,
                    if s['save_id'] not in ('UserOption', 'GDKBackupTimestamps')
                    and _has_required(s['save_id'])]
     if not world_saves:
+        show_warning(parent, t('xgp.no_valid_saves.title', default='No Valid Saves Found'),
+                     t('xgp.no_valid_saves.msg', default='Your GamePass save data could not be read.\n\nThe container index may be corrupted or from an incompatible version.\n\nTry logging into your world on Xbox Game Pass and updating to the latest Palworld version, then try again.'))
         return None
     dlg = QDialog(parent)
     dlg.setWindowTitle(title)

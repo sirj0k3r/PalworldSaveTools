@@ -16,7 +16,7 @@ if _resources_path not in sys.path:
 import copy
 import re
 from i18n import t
-from loading_manager import show_information, show_warning, show_question
+from loading_manager import run_with_loading, show_information, show_warning, show_question
 from palworld_aio import constants
 from palworld_aio.inventory.base_inventory_manager import BaseInventoryManager, get_container_image_path, find_item_locations_efficient
 from palworld_aio.widgets import StatsPanel
@@ -1746,6 +1746,18 @@ class BasePalsContentWidget(QFrame):
         self.max_all_btn.setCursor(Qt.PointingHandCursor)
         self.max_all_btn.clicked.connect(self._max_all_pals)
         page_row.addWidget(self.max_all_btn)
+        self.bulk_clone_btn = QPushButton(t('edit_pals.bulk_clone') if t else 'Bulk Clone')
+        self.bulk_clone_btn.setFixedHeight(22)
+        self.bulk_clone_btn.setStyleSheet('QPushButton { background: rgba(56,189,248,0.12); color: #38BDF8; border: 1px solid rgba(56,189,248,0.25); border-radius: 4px; padding: 3px 8px; font-weight: 600; font-size: 10px; } QPushButton:hover { background: rgba(56,189,248,0.25); border-color: rgba(56,189,248,0.5); color: #FFFFFF; }')
+        self.bulk_clone_btn.setCursor(Qt.PointingHandCursor)
+        self.bulk_clone_btn.clicked.connect(self._open_bulk_clone)
+        page_row.addWidget(self.bulk_clone_btn)
+        self.bulk_delete_btn = QPushButton(t('edit_pals.bulk_delete') if t else 'Bulk Delete')
+        self.bulk_delete_btn.setFixedHeight(22)
+        self.bulk_delete_btn.setStyleSheet('QPushButton { background: rgba(251,113,133,0.12); color: #FB7185; border: 1px solid rgba(251,113,133,0.25); border-radius: 4px; padding: 3px 8px; font-weight: 600; font-size: 10px; } QPushButton:hover { background: rgba(251,113,133,0.25); border-color: rgba(251,113,133,0.5); color: #FFFFFF; }')
+        self.bulk_delete_btn.setCursor(Qt.PointingHandCursor)
+        self.bulk_delete_btn.clicked.connect(self._open_bulk_delete)
+        page_row.addWidget(self.bulk_delete_btn)
         self.prev_page_btn = QPushButton('◀')
         self.prev_page_btn.setFixedSize(28, 24)
         self.prev_page_btn.setStyleSheet('QPushButton { background: rgba(125,211,252,0.08); color: #7DD3FC; border: 1px solid rgba(125,211,252,0.2); border-radius: 4px; font-weight: 600; font-size: 12px; } QPushButton:hover { background: rgba(125,211,252,0.18); color: #FFFFFF; } QPushButton:disabled { background: rgba(100,100,100,0.1); color: #666; border-color: rgba(255,255,255,0.05); }')
@@ -1782,6 +1794,8 @@ class BasePalsContentWidget(QFrame):
         self.next_page_btn.hide()
         self.restore_all_btn.hide()
         self.max_all_btn.hide()
+        self.bulk_clone_btn.hide()
+        self.bulk_delete_btn.hide()
         self.right_panel.hide()
     def set_pals(self, pals_data, base_id=None):
         self._pals = pals_data
@@ -1814,6 +1828,10 @@ class BasePalsContentWidget(QFrame):
             self.restore_all_btn.setText(t('base_inventory.restore_all'))
         if hasattr(self, 'max_all_btn'):
             self.max_all_btn.setText(t('base_inventory.max_all'))
+        if hasattr(self, 'bulk_clone_btn'):
+            self.bulk_clone_btn.setText(t('edit_pals.bulk_clone') if t else 'Bulk Clone')
+        if hasattr(self, 'bulk_delete_btn'):
+            self.bulk_delete_btn.setText(t('edit_pals.bulk_delete') if t else 'Bulk Delete')
         if hasattr(self, 'pal_info') and self.pal_info:
             self.pal_info.refresh_labels()
     def _prev_page(self):
@@ -1867,6 +1885,8 @@ class BasePalsContentWidget(QFrame):
                 self.next_page_btn.hide()
                 self.restore_all_btn.hide()
                 self.max_all_btn.hide()
+                self.bulk_clone_btn.hide()
+                self.bulk_delete_btn.hide()
                 self.right_panel.show()
                 self.stats_label.setText(t('base_inventory.working_pals_count').format(count=0) if t else 'Working Pals: 0')
                 self._selected_idx = -1
@@ -1882,6 +1902,8 @@ class BasePalsContentWidget(QFrame):
             self.next_page_btn.hide()
             self.restore_all_btn.hide()
             self.max_all_btn.hide()
+            self.bulk_clone_btn.hide()
+            self.bulk_delete_btn.hide()
             self.right_panel.hide()
             self._selected_idx = -1
             self.pal_info.set_clicked_pal(None)
@@ -1895,6 +1917,8 @@ class BasePalsContentWidget(QFrame):
         self.next_page_btn.show()
         self.restore_all_btn.show()
         self.max_all_btn.show()
+        self.bulk_clone_btn.show()
+        self.bulk_delete_btn.show()
         self.right_panel.show()
         self.stats_label.setText(t('base_inventory.working_pals_count').format(count=self._pal_count()) if t else f'Working Pals: {self._pal_count()}')
         self._update_page()
@@ -2150,6 +2174,10 @@ class BasePalsContentWidget(QFrame):
     def _on_pal_info_changed(self):
         for icon in self._icons:
             icon.update_display()
+    def _open_bulk_clone(self):
+        show_warning(self, t('common.error'), 'Bulk clone is not yet available for base worker pals. Use context menu on individual pals.')
+    def _open_bulk_delete(self):
+        show_warning(self, t('common.error'), 'Bulk delete is not yet available for base worker pals. Use context menu on individual pals.')
     def _on_pal_right_clicked(self, idx, action):
         pal_idx = self._grid_idx_to_pal_idx(idx)
         pal = self._pals[pal_idx] if pal_idx < len(self._pals) and self._pals[pal_idx] is not None else None

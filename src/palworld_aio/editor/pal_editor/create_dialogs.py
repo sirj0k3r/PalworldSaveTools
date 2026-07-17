@@ -1,12 +1,12 @@
 import copy
 import os
 import re
-from PySide6.QtWidgets import QAbstractItemView, QDialog, QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem, QPushButton, QScrollArea, QScrollBar, QSizePolicy, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QAbstractItemView, QDialog, QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem, QPushButton, QScrollArea, QScrollBar, QSizePolicy, QSpinBox, QVBoxLayout, QWidget
 from palworld_aio.widgets.toggle_check import ToggleCheckBtn
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QIcon
 from i18n import t
-from loading_manager import show_information, show_warning, show_question
+from loading_manager import run_with_loading, show_information, show_warning, show_question
 from palworld_aio import constants
 from palworld_aio.ui.chrome.styles import DIALOG_STYLE
 from resource_resolver import resource_path
@@ -944,3 +944,440 @@ class PalCreateDialog(QDialog):
             self.pal_editor.palbox_pal_dict[slot_to_use] = pal_item
         self.created_item = {'character_id': cid, 'nickname': nick, 'container_id': container_id, 'slot_index': slot_to_use, 'pal_item': pal_item}
         self.accept()
+
+class BulkSpeciesDialog(FramelessDialog):
+    def __init__(self, pal_editor, mode='clone', parent=None, external_pals=None):
+        title_key = 'edit_pals.bulk_clone' if mode == 'clone' else 'edit_pals.bulk_delete'
+        super().__init__(title_key, parent)
+        self.pal_editor = pal_editor
+        self.mode = mode
+        self.setModal(True)
+        self.setMinimumSize(620, 620)
+        self._from_party = True
+        self._from_palbox = True
+        self._from_dps = True
+        self._external_pals = external_pals or []
+        self._species_map = {}
+        self._party_free = 5
+        self._palbox_free = 960
+        self._dps_free = 0
+        self._calc_free_slots()
+        self._refresh_species()
+        inner = QWidget()
+        inner.setStyleSheet('background: transparent;')
+        il = QVBoxLayout(inner)
+        il.setContentsMargins(8, 4, 8, 8)
+        il.setSpacing(6)
+        header = QLabel(t('edit_pals.bulk_clone_header' if mode == 'clone' else 'edit_pals.bulk_delete_header'))
+        header.setStyleSheet('font-size: 12px; font-weight: 700; color: #E2E8F0;')
+        il.addWidget(header)
+        if not self._external_pals:
+            src_row = QHBoxLayout()
+            src_row.setSpacing(8)
+            src_lbl = QLabel(t('edit_pals.bulk_sources'))
+            src_lbl.setStyleSheet('font-size: 11px; font-weight: 600; color: #7DD3FC;')
+            src_row.addWidget(src_lbl)
+            self._party_chk = ToggleCheckBtn(t('edit_pals.party'))
+            self._party_chk.setChecked(True)
+            self._party_chk.toggled.connect(self._on_source_toggle)
+            src_row.addWidget(self._party_chk)
+            self._palbox_chk = ToggleCheckBtn(t('edit_pals.palbox'))
+            self._palbox_chk.setChecked(True)
+            self._palbox_chk.toggled.connect(self._on_source_toggle)
+            src_row.addWidget(self._palbox_chk)
+            self._dps_chk = ToggleCheckBtn(t('edit_pals.dps'))
+            self._dps_chk.setChecked(True)
+            self._dps_chk.toggled.connect(self._on_source_toggle)
+            src_row.addWidget(self._dps_chk)
+            src_row.addStretch()
+            il.addLayout(src_row)
+            self._slot_label = QLabel('')
+            self._slot_label.setStyleSheet('font-size: 10px; color: #94A3B8; padding: 2px 4px;')
+            il.addWidget(self._slot_label)
+        if mode == 'clone':
+            search_qty_row = QHBoxLayout()
+            search_lbl = QLabel(t('common.search'))
+            search_qty_row.addWidget(search_lbl)
+            self._search_edit = QLineEdit()
+            self._search_edit.setPlaceholderText(t('edit_pals.search_placeholder'))
+            self._search_edit.textChanged.connect(self._rebuild_list)
+            search_qty_row.addWidget(self._search_edit, 1)
+            qty_all_lbl = QLabel(t('edit_pals.bulk_qty') if t else 'Qty:')
+            search_qty_row.addWidget(qty_all_lbl)
+            self._qty_all_spin = QSpinBox()
+            self._qty_all_spin.setRange(0, 999)
+            self._qty_all_spin.setValue(1)
+            self._qty_all_spin.valueChanged.connect(self._on_qty_all_changed)
+            search_qty_row.addWidget(self._qty_all_spin)
+            il.addLayout(search_qty_row)
+        else:
+            search_row = QHBoxLayout()
+            search_lbl = QLabel(t('common.search'))
+            search_row.addWidget(search_lbl)
+            self._search_edit = QLineEdit()
+            self._search_edit.setPlaceholderText(t('edit_pals.search_placeholder'))
+            self._search_edit.textChanged.connect(self._rebuild_list)
+            search_row.addWidget(self._search_edit)
+            il.addLayout(search_row)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.setStyleSheet('QScrollArea { background: transparent; border: 1px solid rgba(125,211,252,0.12); border-radius: 4px; }')
+        self._list_inner = QWidget()
+        self._list_inner.setStyleSheet('background: transparent;')
+        scroll.setWidget(self._list_inner)
+        il.addWidget(scroll, 1)
+        self._footer_label = QLabel('')
+        self._footer_label.setStyleSheet('font-size: 10px; color: #94A3B8; padding: 2px 4px;')
+        il.addWidget(self._footer_label)
+        btn_row = QHBoxLayout()
+        btn_row.addStretch()
+        cancel_btn = QPushButton(t('edit_pals.cancel'))
+        cancel_btn.setStyleSheet('QPushButton { background: rgba(255,255,255,0.05); color: #9CA3AF; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 6px 16px; font-size: 12px; font-weight: 600; } QPushButton:hover { background: rgba(255,255,255,0.1); color: #FFFFFF; }')
+        cancel_btn.clicked.connect(self.reject)
+        btn_row.addWidget(cancel_btn)
+        sel_all_btn = QPushButton(t('player_item.select_all'))
+        sel_all_btn.setStyleSheet('QPushButton { background: rgba(74,222,128,0.12); color: #4ade80; border: 1px solid rgba(74,222,128,0.2); border-radius: 4px; padding: 6px 12px; font-size: 11px; font-weight: 600; } QPushButton:hover { background: rgba(74,222,128,0.2); color: #FFFFFF; }')
+        sel_all_btn.clicked.connect(lambda: self._set_all_checked(True))
+        btn_row.addWidget(sel_all_btn)
+        sel_none_btn = QPushButton(t('player_item.deselect_all'))
+        sel_none_btn.setStyleSheet('QPushButton { background: rgba(251,113,133,0.12); color: #FB7185; border: 1px solid rgba(251,113,133,0.2); border-radius: 4px; padding: 6px 12px; font-size: 11px; font-weight: 600; } QPushButton:hover { background: rgba(251,113,133,0.2); color: #FFFFFF; }')
+        sel_none_btn.clicked.connect(lambda: self._set_all_checked(False))
+        btn_row.addWidget(sel_none_btn)
+        apply_key = 'edit_pals.bulk_clone_apply' if mode == 'clone' else 'edit_pals.bulk_delete_apply'
+        self._apply_btn = QPushButton(t(apply_key))
+        self._apply_btn.setStyleSheet('QPushButton { background: rgba(16,185,129,0.15); color: #4ADE80; border: 1px solid rgba(16,185,129,0.3); border-radius: 4px; padding: 6px 20px; font-size: 12px; font-weight: 700; } QPushButton:hover { background: rgba(16,185,129,0.25); color: #FFFFFF; }')
+        self._apply_btn.clicked.connect(self._on_apply)
+        btn_row.addWidget(self._apply_btn)
+        il.addLayout(btn_row)
+        self.content_layout.addWidget(inner)
+        self._rebuild_list()
+    def _calc_free_slots(self):
+        pe = self.pal_editor
+        if not pe:
+            self._party_free = 0
+            self._palbox_free = 0
+            self._dps_free = 0
+            return
+        self._party_free = max(0, 5 - len(pe.party_pals))
+        self._palbox_free = max(0, 32 * 30 - len(pe.palbox_pal_dict))
+        if hasattr(pe, 'dps_total_slots') and pe.dps_total_slots:
+            self._dps_free = max(0, pe.dps_total_slots - len(pe.dps_pals))
+        else:
+            self._dps_free = 0
+    def _get_total_free(self):
+        total = 0
+        if self._from_party:
+            total += self._party_free
+        if self._from_palbox:
+            total += self._palbox_free
+        if self._from_dps:
+            total += self._dps_free
+        return total
+    def _update_slot_label(self):
+        parts = []
+        if self._from_party:
+            parts.append(t('edit_pals.bulk_slots_party', used=5 - self._party_free, total=5))
+        if self._from_palbox:
+            parts.append(t('edit_pals.bulk_slots_palbox', used=960 - self._palbox_free, total=960))
+        if self._from_dps:
+            parts.append(t('edit_pals.bulk_slots_dps', free=self._dps_free))
+        parts.append(t('edit_pals.bulk_slots_total', free=self._get_total_free()))
+        self._slot_label.setText(' | '.join(parts))
+    def _update_footer(self):
+        if self.mode == 'delete':
+            total = sum(len(v) for v in self._species_map.values())
+            self._footer_label.setText(f'{len(self._species_map)} species, {total} total pals')
+        else:
+            total_requested = sum(spin.value() for spin in self._qty_spins) if hasattr(self, '_qty_spins') else 0
+            free = self._get_total_free()
+            color = '#4ADE80' if total_requested <= free else '#FB7185'
+            self._footer_label.setStyleSheet(f'font-size: 10px; color: {color}; padding: 2px 4px;')
+            self._footer_label.setText(t('edit_pals.bulk_footer_requested', requested=total_requested, available=free))
+    def _on_source_toggle(self):
+        self._from_party = self._party_chk.isChecked()
+        self._from_palbox = self._palbox_chk.isChecked()
+        self._from_dps = self._dps_chk.isChecked()
+        self._calc_free_slots()
+        self._refresh_species()
+        self._rebuild_list()
+        self._update_slot_label()
+    def _refresh_species(self):
+        self._species_map = {}
+        pe = self.pal_editor
+        if self._external_pals:
+            for pi in self._external_pals:
+                pr = _get_raw_from_item(pi)
+                cid = extract_value(pr, 'CharacterID', '') if pr else ''
+                if cid:
+                    self._species_map.setdefault(cid.upper(), []).append(pi)
+            return
+        def collect(src_dict):
+            for pi in src_dict.values():
+                pr = _get_raw_from_item(pi)
+                cid = extract_value(pr, 'CharacterID', '') if pr else ''
+                if not cid:
+                    continue
+                self._species_map.setdefault(cid.upper(), []).append(pi)
+        if self._from_party:
+            collect(pe.party_pals)
+        if self._from_palbox:
+            collect(pe.palbox_pal_dict)
+        if self._from_dps and hasattr(pe, 'dps_pals'):
+            collect(pe.dps_pals)
+    def _on_qty_all_changed(self):
+        val = self._qty_all_spin.value()
+        if hasattr(self, '_qty_spins'):
+            for spin in self._qty_spins:
+                spin.setValue(val)
+        self._update_footer()
+    def _rebuild_list(self):
+        from .legacy_frame import PalFrame
+        search = self._search_edit.text().lower() if hasattr(self, '_search_edit') else ''
+        clayout = self._list_inner.layout()
+        if clayout:
+            while clayout.count():
+                item = clayout.takeAt(0)
+                w = item.widget()
+                if w:
+                    w.deleteLater()
+        else:
+            clayout = QVBoxLayout(self._list_inner)
+            clayout.setContentsMargins(2, 2, 2, 2)
+            clayout.setSpacing(2)
+            clayout.setAlignment(Qt.AlignTop)
+        self._checkboxes = []
+        self._species_keys = []
+        self._qty_spins = []
+        for cid_upper in sorted(self._species_map.keys()):
+            pals = self._species_map[cid_upper]
+            name = resolve_name(cid_upper, PalFrame._NAMEMAP) or cid_upper
+            if search and search not in name.lower() and search not in cid_upper.lower():
+                continue
+            safe = _strip_prefix_label(name)
+            row = QWidget()
+            row.setStyleSheet('background: transparent;')
+            rl = QHBoxLayout(row)
+            rl.setContentsMargins(4, 1, 4, 1)
+            rl.setSpacing(4)
+            cb = ToggleCheckBtn(f'{safe} ({len(pals)})')
+            cb.setChecked(True)
+            cb.toggled.connect(self._update_footer)
+            rl.addWidget(cb, 1)
+            self._checkboxes.append(cb)
+            self._species_keys.append(cid_upper)
+            if self.mode == 'clone':
+                rl.addWidget(QLabel(t('edit_pals.bulk_qty') if t else 'Qty:'))
+                spin = QSpinBox()
+                spin.setRange(0, 999)
+                spin.setValue(1)
+                spin.setFixedWidth(60)
+                spin.valueChanged.connect(self._update_footer)
+                rl.addWidget(spin)
+                self._qty_spins.append(spin)
+            clayout.addWidget(row)
+        clayout.addStretch()
+        if self.mode == 'clone':
+            self._update_footer()
+        if not self._external_pals:
+            self._update_slot_label()
+    def _set_all_checked(self, checked):
+        for cb in self._checkboxes:
+            cb.setChecked(checked)
+    def _on_apply(self):
+        if not self.pal_editor:
+            show_warning(self, t('common.error'), 'Bulk operations not available for this context.')
+            return
+        selected = []
+        qtys = []
+        for i, (cid_upper, cb) in enumerate(zip(self._species_keys, self._checkboxes)):
+            if cb.isChecked():
+                selected.append(cid_upper)
+                if self.mode == 'clone':
+                    qtys.append(self._qty_spins[i].value())
+                else:
+                    qtys.append(len(self._species_map[cid_upper]))
+        if not selected:
+            show_warning(self, t('common.error'), t('edit_pals.bulk_no_selection'))
+            return
+        total_requested = sum(qtys)
+        if self.mode == 'clone':
+            free = self._get_total_free()
+            if total_requested > free:
+                show_warning(self, t('common.error'),
+                    t('edit_pals.bulk_not_enough_slots', requested=total_requested, available=free))
+                return
+        confirm_key = 'edit_pals.bulk_clone_confirm' if self.mode == 'clone' else 'edit_pals.bulk_delete_confirm'
+        if not show_question(self, t('common.confirm'), t(confirm_key, count=len(selected), total=total_requested)):
+            return
+        def task():
+            if self.mode == 'clone':
+                return self._do_bulk_clone(selected, qtys)
+            return self._do_bulk_delete(selected)
+        def on_finished(result):
+            species_done, pals_done = result
+            key = 'edit_pals.bulk_species_cloned' if self.mode == 'clone' else 'edit_pals.bulk_species_deleted'
+            self.pal_editor._update_party_slots()
+            self.pal_editor._update_palbox_page()
+            if hasattr(self.pal_editor, '_save_dps'):
+                self.pal_editor._save_dps(force=True)
+            if hasattr(self.pal_editor, '_update_dashboard_stats'):
+                self.pal_editor._update_dashboard_stats()
+            show_information(self, t('common.done'), t(key, count=species_done, total=pals_done))
+            self.accept()
+        run_with_loading(on_finished, task)
+    def _do_bulk_clone(self, selected_cids, qtys):
+        import uuid
+        from palworld_aio.editor.pal_editor.pal_ops import _generate_pal_save_param, _register_pal_instance_to_guild
+        pe = self.pal_editor
+        wsd = constants.loaded_level_json['properties']['worldSaveData']['value']
+        cmap = wsd['CharacterSaveParameterMap']['value']
+        owner_uid = pe.player_uid
+        group_id = None
+        if owner_uid and 'GroupSaveDataMap' in wsd:
+            owner_norm = owner_uid.replace('-', '').lower()
+            for g in wsd['GroupSaveDataMap']['value']:
+                try:
+                    for p in g['value']['RawData']['value'].get('players', []):
+                        if str(p.get('player_uid', '')).replace('-', '').lower() == owner_norm:
+                            group_id = g['value']['RawData']['value'].get('group_id')
+                            break
+                except:
+                    pass
+                if group_id:
+                    break
+        species_done = 0
+        pals_done = 0
+        for si, (cid_upper, qty) in enumerate(zip(selected_cids, qtys)):
+            pals = self._species_map[cid_upper]
+            src_pi = pals[0] if pals else None
+            pr = _get_raw_from_item(src_pi) if src_pi else None
+            if not pr:
+                continue
+            nick_base = resolve_name(cid_upper, PalFrame._NAMEMAP) or cid_upper
+            safe_nick = _strip_prefix_label(nick_base)
+            for _ in range(qty):
+                container_id = None
+                is_dps_slot = False
+                new_index = None
+                used = set()
+                max_idx = 0
+                if self._from_party and len(pe.party_pals) < 5:
+                    container_id = pe.party_container
+                    used = set(pe.party_pals.keys())
+                    max_idx = 5
+                elif self._from_palbox:
+                    container_id = pe.palbox_container
+                    used = set(pe.palbox_pal_dict.keys())
+                    max_idx = 32 * 30
+                elif self._from_dps and pe.dps_gvas:
+                    is_dps_slot = True
+                if not is_dps_slot:
+                    if not container_id:
+                        continue
+                    new_index = None
+                    for i in range(max_idx):
+                        if i not in used:
+                            new_index = i
+                            break
+                    if new_index is None:
+                        continue
+                    nick = f'{safe_nick}_clone'
+                    new_pal = _generate_pal_save_param(cid_upper, nick, owner_uid, container_id, new_index, group_id)
+                    new_raw_target = _get_raw_from_item(new_pal)
+                    if not new_raw_target:
+                        continue
+                    for field in pr:
+                        if field in ('SlotId', 'OwnerPlayerUId'):
+                            continue
+                        new_raw_target[field] = copy.deepcopy(pr[field])
+                    instance_id = new_pal['key']['InstanceId']['value']
+                    cmap.append(new_pal)
+                    char_containers = safe_nested_get(wsd, ['CharacterContainerSaveData', 'value'], [])
+                    for cont in char_containers:
+                        if safe_nested_get(cont, ['key', 'ID', 'value']) == container_id:
+                            slots = safe_nested_get(cont, ['value', 'Slots', 'value', 'values'], [])
+                            slots.append({'SlotIndex': {'id': None, 'type': 'IntProperty', 'value': new_index}, 'RawData': {'array_type': 'ByteProperty', 'id': None, 'value': {'player_uid': '00000000-0000-0000-0000-000000000000', 'instance_id': instance_id, 'permission_tribe_id': 0}, 'custom_type': '.worldSaveData.CharacterContainerSaveData.Value.Slots.Slots.RawData', 'type': 'ArrayProperty'}})
+                            break
+                    if group_id:
+                        _register_pal_instance_to_guild(instance_id, group_id)
+                    if container_id == pe.party_container:
+                        pe.party_pals[new_index] = new_pal
+                    else:
+                        pe.palbox_pal_dict[new_index] = new_pal
+                    used.add(new_index)
+                    pals_done += 1
+                else:
+                    eu = '00000000-0000-0000-0000-000000000000'
+                    arr = pe.dps_gvas.properties.get('SaveParameterArray', {}).get('value', {}).get('values', [])
+                    empty_idx = None
+                    for ei in range(len(arr)):
+                        if ei not in pe.dps_pals:
+                            empty_idx = ei
+                            break
+                    if empty_idx is None:
+                        continue
+                    new_raw = copy.deepcopy(pr)
+                    new_inst = str(uuid.uuid4())
+                    new_raw['OwnerPlayerUId'] = {'struct_type': 'Guid', 'struct_id': eu, 'id': None, 'value': str(owner_uid) if owner_uid else eu, 'type': 'StructProperty'}
+                    sid = new_raw.get('SlotId', {}).get('value', {})
+                    cid_cont = sid.get('ContainerId', {}).get('value', {}).get('ID', {})
+                    cid_cont['value'] = new_inst
+                    sid['SlotIndex']['value'] = 0
+                    sp = arr[empty_idx].get('SaveParameter', {}).get('value', {})
+                    sp.clear()
+                    sp.update(new_raw)
+                    inst = arr[empty_idx].get('InstanceId', {}).get('value', {})
+                    inst['PlayerUId'] = {'struct_type': 'Guid', 'struct_id': eu, 'id': None, 'value': str(owner_uid) if owner_uid else eu, 'type': 'StructProperty'}
+                    inst['InstanceId'] = {'struct_type': 'Guid', 'struct_id': eu, 'id': None, 'value': str(uuid.uuid4()), 'type': 'StructProperty'}
+                    inst['DebugName'] = {'id': None, 'type': 'StrProperty', 'value': ''}
+                    pe.dps_pals[empty_idx] = {'data': new_raw}
+                    pals_done += 1
+            species_done += 1
+        return (species_done, pals_done)
+    def _do_bulk_delete(self, selected_cids):
+        pe = self.pal_editor
+        wsd = constants.loaded_level_json['properties']['worldSaveData']['value']
+        cmap = wsd['CharacterSaveParameterMap']['value']
+        species_done = 0
+        pals_done = 0
+        for cid_upper in selected_cids:
+            pals = list(self._species_map[cid_upper])
+            for src_pi in pals:
+                pr = _get_raw_from_item(src_pi)
+                if not pr:
+                    continue
+                is_dps_pi = 'data' in src_pi
+                if is_dps_pi:
+                    for abs_idx, dp in list(pe.dps_pals.items()):
+                        if dp is src_pi:
+                            for k in list(pr.keys()):
+                                if k != 'SlotId':
+                                    del pr[k]
+                            pr['CharacterID'] = {'id': None, 'type': 'NameProperty', 'value': 'None'}
+                            if pe.dps_gvas:
+                                arr = pe.dps_gvas.properties.get('SaveParameterArray', {}).get('value', {}).get('values', [])
+                                if abs_idx < len(arr) and isinstance(arr[abs_idx], dict):
+                                    inst = arr[abs_idx].get('InstanceId', {}).get('value', {})
+                                    if isinstance(inst, dict):
+                                        empty_guid = '00000000-0000-0000-0000-000000000000'
+                                        inst['PlayerUId'] = {'struct_type': 'Guid', 'struct_id': empty_guid, 'id': None, 'value': empty_guid, 'type': 'StructProperty'}
+                                        inst['InstanceId'] = {'struct_type': 'Guid', 'struct_id': empty_guid, 'id': None, 'value': empty_guid, 'type': 'StructProperty'}
+                                        inst['DebugName'] = {'id': None, 'type': 'StrProperty', 'value': ''}
+                            del pe.dps_pals[abs_idx]
+                            pals_done += 1
+                            break
+                else:
+                    if src_pi in cmap:
+                        cmap.remove(src_pi)
+                    for idx, pi in list(pe.party_pals.items()):
+                        if pi is src_pi:
+                            del pe.party_pals[idx]
+                            break
+                    for idx, pi in list(pe.palbox_pal_dict.items()):
+                        if pi is src_pi:
+                            del pe.palbox_pal_dict[idx]
+                            break
+                    pals_done += 1
+            species_done += 1
+        return (species_done, pals_done)

@@ -321,6 +321,9 @@ if '--spawn-loader' in sys.argv:
     win = OverlayController(start_ts, phrases, parent_geom)
     win.show()
     sys.exit(app.exec())
+def is_loading_active():
+    return _result_data.get('status') == 'running'
+
 def run_with_loading(callback, func, *args, parent=None, **kwargs):
     global _result_data
     if _result_data.get('status') == 'running':

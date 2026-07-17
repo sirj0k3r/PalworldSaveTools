@@ -14,6 +14,13 @@
 - **Tab switching performance** — navigating to a lazy-loaded tab no longer refreshes every single tab; only the target tab repopulates. Removed a redundant double-refresh of the base inventory tab on save load
 - **macOS trackpad phantom scroll fix** — right-clicking (two-finger tap) on empty grid space in pal editor or base inventory no longer kicks you back pages. Zero-delta scroll events from macOS gesture synthesis now pass through instead of triggering page navigation
 - **Linux save path support** — `get_steam_save_path()` now resolves Proton save location (`~/.local/share/Steam/.../SaveGames`). Restore Map works on all 3 platforms
+- **Loading overlay on player select** — selecting a player in Player Inventory or Pal Editor now shows the animated loading overlay for the entire operation: both tabs' data (inventory + pals) load simultaneously in the background, then both UIs update at once when the overlay dismisses. Cross-tab player selection sync is instant and works on first use (Player Inventory and Pal Editor tabs are no longer lazily deferred).
+- **DPS button visibility** — the DPS mode button in Pal Editor now only shows when the selected player actually has a DPS save file. No more clicking a useless button
+- **Loading overlay on base import/export/clone** — importing, exporting, and cloning bases now shows the animated loading overlay instead of a frozen wait cursor. Single-base export, bulk guild export, and multi-file import all wrapped with background progress.
+- **Clone base in map viewer** — right-click any base marker and pick "Clone Base" to duplicate it in the same guild with the loading overlay. The clone spawns near the original.
+- **Loading overlay on XGP save load** — the entire GamePass save extraction and decoding now runs under the animated overlay instead of freezing the UI during container blob reads.
+- **GamePass save error dialogs** — the save picker and Steam↔GamePass converter now show clear error dialogs when no saves are found or saves can't be parsed, with suggestions to log into the world on Xbox Game Pass and update to the latest Palworld version.
+- **Bulk Clone/Delete pals** — new "Bulk Clone" and "Bulk Delete" buttons in the Pal Editor header. Opens a species-picker dialog with Party/Palbox/DPS source toggles, search, and per-species quantity (clone) or select-all (delete). Clone mode shows available free slots and caps copies accordingly. Both operations run under the loading overlay.
 - Bumped version to 2.1.2
 
 #2.1.0

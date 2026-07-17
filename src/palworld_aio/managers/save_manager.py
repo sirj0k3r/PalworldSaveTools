@@ -245,44 +245,46 @@ class SaveManager(QObject):
         )
         import tempfile as _tempfile
         self._reset_state()
-        self._xgp_temp_dir = _tempfile.mkdtemp(prefix='pst_xgp_')
-        index = read_container_index(container_path)
-        extracted = extract_save_to_temp(container_path, index, save_id, self._xgp_temp_dir)
-        level_path = extracted.get('Level.sav')
-        if not level_path:
-            shutil.rmtree(self._xgp_temp_dir, ignore_errors=True)
-            self._xgp_temp_dir = None
-            if parent:
-                show_critical(parent, t('error.title'),
-                    f'Level.sav not found in container for save_id {save_id}')
-            return False
-        if not os.path.isfile(level_path):
-            shutil.rmtree(self._xgp_temp_dir, ignore_errors=True)
-            self._xgp_temp_dir = None
-            if parent:
-                show_critical(parent, t('error.title'),
-                    f'Extracted Level.sav path ({level_path}) does not exist on disk.\n'
-                    f'Extracted keys: {list(extracted.keys())}')
-            return False
-        self.load_started.emit()
-        constants.xgp_container_path = container_path
-        constants.xgp_save_id = save_id
-        constants.xgp_container_index = read_container_index(container_path)
-        constants.xgp_loaded = True
-        constants.current_save_path = self._xgp_temp_dir
-        constants.backup_save_path = self._xgp_temp_dir
+        tmpdir = _tempfile.mkdtemp(prefix='pst_xgp_')
+        self._xgp_temp_dir = tmpdir
         def load_task():
             try:
-                ok = self._load_from_path(level_path, parent)
-                self.load_finished.emit(ok)
-                return ok
+                index = read_container_index(container_path)
+                extracted = extract_save_to_temp(container_path, index, save_id, tmpdir)
+                level_path = extracted.get('Level.sav')
+                if not level_path:
+                    if parent:
+                        show_critical(parent, t('xgp.save_unreadable.title', default='Save Data Unreadable'),
+                            t('xgp.save_unreadable.msg', default='Your GamePass save data could not be read.\n\nThe container index may be corrupted or from an incompatible version.\n\nTry logging into your world on Xbox Game Pass and updating to the latest Palworld version, then try again.'))
+                    return False
+                if not os.path.isfile(level_path):
+                    if parent:
+                        show_critical(parent, t('xgp.save_unreadable.title', default='Save Data Unreadable'),
+                            t('xgp.save_unreadable.msg', default='Your GamePass save data could not be read.\n\nThe container index may be corrupted or from an incompatible version.\n\nTry logging into your world on Xbox Game Pass and updating to the latest Palworld version, then try again.'))
+                    return False
+                constants.xgp_container_path = container_path
+                constants.xgp_save_id = save_id
+                constants.xgp_container_index = read_container_index(container_path)
+                constants.xgp_loaded = True
+                constants.current_save_path = tmpdir
+                constants.backup_save_path = tmpdir
+                return self._load_from_path(level_path, parent)
             except Exception as e:
                 print(f'load_xgp_save error: {e}')
                 import traceback
                 traceback.print_exc()
-                self.load_finished.emit(False)
+                if parent:
+                    show_critical(parent, t('xgp.save_unreadable.title', default='Save Data Unreadable'),
+                        t('xgp.save_unreadable.msg', default='Your GamePass save data could not be read.\n\nThe container index may be corrupted or from an incompatible version.\n\nTry logging into your world on Xbox Game Pass and updating to the latest Palworld version, then try again.'))
                 return False
-        run_with_loading(lambda _: None, load_task)
+        def on_finished(ok):
+            if ok:
+                self.load_finished.emit(True)
+            else:
+                shutil.rmtree(tmpdir, ignore_errors=True)
+                self._xgp_temp_dir = None
+                self.load_finished.emit(False)
+        run_with_loading(on_finished, load_task)
         return True
     def _save_xgp_container(self):
         from palworld_xgp_import.gamepass_manager import save_xgp_changes

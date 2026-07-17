@@ -34,7 +34,7 @@ from .pal_ops import (
 from .pal_info_widget import PalInfoWidget
 from .party_slot_widget import PartySlotWidget
 from .palbox_slot_widget import PalboxSlotWidget
-from .create_dialogs import BulkSyncPalDialog, PalCreateDialog, _show_learned_moves_dialog
+from .create_dialogs import BulkSyncPalDialog, PalCreateDialog, _show_learned_moves_dialog, BulkSpeciesDialog
 from .pal_editor_bulk_ops import BulkOperationMixin
 
 class PalEditorWidget(QWidget, BulkOperationMixin):
@@ -147,6 +147,19 @@ class PalEditorWidget(QWidget, BulkOperationMixin):
         self.max_all_btn.setCursor(Qt.PointingHandCursor)
         self.max_all_btn.clicked.connect(self._max_all_pals)
         header_row.addWidget(self.max_all_btn)
+        header_row.addSpacing(4)
+        self.bulk_clone_btn = QPushButton(t('edit_pals.bulk_clone') if t else 'Bulk Clone')
+        self.bulk_clone_btn.setFixedHeight(24)
+        self.bulk_clone_btn.setStyleSheet('QPushButton { background: rgba(56,189,248,0.12); color: #38BDF8; border: 1px solid rgba(56,189,248,0.25); border-radius: 5px; padding: 4px 10px; font-weight: 600; font-size: 10px; } QPushButton:hover { background: rgba(56,189,248,0.25); border-color: rgba(56,189,248,0.5); color: #FFFFFF; }')
+        self.bulk_clone_btn.setCursor(Qt.PointingHandCursor)
+        self.bulk_clone_btn.clicked.connect(self._open_bulk_clone)
+        header_row.addWidget(self.bulk_clone_btn)
+        self.bulk_delete_btn = QPushButton(t('edit_pals.bulk_delete') if t else 'Bulk Delete')
+        self.bulk_delete_btn.setFixedHeight(24)
+        self.bulk_delete_btn.setStyleSheet('QPushButton { background: rgba(251,113,133,0.12); color: #FB7185; border: 1px solid rgba(251,113,133,0.25); border-radius: 5px; padding: 4px 10px; font-weight: 600; font-size: 10px; } QPushButton:hover { background: rgba(251,113,133,0.25); border-color: rgba(251,113,133,0.5); color: #FFFFFF; }')
+        self.bulk_delete_btn.setCursor(Qt.PointingHandCursor)
+        self.bulk_delete_btn.clicked.connect(self._open_bulk_delete)
+        header_row.addWidget(self.bulk_delete_btn)
         header_row.addSpacing(8)
         self.prev_box_btn = QPushButton('◀')
         self.prev_box_btn.setObjectName('navBtn')
@@ -211,6 +224,8 @@ class PalEditorWidget(QWidget, BulkOperationMixin):
         self._update_box_label()
         self._update_palbox_page()
     def _update_mode_buttons(self):
+        has_dps = bool(self.dps_file_path and os.path.isfile(self.dps_file_path))
+        self.mode_dps_btn.setVisible(has_dps)
         active = 'QPushButton { background: rgba(125,211,252,0.15); color: #7DD3FC; border: none; padding: 4px 14px; font-size: 10px; font-weight: 600; border-radius: 4px; }'
         inactive = 'QPushButton { background: rgba(125,211,252,0.06); color: #94A3B8; border: none; padding: 4px 14px; font-size: 10px; font-weight: 600; border-radius: 4px; } QPushButton:hover { background: rgba(125,211,252,0.1); color: #CBD5E1; }'
         self.mode_box_btn.setStyleSheet(active if self._palbox_mode == 'box' else inactive)
@@ -230,8 +245,6 @@ class PalEditorWidget(QWidget, BulkOperationMixin):
         self._dps_modified = False
         if not self.dps_file_path or not os.path.isfile(self.dps_file_path):
             self.dps_loaded = False
-            self._update_box_label()
-            self._update_palbox_page()
             return
         try:
             self.dps_gvas = sav_to_gvasfile(self.dps_file_path)
@@ -246,7 +259,6 @@ class PalEditorWidget(QWidget, BulkOperationMixin):
                 sp = sp_entry.get('value', {})
                 if not isinstance(sp, dict):
                     continue
-                    continue
                 char_id = extract_value(sp, 'CharacterID', 'None')
                 if char_id == 'None' or not char_id:
                     continue
@@ -256,11 +268,11 @@ class PalEditorWidget(QWidget, BulkOperationMixin):
             print(f'Error loading DPS file: {e}')
             self.dps_gvas = None
             self.dps_loaded = False
-        self._update_box_label()
-        self._update_palbox_page()
     def reload_dps_from_disk(self):
         if self.dps_file_path and os.path.isfile(self.dps_file_path):
             self._load_dps_pals()
+            self._update_palbox_page()
+            self._update_box_label()
             self._update_mode_buttons()
     def _save_dps(self, force=False):
         if not self.dps_gvas or not self.dps_file_path:
@@ -1067,6 +1079,16 @@ class PalEditorWidget(QWidget, BulkOperationMixin):
             self._update_palbox_page()
             self._update_dashboard_stats()
             self._increment_pal_count()
+    def _open_bulk_clone(self):
+        if not self.player_uid:
+            return
+        dlg = BulkSpeciesDialog(self, mode='clone')
+        dlg.exec()
+    def _open_bulk_delete(self):
+        if not self.player_uid:
+            return
+        dlg = BulkSpeciesDialog(self, mode='delete')
+        dlg.exec()
     def _increment_pal_count(self):
         if self.player_uid:
             key = self.player_uid.replace('-', '').lower()
@@ -1118,14 +1140,23 @@ class PalEditorWidget(QWidget, BulkOperationMixin):
         self._clicked_pal = None
         self.selected_pal_slot = None
         self._palbox_mode = 'box'
-        self._clear_party_highlight()
-        self._clear_palbox_highlight()
-        self.pal_info.set_clicked_pal(None)
         self._get_container_ids()
         PalFrame._load_maps()
         self._load_pals()
         self._load_dps_pals()
+
+    def apply_player_ui(self):
+        self._clear_party_highlight()
+        self._clear_palbox_highlight()
+        self.pal_info.set_clicked_pal(None)
+        self._update_party_slots()
+        self._update_palbox_page()
+        self._update_box_label()
         self._update_mode_buttons()
+
+    def set_player_sync(self, player_uid, player_name):
+        self.set_player(player_uid, player_name)
+        self.apply_player_ui()
     def _get_container_ids(self):
         self.party_container = None
         self.palbox_container = None
@@ -1198,6 +1229,10 @@ class PalEditorWidget(QWidget, BulkOperationMixin):
         if self.player_uid:
             self._load_pals()
             self._load_dps_pals()
+            self._update_party_slots()
+            self._update_palbox_page()
+            self._update_box_label()
+            self._update_mode_buttons()
     def _process_pending_changes(self):
         pass
     def _update_dashboard_stats(self):
@@ -1217,6 +1252,10 @@ class PalEditorWidget(QWidget, BulkOperationMixin):
             self.restore_all_btn.setText(t('edit_pals.restore_all'))
         if hasattr(self, 'max_all_btn'):
             self.max_all_btn.setText(t('edit_pals.max_all'))
+        if hasattr(self, 'bulk_clone_btn'):
+            self.bulk_clone_btn.setText(t('edit_pals.bulk_clone') if t else 'Bulk Clone')
+        if hasattr(self, 'bulk_delete_btn'):
+            self.bulk_delete_btn.setText(t('edit_pals.bulk_delete') if t else 'Bulk Delete')
         if hasattr(self, 'mode_box_btn'):
             self.mode_box_btn.setText(t('pal_editor.box_tab') if t else 'Box')
         if hasattr(self, 'mode_dps_btn'):
@@ -1269,8 +1308,6 @@ class PalEditorWidget(QWidget, BulkOperationMixin):
                     self.palbox_pal_dict[slot_index] = item
             except (KeyError, TypeError, AttributeError):
                 continue
-        self._update_party_slots()
-        self._update_palbox_page()
     def _update_party_slots(self):
         for slot in self.party_slots:
             slot.pal_data = None
@@ -1307,7 +1344,7 @@ class EditPalsDialog(FramelessDialog):
             self.setWindowIcon(QIcon(constants.ICON_PATH))
         self.pal_editor_widget = PalEditorWidget()
         self.content_layout.addWidget(self.pal_editor_widget)
-        self.pal_editor_widget.set_player(player_uid, player_name)
+        self.pal_editor_widget.set_player_sync(player_uid, player_name)
     def closeEvent(self, event):
         self.pal_editor_widget._save_dps()
         super().closeEvent(event)

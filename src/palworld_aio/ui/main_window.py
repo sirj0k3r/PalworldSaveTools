@@ -311,6 +311,8 @@ class MainWindow(QMainWindow):
             self.stacked_widget.addWidget(placeholder)
             self._lazy_tab_map[idx] = placeholder
         self._ensure_tab(0)
+        self._ensure_tab(2)
+        self._ensure_tab(3)
         self._ensure_tab(4)
         self._ensure_tab(5)
         self._ensure_tab(6)
@@ -612,7 +614,10 @@ class MainWindow(QMainWindow):
             self.status_bar.showMessage(t('status.load_failed') if t else 'Failed to load save', 5000)
             msg_box = self._create_message_box(QMessageBox.Critical)
             msg_box.setWindowTitle(t('error.title'))
-            msg_box.setText(t('save.load_failed'))
+            if constants.xgp_loaded:
+                msg_box.setText(t('xgp.save_unreadable.msg', default='Your GamePass save data could not be read.\n\nThe container index may be corrupted or from an incompatible version.\n\nTry logging into your world on Xbox Game Pass and updating to the latest Palworld version, then try again.'))
+            else:
+                msg_box.setText(t('save.load_failed'))
             msg_box.addButton(t('button.ok'), QMessageBox.AcceptRole)
             msg_box.exec()
     def _on_save_finished(self, duration):
@@ -1713,31 +1718,36 @@ class MainWindow(QMainWindow):
         file_paths, _ = QFileDialog.getOpenFileNames(self, 'Select Base Files', '', 'Base Files (*.json *.pstbase)')
         if not file_paths:
             return
-        successful_imports = 0
-        failed_imports = 0
-        failed_files = []
-        for file_path in file_paths:
-            try:
-                exported_data = load_base_file(file_path)
-                if import_base_json(constants.loaded_level_json, exported_data, gid):
-                    successful_imports += 1
-                else:
+        def task():
+            successful_imports = 0
+            failed_imports = 0
+            failed_files = []
+            for file_path in file_paths:
+                try:
+                    exported_data = load_base_file(file_path)
+                    if import_base_json(constants.loaded_level_json, exported_data, gid):
+                        successful_imports += 1
+                    else:
+                        failed_imports += 1
+                        failed_files.append(os.path.basename(file_path) + '(import failed)')
+                except Exception as e:
                     failed_imports += 1
-                    failed_files.append(os.path.basename(file_path) + '(import failed)')
-            except Exception as e:
-                failed_imports += 1
-                failed_files.append(os.path.basename(file_path) + f'(error: {str(e)})')
-        if successful_imports > 0:
-            constants.invalidate_container_lookup()
-            self.base_inventory_tab.manager.invalidate_cache()
-        self.refresh_all()
-        if successful_imports > 0:
-            msg = f'Successfully imported {successful_imports} base(s).'
-            if failed_imports > 0:
-                msg += f'\nFailed to import {failed_imports} file(s):\n' + '\n'.join(failed_files)
-            self._show_info(t('success.title'), msg)
-        else:
-            self._show_warning(t('error.title'), f'Failed to import any bases.\n' + '\n'.join(failed_files))
+                    failed_files.append(os.path.basename(file_path) + f'(error: {str(e)})')
+            return (successful_imports, failed_imports, failed_files)
+        def on_finished(result):
+            successful_imports, failed_imports, failed_files = result
+            if successful_imports > 0:
+                constants.invalidate_container_lookup()
+                self.base_inventory_tab.manager.invalidate_cache()
+            self.refresh_all()
+            if successful_imports > 0:
+                msg = f'Successfully imported {successful_imports} base(s).'
+                if failed_imports > 0:
+                    msg += f'\nFailed to import {failed_imports} file(s):\n' + '\n'.join(failed_files)
+                self._show_info(t('success.title'), msg)
+            else:
+                self._show_warning(t('error.title'), f'Failed to import any bases.\n' + '\n'.join(failed_files))
+        run_with_loading(on_finished, task)
     def _export_all_bases(self):
         if not constants.loaded_level_json:
             self._show_warning(t('Error') if t else 'Error', t('error.no_save_loaded') if t else 'No save file loaded.')
@@ -1812,41 +1822,46 @@ class MainWindow(QMainWindow):
         if not export_dir:
             return
         level_sav = os.path.join(constants.current_save_path, 'Level.sav')
-        successful_exports = 0
-        failed_exports = 0
-        failed_bases = []
-        for base in guild_bases:
-            bid = base['id']
-            gname = base['guild_name']
-            try:
-                safe_gname = ''.join((c for c in gname if c.isalnum() or c in (' ', '-', '_'))).rstrip()
-                ext = '.pstbase' if compressed else '.json'
-                filename = f'base_{bid}_{safe_gname}{ext}'
-                file_path = os.path.join(export_dir, filename)
-                if compressed:
-                    if not os.path.exists(level_sav):
-                        failed_exports += 1
-                        failed_bases.append(f'Base {bid}(Level.sav not found)')
-                        continue
-                    export_base_backup(level_sav, bid, file_path, compressed=True)
-                else:
-                    data = export_base_json(constants.loaded_level_json, bid)
-                    if not data:
-                        failed_exports += 1
-                        failed_bases.append(f'Base {bid}(no data)')
-                        continue
-                    json_tools.dump(data, file_path, cls=json_tools.CustomEncoder, indent=2)
-                successful_exports += 1
-            except Exception as e:
-                failed_exports += 1
-                failed_bases.append(f'Base {bid}(error: {str(e)})')
-        if successful_exports > 0:
-            msg = f'Successfully exported {successful_exports} base(s)for guild "{guild_name}" to {export_dir}.'
-            if failed_exports > 0:
-                msg += f'\nFailed to export {failed_exports} base(s):\n' + '\n'.join(failed_bases)
-            self._show_info(t('success.title'), msg)
-        else:
-            self._show_warning(t('error.title'), f'Failed to export any bases for guild "{guild_name}".\n' + '\n'.join(failed_bases))
+        def task():
+            successful_exports = 0
+            failed_exports = 0
+            failed_bases = []
+            for base in guild_bases:
+                bid = base['id']
+                gname = base['guild_name']
+                try:
+                    safe_gname = ''.join((c for c in gname if c.isalnum() or c in (' ', '-', '_'))).rstrip()
+                    ext = '.pstbase' if compressed else '.json'
+                    filename = f'base_{bid}_{safe_gname}{ext}'
+                    file_path = os.path.join(export_dir, filename)
+                    if compressed:
+                        if not os.path.exists(level_sav):
+                            failed_exports += 1
+                            failed_bases.append(f'Base {bid}(Level.sav not found)')
+                            continue
+                        export_base_backup(level_sav, bid, file_path, compressed=True)
+                    else:
+                        data = export_base_json(constants.loaded_level_json, bid)
+                        if not data:
+                            failed_exports += 1
+                            failed_bases.append(f'Base {bid}(no data)')
+                            continue
+                        json_tools.dump(data, file_path, cls=json_tools.CustomEncoder, indent=2)
+                    successful_exports += 1
+                except Exception as e:
+                    failed_exports += 1
+                    failed_bases.append(f'Base {bid}(error: {str(e)})')
+            return (successful_exports, failed_exports, failed_bases)
+        def on_finished(result):
+            successful_exports, failed_exports, failed_bases = result
+            if successful_exports > 0:
+                msg = f'Successfully exported {successful_exports} base(s)for guild "{guild_name}" to {export_dir}.'
+                if failed_exports > 0:
+                    msg += f'\nFailed to export {failed_exports} base(s):\n' + '\n'.join(failed_bases)
+                self._show_info(t('success.title'), msg)
+            else:
+                self._show_warning(t('error.title'), f'Failed to export any bases for guild "{guild_name}".\n' + '\n'.join(failed_bases))
+        run_with_loading(on_finished, task)
     def _export_base(self, bid):
         if not constants.loaded_level_json:
             self._show_warning(t('Error') if t else 'Error', t('error.no_save_loaded') if t else 'No save file loaded.')
@@ -1855,27 +1870,30 @@ class MainWindow(QMainWindow):
         file_path, selected_filter = QFileDialog.getSaveFileName(self, t('base.export.title') if t else 'Export Base', default_filename, 'PSTB Base Files (*.pstbase);;JSON Files (*.json)')
         if not file_path:
             return
-        try:
-            is_pstbase = 'pstbase' in selected_filter if selected_filter else file_path.endswith('.pstbase')
+        is_pstbase = 'pstbase' in selected_filter if selected_filter else file_path.endswith('.pstbase')
+        def task():
             if is_pstbase:
                 if not file_path.endswith('.pstbase'):
                     file_path += '.pstbase'
                 level_sav = os.path.join(constants.current_save_path, 'Level.sav')
                 if not os.path.exists(level_sav):
-                    self._show_warning(t('error.title') if t else 'Error', 'Level.sav not found')
-                    return
+                    return (False, 'Level.sav not found')
                 export_base_backup(level_sav, bid, file_path, compressed=True)
             else:
                 if not file_path.endswith('.json'):
                     file_path += '.json'
                 data = export_base_json(constants.loaded_level_json, bid)
                 if not data:
-                    self._show_warning(t('error.title') if t else 'Error', t('base.export.not_found') if t else f'Could not find base data for ID: {bid}')
-                    return
+                    return (False, t('base.export.not_found') if t else f'Could not find base data for ID: {bid}')
                 json_tools.dump(data, file_path, cls=json_tools.CustomEncoder, indent=2)
-            self._show_info(t('success.title') if t else 'Success', t('base.export.success') if t else 'Base exported successfully')
-        except Exception as e:
-            self._show_error(t('error.title') if t else 'Error', t('base.export.failed') if t else f'Failed to export base: {str(e)}')
+            return (True, None)
+        def on_finished(result):
+            success, error = result
+            if success:
+                self._show_info(t('success.title') if t else 'Success', t('base.export.success') if t else 'Base exported successfully')
+            else:
+                self._show_error(t('error.title') if t else 'Error', error or 'Failed to export base')
+        run_with_loading(on_finished, task)
     def _adjust_base_radius(self, bid):
         if not constants.loaded_level_json:
             self._show_warning(t('Error') if t else 'Error', t('error.no_save_loaded') if t else 'No save file loaded.')
@@ -1907,11 +1925,15 @@ class MainWindow(QMainWindow):
             self._show_info(t('done') if t else 'Done', t('deletion.trimmed_inventories', fixed=fixed) if t else f'Trimmed {fixed} overfilled inventories')
         run_with_loading(on_finished, task)
     def _clone_base(self, bid, gid):
-        if clone_base_complete(constants.loaded_level_json, bid, gid):
-            self.refresh_all()
-            self._show_info(t('success.title'), t('clone_base.msg'))
-        else:
-            self._show_warning(t('error.title'), 'Failed to clone base')
+        def task():
+            return clone_base_complete(constants.loaded_level_json, bid, gid)
+        def on_finished(success):
+            if success:
+                self.refresh_all()
+                self._show_info(t('success.title'), t('clone_base.msg'))
+            else:
+                self._show_warning(t('error.title'), 'Failed to clone base')
+        run_with_loading(on_finished, task)
     def _edit_player_pals(self, uid, name):
         from ..editor.edit_pals import EditPalsDialog
         dialog = EditPalsDialog(uid, name, self)

@@ -6,11 +6,11 @@ from PySide6.QtCore import Qt, QRectF, QPointF, QPoint, QSize, QTimer, QProperty
 from PySide6.QtGui import QPixmap, QPen, QBrush, QColor, QPainter, QFont, QIcon
 from i18n import t
 from resource_resolver import resource_path
-from loading_manager import show_information, show_warning, show_critical, show_question
+from loading_manager import show_information, show_warning, show_critical, show_question, run_with_loading
 import palworld_coord
 from palworld_aio import constants
 from palworld_aio.managers.data_manager import delete_base_camp, get_tick
-from palworld_aio.managers.base_manager import export_base_json, import_base_json, update_base_area_range
+from palworld_aio.managers.base_manager import export_base_json, import_base_json, update_base_area_range, clone_base_complete
 from palworld_aio.managers.backup_manager import export_base_backup, load_base_file
 from palworld_aio.managers.guild_manager import rename_guild
 from palworld_aio.widgets import BaseHoverOverlay, PlayerHoverOverlay
@@ -1303,6 +1303,7 @@ class MapTab(QWidget):
         else:
             delete_action = menu.addAction(t('delete.base') if t else 'Delete Base')
             export_action = menu.addAction(t('button.export') if t else 'Export Base')
+            clone_action = menu.addAction(t('clone.base') if t else 'Clone Base')
             radius_action = menu.addAction(t('base.radius.menu') if t else 'Adjust Radius')
             move_coords_action = menu.addAction(t('base.move_coords') if t else 'Change Coordinates')
             nudge_action = menu.addAction(t('base.nudge') if t else 'Nudge Base')
@@ -1313,6 +1314,8 @@ class MapTab(QWidget):
                 self._delete_base(data)
             elif action == export_action:
                 self._export_base(data)
+            elif action == clone_action:
+                self._clone_base(data)
             elif action == radius_action:
                 self._adjust_base_radius(data)
             elif action == move_coords_action:
@@ -1525,32 +1528,51 @@ class MapTab(QWidget):
         file_path, selected_filter = QFileDialog.getSaveFileName(self, t('base.export.title') if t else 'Export Base', default_name, 'PSTB Base Files (*.pstbase);;JSON Files (*.json)')
         if not file_path:
             return
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        try:
-            is_pstbase = 'pstbase' in selected_filter if selected_filter else file_path.endswith('.pstbase')
+        is_pstbase = 'pstbase' in selected_filter if selected_filter else file_path.endswith('.pstbase')
+        fp = file_path
+        def task():
+            nonlocal fp
             if is_pstbase:
-                if not file_path.endswith('.pstbase'):
-                    file_path += '.pstbase'
+                if not fp.endswith('.pstbase'):
+                    fp += '.pstbase'
                 level_sav = os.path.join(constants.current_save_path, 'Level.sav')
                 if not os.path.exists(level_sav):
-                    show_warning(self, t('error.title') if t else 'Error', 'Level.sav not found')
-                    return
-                export_base_backup(level_sav, bid, file_path, compressed=True)
+                    return (False, 'Level.sav not found')
+                export_base_backup(level_sav, bid, fp, compressed=True)
             else:
-                if not file_path.endswith('.json'):
-                    file_path += '.json'
+                if not fp.endswith('.json'):
+                    fp += '.json'
                 data = export_base_json(constants.loaded_level_json, bid)
                 if not data:
-                    show_warning(self, t('error.title') if t else 'Error', t('base.export.not_found') if t else 'Base data not found')
-                    return
-                json_tools.dump(data, file_path, cls=json_tools.CustomEncoder, indent=2)
-            img_x, img_y = base_data['img_coords']
-            self._play_effect(ExportEffect, img_x, img_y)
-            show_information(self, t('success.title') if t else 'Success', t('base.export.success') if t else 'Base exported successfully')
-        except Exception as e:
-            show_critical(self, t('error.title') if t else 'Error', f'Failed to export base: {str(e)}')
-        finally:
-            QApplication.restoreOverrideCursor()
+                    return (False, t('base.export.not_found') if t else 'Base data not found')
+                json_tools.dump(data, fp, cls=json_tools.CustomEncoder, indent=2)
+            return (True, None)
+        def on_finished(result):
+            success, error = result
+            if success:
+                img_x, img_y = base_data['img_coords']
+                self._play_effect(ExportEffect, img_x, img_y)
+                show_information(self, t('success.title') if t else 'Success', t('base.export.success') if t else 'Base exported successfully')
+            else:
+                show_critical(self, t('error.title') if t else 'Error', error or 'Failed to export base')
+        run_with_loading(on_finished, task)
+    def _clone_base(self, base_data):
+        bid = str(base_data['base_id'])
+        gid = str(base_data.get('guild_id', ''))
+        if not gid:
+            show_warning(self, t('error.title') if t else 'Error', 'No guild ID for this base.')
+            return
+        def task():
+            return clone_base_complete(constants.loaded_level_json, bid, gid)
+        def on_finished(success):
+            if success:
+                self.refresh()
+                if self.parent_window:
+                    self.parent_window.refresh_all()
+                show_information(self, t('success.title') if t else 'Success', t('clone_base.msg') if t else 'Base cloned successfully')
+            else:
+                show_warning(self, t('error.title') if t else 'Error', 'Failed to clone base')
+        run_with_loading(on_finished, task)
     def _adjust_base_radius(self, base_data):
         QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
@@ -1932,8 +1954,7 @@ class MapTab(QWidget):
         file_paths, _ = QFileDialog.getOpenFileNames(self, t('base.import_multi') if t else 'Import Bases(Multi-File)', '', 'Base Files (*.json *.pstbase)')
         if not file_paths:
             return
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        try:
+        def task():
             successful_imports = 0
             failed_imports = 0
             failed_files = []
@@ -1952,7 +1973,6 @@ class MapTab(QWidget):
                             bx, by = (pt.x, pt.y)
                             img_x, img_y = self._to_image_coordinates(bx, by, self.map_width, self.map_height)
                             imported_coords_list.append((bx, by, img_x, img_y))
-                            self._play_effect(ImportEffect, img_x, img_y)
                         except:
                             pass
                     else:
@@ -1961,6 +1981,9 @@ class MapTab(QWidget):
                 except Exception as e:
                     failed_imports += 1
                     failed_files.append(os.path.basename(file_path) + f'(error: {str(e)})')
+            return (successful_imports, failed_imports, failed_files, imported_coords_list)
+        def on_finished(result):
+            successful_imports, failed_imports, failed_files, imported_coords_list = result
             self.refresh()
             if self.parent_window:
                 self.parent_window.refresh_all()
@@ -1976,8 +1999,9 @@ class MapTab(QWidget):
                 show_information(self, t('success.title') if t else 'Success', msg)
             else:
                 show_warning(self, t('error.title') if t else 'Error', f'Failed to import any bases.\n' + '\n'.join(failed_files))
-        finally:
-            QApplication.restoreOverrideCursor()
+            for _, _, img_x, img_y in imported_coords_list:
+                self._play_effect(ImportEffect, img_x, img_y)
+        run_with_loading(on_finished, task)
     def _export_bases_for_guild(self, guild_id):
         guild_name = self.guilds_data.get(guild_id, {}).get('guild_name', '')
         if not guild_name:
@@ -1992,12 +2016,12 @@ class MapTab(QWidget):
         export_dir = QFileDialog.getExistingDirectory(self, f'Select Export Directory for "{guild_name}"')
         if not export_dir:
             return
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        try:
-            level_sav = os.path.join(constants.current_save_path, 'Level.sav')
+        level_sav = os.path.join(constants.current_save_path, 'Level.sav')
+        def task():
             successful_exports = 0
             failed_exports = 0
             failed_bases = []
+            exported_coords = []
             for base_data in guild_bases:
                 bid = str(base_data['base_id'])
                 try:
@@ -2019,11 +2043,13 @@ class MapTab(QWidget):
                             continue
                         json_tools.dump(data, file_path, cls=json_tools.CustomEncoder, indent=2)
                     successful_exports += 1
-                    img_x, img_y = base_data['img_coords']
-                    self._play_effect(ExportEffect, img_x, img_y)
+                    exported_coords.append(base_data['img_coords'])
                 except Exception as e:
                     failed_exports += 1
                     failed_bases.append(f'Base {bid}(error: {str(e)})')
+            return (successful_exports, failed_exports, failed_bases, exported_coords)
+        def on_finished(result):
+            successful_exports, failed_exports, failed_bases, exported_coords = result
             if successful_exports > 0:
                 msg = f'Successfully exported {successful_exports} base(s)for guild "{guild_name}" to {export_dir}.'
                 if failed_exports > 0:
@@ -2031,8 +2057,9 @@ class MapTab(QWidget):
                 show_information(self, t('success.title'), msg)
             else:
                 show_warning(self, t('error.title'), f'Failed to export any bases for guild "{guild_name}".\n' + '\n'.join(failed_bases))
-        finally:
-            QApplication.restoreOverrideCursor()
+            for img_x, img_y in exported_coords:
+                self._play_effect(ExportEffect, img_x, img_y)
+        run_with_loading(on_finished, task)
     def _delete_player(self, player_data):
         from ...managers.data_manager import load_exclusions, delete_player
         player_uid = player_data.get('player_uid', '')

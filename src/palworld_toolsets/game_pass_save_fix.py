@@ -3,7 +3,7 @@ from palworld_aio.utils import sav_to_json, json_to_sav, extract_value
 from palworld_toolsets.fix_host_save import ask_string_with_icon
 from resource_resolver import get_data_base
 from palworld_aio.ui.chrome.styles import ThemeManager
-from loading_manager import run_with_loading, show_information, show_critical
+from loading_manager import run_with_loading, show_information, show_critical, show_warning
 import nerdfont as nf
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QComboBox, QFrame, QMessageBox, QFileDialog, QStyleFactory, QApplication, QLabel
 from PySide6.QtCore import Qt, Signal, QObject, QTimer, QMetaObject, Q_ARG
@@ -124,6 +124,8 @@ class GamePassSaveFixWidget(QWidget):
     def handle_message(self, message_type: str, title: str, text: str):
         if message_type == 'info':
             show_information(self, title, text)
+        elif message_type == 'warning':
+            show_warning(self, title, text)
         elif message_type == 'critical':
             show_critical(self, title, text)
     def start_conversion(self):
@@ -168,8 +170,8 @@ class GamePassSaveFixWidget(QWidget):
                 idx = read_container_index(idx_path)
                 xgp_missing = validate_xgp_save(idx_path, idx)
                 if xgp_missing:
-                    self.message_signal.emit('critical', t('Error'),
-                        t('xgp.err.missing_files', files=', '.join(xgp_missing)))
+                    self.message_signal.emit('critical', t('xgp.save_unreadable.title', default='Save Data Unreadable'),
+                        t('xgp.save_unreadable.msg', default='Your GamePass save data could not be read.\n\nThe container index may be corrupted or from an incompatible version.\n\nTry logging into your world on Xbox Game Pass and updating to the latest Palworld version, then try again.'))
                     return
             except Exception as e:
                 self.message_signal.emit('critical', t('Error'), str(e))
@@ -178,7 +180,8 @@ class GamePassSaveFixWidget(QWidget):
             return
         saves = self.find_valid_saves(folder)
         if not saves:
-            self.message_signal.emit('critical', t('Error'), t('xgp.err.no_valid_saves'))
+            self.message_signal.emit('critical', t('xgp.no_saves_found.title', default='No GamePass Saves Found'),
+                t('xgp.no_saves_found.msg', default='Could not find any GamePass save files.\n\nPossible reasons:\n• You have not created a world yet on Xbox Game Pass\n• The save files are in an unreadable format\n\nTry logging into your world on Xbox Game Pass and updating to the latest Palworld version, then try again.'))
             return
         save_info_map = {}
         save_list_display = []
@@ -253,7 +256,8 @@ class GamePassSaveFixWidget(QWidget):
         save_dir = os.path.join(root_dir, 'saves')
         saveFolders = self.list_folders_in_directory(save_dir)
         if not saveFolders:
-            print('No save files found')
+            self.message_signal.emit('critical', t('xgp.no_valid_saves.title', default='No Valid Saves Found'),
+                t('xgp.no_valid_saves.msg', default='Your GamePass save data could not be read.\n\nThe container index may be corrupted or from an incompatible version.\n\nTry logging into your world on Xbox Game Pass and updating to the latest Palworld version, then try again.'))
             return
         saveList = []
         successful = 0
@@ -290,12 +294,16 @@ class GamePassSaveFixWidget(QWidget):
             extractor.main(self.xgp_source_folder)
             zip_files = [f for f in os.listdir(root_dir) if f.startswith('palworld_') and f.endswith('.zip')]
             if not zip_files:
+                self.message_signal.emit('critical', t('xgp.no_saves_found.title', default='No GamePass Saves Found'),
+                    t('xgp.no_saves_found.msg', default='Could not find any GamePass save files.\n\nPossible reasons:\n• You have not created a world yet on Xbox Game Pass\n• The save files are in an unreadable format\n\nTry logging into your world on Xbox Game Pass and updating to the latest Palworld version, then try again.'))
                 return
             valid_zip_path = max([os.path.join(root_dir, f) for f in zip_files], key=os.path.getsize)
             saves_dir = os.path.join(root_dir, 'saves')
             if os.path.exists(saves_dir):
                 shutil.rmtree(saves_dir)
             if not self.unzip_file(valid_zip_path, saves_dir):
+                self.message_signal.emit('critical', t('xgp.err.extract_failed', default='Extraction Failed'),
+                    t('xgp.save_unreadable.msg', default='Your GamePass save data could not be read.\n\nThe container index may be corrupted or from an incompatible version.\n\nTry logging into your world on Xbox Game Pass and updating to the latest Palworld version, then try again.'))
                 return
             backup_dir = os.path.join(root_dir, 'XGP_converted_saves')
             os.makedirs(backup_dir, exist_ok=True)
@@ -309,7 +317,8 @@ class GamePassSaveFixWidget(QWidget):
                     pass
             saves_found = self.find_valid_saves(os.path.join(root_dir, 'saves'))
             if not saves_found:
-                self.message_signal.emit('critical', t('Error'), t('xgp.err.no_valid_saves'))
+                self.message_signal.emit('critical', t('xgp.no_valid_saves.title', default='No Valid Saves Found'),
+                    t('xgp.no_valid_saves.msg', default='Your GamePass save data could not be read.\n\nThe container index may be corrupted or from an incompatible version.\n\nTry logging into your world on Xbox Game Pass and updating to the latest Palworld version, then try again.'))
                 return
             save_info_map = {}
             save_list_display = []
@@ -419,7 +428,8 @@ class GamePassSaveFixWidget(QWidget):
             if result == 'success' or 'Conversion completed(logging error suppressed)' in result:
                 self.move_save_steam(saveName)
             elif result == 'err_no_json':
-                self.message_signal.emit('critical', t('Error'), t('xgp.err.no_valid_saves'))
+                self.message_signal.emit('critical', t('xgp.save_unreadable.title', default='Save Data Unreadable'),
+                    t('xgp.save_unreadable.msg', default='Your GamePass save data could not be read.\n\nThe container index may be corrupted or from an incompatible version.\n\nTry logging into your world on Xbox Game Pass and updating to the latest Palworld version, then try again.'))
             else:
                 self.message_signal.emit('critical', t('Error'), f'Conversion failed: {result}')
         run_with_loading(on_conversion_finished, run_conversion)
