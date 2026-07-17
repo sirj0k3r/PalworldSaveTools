@@ -5,6 +5,7 @@
 - **Game version tooltip** — the game version label in the header now shows a tooltip with the current Palworld version, localized into all 8 languages.
 - **Stream support in palsav json_tools** — `dump()` and `load()` now accept binary streams (`BytesIO`, open files) in addition to file paths. By msansen.
 - **Load from Backup** — new menu option under File that lists all auto-backups with timestamps, world name, and player count. Only valid backups (Level.sav + Players folder) are shown.
+- **Cheat mode Rank cap** — condenser stars (Rank) are now capped at 5 even in cheat mode, as higher values cause in-game bugs. Cheat mode still uncaps IVs, souls, and level.
 - Bumped version to 2.1.3
 
 #2.1.2
