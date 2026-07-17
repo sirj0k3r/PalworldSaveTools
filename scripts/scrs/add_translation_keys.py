@@ -42,8 +42,19 @@ def add_english_keys():
     with open(lang_file, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
 def translate_text(text: str, target_lang: str) -> str:
+    import re
+    placeholders = re.findall(r'\{[^}]+\}', text)
+    protected = text
+    tokens = {}
+    for i, ph in enumerate(placeholders):
+        tok = f'__PH{i}__'
+        tokens[tok] = ph
+        protected = protected.replace(ph, tok, 1)
     translator = GoogleTranslator(source='en', target=target_lang)
-    return translator.translate(text)
+    translated = translator.translate(protected)
+    for tok, ph in tokens.items():
+        translated = translated.replace(tok, ph)
+    return translated
 def add_keys_to_language(lang_code: str, lang_info: dict) -> bool:
     try:
         lang_file = PROJECT_ROOT / 'resources' / 'i18n' / f'{lang_code}.json'

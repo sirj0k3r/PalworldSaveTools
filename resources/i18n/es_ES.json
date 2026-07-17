@@ -1874,5 +1874,5 @@
     "edit_pals.tooltip.max_stats": "Max todas las estadísticas de este amigo",
     "edit_pals.tooltip.dna": "Alternar ADN/bandera importada",
     "edit_pals.tooltip.favorite": "Alternar nivel de favorito/bloqueo",
-    "game_version.tooltip": "Palworld v{versión}"
+    "game_version.tooltip": "Palworld v{version}"
 }

@@ -1880,5 +1880,5 @@
     "edit_pals.tooltip.max_stats": "この仲間のすべてのステータスを最大化する",
     "edit_pals.tooltip.dna": "DNA/インポートフラグを切り替えます",
     "edit_pals.tooltip.favorite": "お気に入り/ロックレベルの切り替え",
-    "game_version.tooltip": "Palworld v{バージョン}"
+    "game_version.tooltip": "Palworld v{version}"
 }

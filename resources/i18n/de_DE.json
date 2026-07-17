@@ -1904,5 +1904,5 @@
     "edit_pals.tooltip.max_stats": "Maximieren Sie alle Statistiken für diesen Kumpel",
     "edit_pals.tooltip.dna": "DNA/importierte Flagge umschalten",
     "edit_pals.tooltip.favorite": "Favorit/Sperrstufe umschalten",
-    "game_version.tooltip": "Palworld v{Version}"
+    "game_version.tooltip": "Palworld v{version}"
 }

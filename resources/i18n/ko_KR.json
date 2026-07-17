@@ -1879,5 +1879,5 @@
     "edit_pals.tooltip.max_stats": "이 친구의 모든 통계를 최대화하세요",
     "edit_pals.tooltip.dna": "DNA/가져온 플래그 전환",
     "edit_pals.tooltip.favorite": "즐겨찾기/잠금 수준 전환",
-    "game_version.tooltip": "Palworld v{버전}"
+    "game_version.tooltip": "Palworld v{version}"
 }
