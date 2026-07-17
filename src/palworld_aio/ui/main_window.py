@@ -1307,7 +1307,8 @@ class MainWindow(QMainWindow):
         def on_finished(removed):
             if removed > 0:
                 constants.invalidate_container_lookup()
-                self.base_inventory_tab.manager.invalidate_cache()
+                if 'base_inventory_tab' in self.__dict__:
+                    self.base_inventory_tab.manager.invalidate_cache()
             self.refresh_all()
             msg_box = self._create_message_box(QMessageBox.Information)
             msg_box.setWindowTitle(t('Done'))
@@ -1326,7 +1327,8 @@ class MainWindow(QMainWindow):
             def on_finished(removed):
                 if removed > 0:
                     constants.invalidate_container_lookup()
-                    self.base_inventory_tab.manager.invalidate_cache()
+                    if 'base_inventory_tab' in self.__dict__:
+                        self.base_inventory_tab.manager.invalidate_cache()
                 self.refresh_all()
                 self._show_info(t('Done'), t('inactive_bases_deleted', count=removed))
             run_with_loading(on_finished, task)
@@ -1339,7 +1341,8 @@ class MainWindow(QMainWindow):
         def on_finished(removed):
             if removed > 0:
                 constants.invalidate_container_lookup()
-                self.base_inventory_tab.manager.invalidate_cache()
+                if 'base_inventory_tab' in self.__dict__:
+                    self.base_inventory_tab.manager.invalidate_cache()
             self.refresh_all()
             self._show_info(t('Done'), t('deletion.duplicates_removed', count=removed))
         run_with_loading(on_finished, task)
@@ -1769,7 +1772,8 @@ class MainWindow(QMainWindow):
                 break
         if deleted:
             constants.invalidate_container_lookup()
-            self.base_inventory_tab.manager.invalidate_cache()
+            if 'base_inventory_tab' in self.__dict__:
+                self.base_inventory_tab.manager.invalidate_cache()
         self.refresh_all()
         self._show_info(t('Done'), t('deletion.base_deleted'))
     def _rename_player(self, uid, old_name):
@@ -1832,7 +1836,8 @@ class MainWindow(QMainWindow):
             successful_imports, failed_imports, failed_files = result
             if successful_imports > 0:
                 constants.invalidate_container_lookup()
-                self.base_inventory_tab.manager.invalidate_cache()
+                if 'base_inventory_tab' in self.__dict__:
+                    self.base_inventory_tab.manager.invalidate_cache()
             self.refresh_all()
             if successful_imports > 0:
                 msg = f'Successfully imported {successful_imports} base(s).'
