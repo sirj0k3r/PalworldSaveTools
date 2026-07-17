@@ -1861,10 +1861,13 @@
     "edit_pals.bulk_clone_confirm": "{count} 종의 모든 {total} 친구를 복제하시겠습니까?",
     "edit_pals.bulk_delete_confirm": "{count}종에서 {total}명의 친구를 모두 삭제하시겠습니까?",
     "edit_pals.bulk_qty": "수량",
-    "edit_pals.bulk_slots_party": "파티: {중고}/{총}",
-    "edit_pals.bulk_slots_palbox": "Palbox: {사용됨}/{총계}",
-    "edit_pals.bulk_slots_dps": "DPS: {무료} 무료",
-    "edit_pals.bulk_slots_total": "총 무료: {무료}",
-    "edit_pals.bulk_footer_requested": "요청됨: {요청됨} | 사용 가능한 슬롯: {사용 가능}",
-    "edit_pals.bulk_not_enough_slots": "여유 슬롯이 부족합니다. {요청}을(를) 요청했지만 {사용 가능}만 사용 가능합니다."
+    "edit_pals.bulk_slots_party": "파티: {used}/{total}",
+    "edit_pals.bulk_slots_palbox": "Palbox: {used}/{total}",
+    "edit_pals.bulk_slots_dps": "DPS: {free} 무료",
+    "edit_pals.bulk_slots_total": "총 무료: {free}",
+    "edit_pals.bulk_footer_requested": "요청됨: {requested} | 사용 가능한 슬롯: {available}",
+    "edit_pals.bulk_not_enough_slots": "여유 슬롯이 부족합니다. {requested}을(를) 요청했지만 {available}만 사용 가능합니다.",
+    "common.done": "완료",
+    "edit_pals.bulk_select_species": "목록에서 종을 선택하세요",
+    "edit_pals.bulk_species_count": "{count} {name} 찾음"
 }

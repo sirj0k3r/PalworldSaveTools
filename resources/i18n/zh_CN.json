@@ -1579,7 +1579,7 @@
     "edit_pals.bulk_rename_label": "新昵称：",
     "edit_pals.bulk_rename_apply": "应用重命名",
     "edit_pals.bulk_rename_success": "已重命名为 {count} {name}！",
-    "edit_pals.bulk_heal_title": "批量恢复 - {名称}",
+    "edit_pals.bulk_heal_title": "批量恢复 - {name}",
     "edit_pals.bulk_heal_success": "治愈了 {count} {name}！",
     "edit_pals.bulk_no_selection": "未选择物种。",
     "edit_pals.bulk_heal_desc": "将HP恢复至最大，治愈疾病，重置身体健康。",
@@ -1864,10 +1864,13 @@
     "edit_pals.bulk_clone_confirm": "克隆 {count} 个物种的所有 {total} 个朋友？",
     "edit_pals.bulk_delete_confirm": "删除 {count} 个物种中的所有 {total} 个好友？",
     "edit_pals.bulk_qty": "数量",
-    "edit_pals.bulk_slots_party": "派对：{已使用}/{总计}",
-    "edit_pals.bulk_slots_palbox": "Palbox：{已使用}/{总计}",
-    "edit_pals.bulk_slots_dps": "DPS：{免费}免费",
-    "edit_pals.bulk_slots_total": "总共免费：{免费}",
-    "edit_pals.bulk_footer_requested": "请求：{请求}|可用插槽：{可用}",
-    "edit_pals.bulk_not_enough_slots": "没有足够的可用插槽。已请求 {requested}，仅 {available} 可用。"
+    "edit_pals.bulk_slots_party": "派对：{used}/{total}",
+    "edit_pals.bulk_slots_palbox": "Palbox：{used}/{total}",
+    "edit_pals.bulk_slots_dps": "DPS：{free}免费",
+    "edit_pals.bulk_slots_total": "总共免费：{free}",
+    "edit_pals.bulk_footer_requested": "请求：{requested}|可用插槽：{available}",
+    "edit_pals.bulk_not_enough_slots": "没有足够的可用插槽。已请求 {requested}，仅 {available} 可用。",
+    "common.done": "完毕",
+    "edit_pals.bulk_select_species": "从列表中选择一个物种",
+    "edit_pals.bulk_species_count": "找到 {count} {name}"
 }

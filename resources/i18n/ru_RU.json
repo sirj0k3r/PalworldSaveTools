@@ -1860,10 +1860,13 @@
     "edit_pals.bulk_clone_confirm": "Клонировать всех {total} приятелей из {count} видов?",
     "edit_pals.bulk_delete_confirm": "Удалить всех друзей из {total} видов ({count})?",
     "edit_pals.bulk_qty": "Кол-во",
-    "edit_pals.bulk_slots_party": "Вечеринка: {использовано}/{всего}",
-    "edit_pals.bulk_slots_palbox": "Палбокс: {использовано}/{всего}",
-    "edit_pals.bulk_slots_dps": "ДПС: {бесплатно} бесплатно",
+    "edit_pals.bulk_slots_party": "Вечеринка: {used}/{total}",
+    "edit_pals.bulk_slots_palbox": "Палбокс: {used}/{total}",
+    "edit_pals.bulk_slots_dps": "ДПС: {free} бесплатно",
     "edit_pals.bulk_slots_total": "Всего бесплатно: {free}",
-    "edit_pals.bulk_footer_requested": "Запрошено: {запрошено} | Доступные слоты: {доступно}",
-    "edit_pals.bulk_not_enough_slots": "Недостаточно свободных слотов. Запрошено {запрошено}, доступно только {доступно}."
+    "edit_pals.bulk_footer_requested": "Запрошено: {requested} | Доступные слоты: {available}",
+    "edit_pals.bulk_not_enough_slots": "Недостаточно свободных слотов. Запрошен {requested}, доступен только {available}.",
+    "common.done": "Сделанный",
+    "edit_pals.bulk_select_species": "Выберите вид из списка",
+    "edit_pals.bulk_species_count": "{count} {name} найдено"
 }

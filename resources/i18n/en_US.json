@@ -2154,5 +2154,8 @@
     "edit_pals.bulk_slots_dps": "DPS: {free} free",
     "edit_pals.bulk_slots_total": "Total free: {free}",
     "edit_pals.bulk_footer_requested": "Requested: {requested} | Available slots: {available}",
-    "edit_pals.bulk_not_enough_slots": "Not enough free slots. Requested {requested}, only {available} available."
+    "edit_pals.bulk_not_enough_slots": "Not enough free slots. Requested {requested}, only {available} available.",
+    "common.done": "Done",
+    "edit_pals.bulk_select_species": "Select a species from the list",
+    "edit_pals.bulk_species_count": "{count} {name} found"
 }

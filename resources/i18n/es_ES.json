@@ -1571,7 +1571,7 @@
     "edit_pals.bulk_rename_label": "Nuevo apodo:",
     "edit_pals.bulk_rename_apply": "Aplicar cambiar nombre",
     "edit_pals.bulk_rename_success": "¡Renombrado {count} {name}!",
-    "edit_pals.bulk_heal_title": "Restauración masiva: {nombre}",
+    "edit_pals.bulk_heal_title": "Restauración masiva: {name}",
     "edit_pals.bulk_heal_success": "¡Curó a {count} {name}!",
     "edit_pals.bulk_no_selection": "Ninguna especie seleccionada.",
     "edit_pals.bulk_heal_desc": "Restaura HP al máximo, cura enfermedades, restablece la salud física.",
@@ -1856,10 +1856,13 @@
     "edit_pals.bulk_clone_confirm": "¿Clonar a todos los {total} amigos de {count} especies?",
     "edit_pals.bulk_delete_confirm": "¿Eliminar a todos los {total} amigos de {count} especies?",
     "edit_pals.bulk_qty": "Cantidad",
-    "edit_pals.bulk_slots_party": "Parte: {usado}/{total}",
-    "edit_pals.bulk_slots_palbox": "Palbox: {usado}/{total}",
-    "edit_pals.bulk_slots_dps": "DPS: {gratis} gratis",
-    "edit_pals.bulk_slots_total": "Gratis total: {gratis}",
-    "edit_pals.bulk_footer_requested": "Solicitado: {solicitado} | Espacios disponibles: {disponibles}",
-    "edit_pals.bulk_not_enough_slots": "No hay suficientes espacios libres. Solicitado {solicitado}, solo {disponible} disponible."
+    "edit_pals.bulk_slots_party": "Parte: {used}/{total}",
+    "edit_pals.bulk_slots_palbox": "Palbox: {used}/{total}",
+    "edit_pals.bulk_slots_dps": "DPS: {free} gratis",
+    "edit_pals.bulk_slots_total": "Gratis total: {free}",
+    "edit_pals.bulk_footer_requested": "Solicitado: {requested} | Espacios disponibles: {available}",
+    "edit_pals.bulk_not_enough_slots": "No hay suficientes espacios libres. Solicitado {requested}, solo {available} disponible.",
+    "common.done": "Hecho",
+    "edit_pals.bulk_select_species": "Seleccione una especie de la lista",
+    "edit_pals.bulk_species_count": "{count} {nombre} encontrado"
 }

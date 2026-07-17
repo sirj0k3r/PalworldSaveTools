@@ -1844,10 +1844,13 @@
     "edit_pals.bulk_clone_confirm": "Cloner tous les {total} amis de {count} espèces ?",
     "edit_pals.bulk_delete_confirm": "Supprimer tous les {total} amis de {count} espèces ?",
     "edit_pals.bulk_qty": "Quantité",
-    "edit_pals.bulk_slots_party": "Party: {used}/{total}",
-    "edit_pals.bulk_slots_palbox": "Palbox: {used}/{total}",
-    "edit_pals.bulk_slots_dps": "DPS: {free} free",
-    "edit_pals.bulk_slots_total": "Total free: {free}",
-    "edit_pals.bulk_footer_requested": "Requested: {requested} | Emplacements disponibles : {disponible}",
-    "edit_pals.bulk_not_enough_slots": "Pas assez de créneaux gratuits. Demandé {demandé}, seulement {disponible} disponible."
+    "edit_pals.bulk_slots_party": "Groupe : {used}/{total}",
+    "edit_pals.bulk_slots_palbox": "Palbox : {used}/{total}",
+    "edit_pals.bulk_slots_dps": "DPS : {free} gratuit",
+    "edit_pals.bulk_slots_total": "Total gratuit : {free}",
+    "edit_pals.bulk_footer_requested": "Demandé : {requested} | Emplacements disponibles : {available}",
+    "edit_pals.bulk_not_enough_slots": "Pas assez de créneaux gratuits. Demandé {requested}, seulement {available} disponible.",
+    "common.done": "Fait",
+    "edit_pals.bulk_select_species": "Sélectionnez une espèce dans la liste",
+    "edit_pals.bulk_species_count": "{count} {nom} trouvé"
 }

@@ -947,12 +947,13 @@ class PalCreateDialog(QDialog):
 
 class BulkSpeciesDialog(FramelessDialog):
     def __init__(self, pal_editor, mode='clone', parent=None, external_pals=None):
+        self.mode = mode
         title_key = 'edit_pals.bulk_clone' if mode == 'clone' else 'edit_pals.bulk_delete'
         super().__init__(title_key, parent)
         self.pal_editor = pal_editor
-        self.mode = mode
         self.setModal(True)
-        self.setMinimumSize(620, 620)
+        self.setMinimumSize(740, 750)
+        self.resize(780, 780)
         self._from_party = True
         self._from_palbox = True
         self._from_dps = True
@@ -961,6 +962,8 @@ class BulkSpeciesDialog(FramelessDialog):
         self._party_free = 5
         self._palbox_free = 960
         self._dps_free = 0
+        self._selected_cid = None
+        self._template_pal_item = None
         self._calc_free_slots()
         self._refresh_species()
         inner = QWidget()
@@ -968,9 +971,6 @@ class BulkSpeciesDialog(FramelessDialog):
         il = QVBoxLayout(inner)
         il.setContentsMargins(8, 4, 8, 8)
         il.setSpacing(6)
-        header = QLabel(t('edit_pals.bulk_clone_header' if mode == 'clone' else 'edit_pals.bulk_delete_header'))
-        header.setStyleSheet('font-size: 12px; font-weight: 700; color: #E2E8F0;')
-        il.addWidget(header)
         if not self._external_pals:
             src_row = QHBoxLayout()
             src_row.setSpacing(8)
@@ -990,43 +990,100 @@ class BulkSpeciesDialog(FramelessDialog):
             self._dps_chk.toggled.connect(self._on_source_toggle)
             src_row.addWidget(self._dps_chk)
             src_row.addStretch()
-            il.addLayout(src_row)
             self._slot_label = QLabel('')
-            self._slot_label.setStyleSheet('font-size: 10px; color: #94A3B8; padding: 2px 4px;')
-            il.addWidget(self._slot_label)
-        if mode == 'clone':
-            search_qty_row = QHBoxLayout()
-            search_lbl = QLabel(t('common.search'))
-            search_qty_row.addWidget(search_lbl)
-            self._search_edit = QLineEdit()
-            self._search_edit.setPlaceholderText(t('edit_pals.search_placeholder'))
-            self._search_edit.textChanged.connect(self._rebuild_list)
-            search_qty_row.addWidget(self._search_edit, 1)
-            qty_all_lbl = QLabel(t('edit_pals.bulk_qty') if t else 'Qty:')
-            search_qty_row.addWidget(qty_all_lbl)
-            self._qty_all_spin = QSpinBox()
-            self._qty_all_spin.setRange(0, 999)
-            self._qty_all_spin.setValue(1)
-            self._qty_all_spin.valueChanged.connect(self._on_qty_all_changed)
-            search_qty_row.addWidget(self._qty_all_spin)
-            il.addLayout(search_qty_row)
-        else:
-            search_row = QHBoxLayout()
-            search_lbl = QLabel(t('common.search'))
-            search_row.addWidget(search_lbl)
-            self._search_edit = QLineEdit()
-            self._search_edit.setPlaceholderText(t('edit_pals.search_placeholder'))
-            self._search_edit.textChanged.connect(self._rebuild_list)
-            search_row.addWidget(self._search_edit)
-            il.addLayout(search_row)
+            self._slot_label.setStyleSheet('font-size: 10px; color: #94A3B8;')
+            src_row.addWidget(self._slot_label)
+            il.addLayout(src_row)
+        body = QHBoxLayout()
+        body.setSpacing(6)
+        left_col = QVBoxLayout()
+        left_col.setSpacing(3)
+        pal_list_label = QLabel(t('edit_pals.bulk_clone_header' if mode == 'clone' else 'edit_pals.bulk_delete_header'))
+        pal_list_label.setStyleSheet('font-size: 10px; font-weight: 600; color: #7DD3FC; background: transparent; border: none; padding: 2px 0;')
+        left_col.addWidget(pal_list_label)
+        search_edit = QLineEdit()
+        search_edit.setPlaceholderText(t('edit_pals.search_placeholder'))
+        search_edit.textChanged.connect(self._rebuild_grid)
+        left_col.addWidget(search_edit)
+        self._search_edit = search_edit
+        filter_row = QHBoxLayout()
+        filter_row.setSpacing(4)
+        self._show_standard_chk = ToggleCheckBtn(t('edit_pals.show_standard'))
+        self._show_standard_chk.setChecked(True)
+        self._show_standard_chk.toggled.connect(self._rebuild_grid)
+        filter_row.addWidget(self._show_standard_chk)
+        self._show_boss_chk = ToggleCheckBtn(t('edit_pals.show_boss'))
+        self._show_boss_chk.setChecked(True)
+        self._show_boss_chk.toggled.connect(self._rebuild_grid)
+        filter_row.addWidget(self._show_boss_chk)
+        self._show_predator_chk = ToggleCheckBtn(t('edit_pals.show_predator'))
+        self._show_predator_chk.setChecked(True)
+        self._show_predator_chk.toggled.connect(self._rebuild_grid)
+        filter_row.addWidget(self._show_predator_chk)
+        self._show_npc_chk = ToggleCheckBtn(t('edit_pals.show_npc'))
+        self._show_npc_chk.setChecked(True)
+        self._show_npc_chk.toggled.connect(self._rebuild_grid)
+        filter_row.addWidget(self._show_npc_chk)
+        filter_row.addStretch()
+        left_col.addLayout(filter_row)
+        pal_scroll = QScrollArea()
+        pal_scroll.setWidgetResizable(True)
+        pal_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        pal_scroll.setStyleSheet('QScrollArea { background: transparent; border: 1px solid rgba(125,211,252,0.12); border-radius: 4px; }')
+        self._species_list = QListWidget()
+        self._species_list.setIconSize(QSize(32, 32))
+        self._species_list.setSpacing(1)
+        self._species_list.setDragEnabled(False)
+        self._species_list.setAcceptDrops(False)
+        self._species_list.setDragDropMode(QAbstractItemView.NoDragDrop)
+        self._species_list.setMinimumWidth(180)
+        self._species_list.setMouseTracking(True)
+        self._species_list.itemEntered.connect(self._on_species_hovered)
+        self._species_list.itemClicked.connect(self._on_species_selected)
+        self._species_list.itemDoubleClicked.connect(lambda item: (self._on_species_selected(item), self._on_apply()))
+        self._species_list.setSelectionMode(QAbstractItemView.SingleSelection)
+        self._species_list.viewport().installEventFilter(self)
+        pal_scroll.setWidget(self._species_list)
+        left_col.addWidget(pal_scroll, 1)
+        body.addLayout(left_col, 1)
+        right_col = QVBoxLayout()
+        right_col.setSpacing(3)
+        preview_label = QLabel(t('edit_pals.bulk_sync_preview'))
+        preview_label.setStyleSheet('font-size: 10px; font-weight: 600; color: #7DD3FC; background: transparent; border: none; padding: 2px 0;')
+        right_col.addWidget(preview_label)
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         scroll.setStyleSheet('QScrollArea { background: transparent; border: 1px solid rgba(125,211,252,0.12); border-radius: 4px; }')
-        self._list_inner = QWidget()
-        self._list_inner.setStyleSheet('background: transparent;')
-        scroll.setWidget(self._list_inner)
-        il.addWidget(scroll, 1)
+        self._pal_info = PalInfoWidget()
+        self._pal_info.setStyleSheet(self._pal_info.styleSheet() + '\nQWidget#palInfoInner { border: none; }')
+        self._pal_info.setMinimumWidth(0)
+        scroll.setWidget(self._pal_info)
+        right_col.addWidget(scroll, 1)
+        controls_row = QHBoxLayout()
+        controls_row.setSpacing(6)
+        self._count_label = QLabel(t('edit_pals.bulk_select_species'))
+        self._count_label.setStyleSheet('font-size: 11px; color: #94A3B8; background: transparent; border: none;')
+        controls_row.addWidget(self._count_label)
+        controls_row.addStretch()
+        if mode == 'clone':
+            qty_lbl = QLabel(t('edit_pals.bulk_qty'))
+            qty_lbl.setStyleSheet('font-size: 11px; color: #94A3B8; background: transparent; border: none;')
+            controls_row.addWidget(qty_lbl)
+            self._qty_spin = QSpinBox()
+            self._qty_spin.setRange(1, 999)
+            self._qty_spin.setValue(1)
+            self._qty_spin.setFixedWidth(60)
+            self._qty_spin.valueChanged.connect(self._update_footer)
+            controls_row.addWidget(self._qty_spin)
+        self._apply_btn = QPushButton(t('edit_pals.bulk_clone_apply' if mode == 'clone' else 'edit_pals.bulk_delete_apply'))
+        self._apply_btn.setStyleSheet('QPushButton { background: rgba(16,185,129,0.15); color: #4ADE80; border: 1px solid rgba(16,185,129,0.3); border-radius: 4px; padding: 6px 20px; font-size: 12px; font-weight: 700; } QPushButton:hover { background: rgba(16,185,129,0.25); color: #FFFFFF; } QPushButton:disabled { background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.06); }')
+        self._apply_btn.clicked.connect(self._on_apply)
+        self._apply_btn.setEnabled(False)
+        controls_row.addWidget(self._apply_btn)
+        right_col.addLayout(controls_row)
+        body.addLayout(right_col, 1)
+        il.addLayout(body, 1)
         self._footer_label = QLabel('')
         self._footer_label.setStyleSheet('font-size: 10px; color: #94A3B8; padding: 2px 4px;')
         il.addWidget(self._footer_label)
@@ -1036,22 +1093,98 @@ class BulkSpeciesDialog(FramelessDialog):
         cancel_btn.setStyleSheet('QPushButton { background: rgba(255,255,255,0.05); color: #9CA3AF; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 6px 16px; font-size: 12px; font-weight: 600; } QPushButton:hover { background: rgba(255,255,255,0.1); color: #FFFFFF; }')
         cancel_btn.clicked.connect(self.reject)
         btn_row.addWidget(cancel_btn)
-        sel_all_btn = QPushButton(t('player_item.select_all'))
-        sel_all_btn.setStyleSheet('QPushButton { background: rgba(74,222,128,0.12); color: #4ade80; border: 1px solid rgba(74,222,128,0.2); border-radius: 4px; padding: 6px 12px; font-size: 11px; font-weight: 600; } QPushButton:hover { background: rgba(74,222,128,0.2); color: #FFFFFF; }')
-        sel_all_btn.clicked.connect(lambda: self._set_all_checked(True))
-        btn_row.addWidget(sel_all_btn)
-        sel_none_btn = QPushButton(t('player_item.deselect_all'))
-        sel_none_btn.setStyleSheet('QPushButton { background: rgba(251,113,133,0.12); color: #FB7185; border: 1px solid rgba(251,113,133,0.2); border-radius: 4px; padding: 6px 12px; font-size: 11px; font-weight: 600; } QPushButton:hover { background: rgba(251,113,133,0.2); color: #FFFFFF; }')
-        sel_none_btn.clicked.connect(lambda: self._set_all_checked(False))
-        btn_row.addWidget(sel_none_btn)
-        apply_key = 'edit_pals.bulk_clone_apply' if mode == 'clone' else 'edit_pals.bulk_delete_apply'
-        self._apply_btn = QPushButton(t(apply_key))
-        self._apply_btn.setStyleSheet('QPushButton { background: rgba(16,185,129,0.15); color: #4ADE80; border: 1px solid rgba(16,185,129,0.3); border-radius: 4px; padding: 6px 20px; font-size: 12px; font-weight: 700; } QPushButton:hover { background: rgba(16,185,129,0.25); color: #FFFFFF; }')
-        self._apply_btn.clicked.connect(self._on_apply)
-        btn_row.addWidget(self._apply_btn)
         il.addLayout(btn_row)
         self.content_layout.addWidget(inner)
-        self._rebuild_list()
+        self._rebuild_grid()
+        if not self._external_pals:
+            self._update_slot_label()
+    def _build_species_sorted(self):
+        search = self._search_edit.text().lower() if hasattr(self, '_search_edit') else ''
+        show_standard = self._show_standard_chk.isChecked() if hasattr(self, '_show_standard_chk') else True
+        show_predator = self._show_predator_chk.isChecked() if hasattr(self, '_show_predator_chk') else False
+        show_boss = self._show_boss_chk.isChecked() if hasattr(self, '_show_boss_chk') else False
+        show_npc = self._show_npc_chk.isChecked() if hasattr(self, '_show_npc_chk') else True
+        from .data import _BOSS_PREFIXES
+        result = []
+        for cid_upper in self._species_map:
+            name = resolve_name(cid_upper, PalFrame._NAMEMAP) or cid_upper
+            if search and search not in name.lower() and search not in cid_upper.lower():
+                continue
+            is_predator = cid_upper.startswith('PREDATOR_')
+            is_boss = any(cid_upper.startswith(p) for p in _BOSS_PREFIXES) and not is_predator
+            is_npc = cid_upper.lower() in getattr(self, '_npc_set', set())
+            if is_predator and not show_predator:
+                continue
+            if is_boss and not show_boss:
+                continue
+            if is_npc and not show_npc:
+                continue
+            if (not is_predator and not is_boss and not is_npc) and not show_standard:
+                continue
+            pals = self._species_map[cid_upper]
+            result.append((name, cid_upper, len(pals), is_boss, is_predator))
+        result.sort(key=lambda x: (x[1], x[0]))
+        return result
+    def _rebuild_grid(self):
+        self._species_list.clear()
+        self._npc_set = set()
+        try:
+            cd = json_tools.load(resource_path(constants.get_base_path(), 'game_data', 'characters.json'))
+            for p in cd.get('npcs', []):
+                if isinstance(p, dict) and p.get('asset'):
+                    self._npc_set.add(p['asset'].lower())
+        except:
+            pass
+        entries = self._build_species_sorted()
+        for name, cid_upper, count, is_boss, is_predator in entries:
+            li = QListWidgetItem(f'{name}  ({count})')
+            li.setData(Qt.UserRole, cid_upper)
+            pal_icon_path = _icons._get_pal_icon_path(cid_upper)
+            if pal_icon_path:
+                pix = _icons._get_cached_pixmap(pal_icon_path, 32)
+                if pix:
+                    li.setIcon(QIcon(pix))
+            if is_boss:
+                li.setData(Qt.UserRole + 1, True)
+            if is_predator:
+                li.setData(Qt.UserRole + 3, True)
+            self._species_list.addItem(li)
+    def _on_species_selected(self, item):
+        cid_upper = item.data(Qt.UserRole)
+        if not cid_upper or cid_upper == self._selected_cid:
+            return
+        self._selected_cid = cid_upper
+        pals = self._species_map.get(cid_upper, [])
+        if not pals:
+            self._deselect_species()
+            return
+        self._template_pal_item = pals[0]
+        self._apply_btn.setEnabled(True)
+        pal_name = resolve_name(cid_upper, PalFrame._NAMEMAP) or cid_upper
+        safe_name = _strip_prefix_label(pal_name)
+        self._count_label.setText(t('edit_pals.bulk_species_count', count=len(pals), name=safe_name))
+        self._pal_info.set_clicked_pal(self._template_pal_item)
+        if self.mode == 'clone':
+            self._update_footer()
+    def _on_species_hovered(self, item):
+        cid_upper = item.data(Qt.UserRole)
+        if not cid_upper:
+            return
+        pals = self._species_map.get(cid_upper, [])
+        if not pals:
+            return
+        self._pal_info.set_clicked_pal(pals[0])
+    def eventFilter(self, obj, event):
+        from PySide6.QtCore import QEvent
+        if obj is self._species_list.viewport() and event.type() == QEvent.Leave and self._selected_cid and self._template_pal_item:
+            self._pal_info.set_clicked_pal(self._template_pal_item)
+        return super().eventFilter(obj, event)
+    def _deselect_species(self):
+        self._selected_cid = None
+        self._template_pal_item = None
+        self._apply_btn.setEnabled(False)
+        self._count_label.setText(t('edit_pals.bulk_select_species'))
+        self._pal_info.set_clicked_pal(None)
     def _calc_free_slots(self):
         pe = self.pal_editor
         if not pe:
@@ -1085,11 +1218,8 @@ class BulkSpeciesDialog(FramelessDialog):
         parts.append(t('edit_pals.bulk_slots_total', free=self._get_total_free()))
         self._slot_label.setText(' | '.join(parts))
     def _update_footer(self):
-        if self.mode == 'delete':
-            total = sum(len(v) for v in self._species_map.values())
-            self._footer_label.setText(f'{len(self._species_map)} species, {total} total pals')
-        else:
-            total_requested = sum(spin.value() for spin in self._qty_spins) if hasattr(self, '_qty_spins') else 0
+        if self.mode == 'clone' and self._selected_cid:
+            total_requested = self._qty_spin.value() if hasattr(self, '_qty_spin') else 0
             free = self._get_total_free()
             color = '#4ADE80' if total_requested <= free else '#FB7185'
             self._footer_label.setStyleSheet(f'font-size: 10px; color: {color}; padding: 2px 4px;')
@@ -1100,8 +1230,10 @@ class BulkSpeciesDialog(FramelessDialog):
         self._from_dps = self._dps_chk.isChecked()
         self._calc_free_slots()
         self._refresh_species()
-        self._rebuild_list()
-        self._update_slot_label()
+        self._rebuild_grid()
+        self._deselect_species()
+        if not self._external_pals:
+            self._update_slot_label()
     def _refresh_species(self):
         self._species_map = {}
         pe = self.pal_editor
@@ -1125,108 +1257,45 @@ class BulkSpeciesDialog(FramelessDialog):
             collect(pe.palbox_pal_dict)
         if self._from_dps and hasattr(pe, 'dps_pals'):
             collect(pe.dps_pals)
-    def _on_qty_all_changed(self):
-        val = self._qty_all_spin.value()
-        if hasattr(self, '_qty_spins'):
-            for spin in self._qty_spins:
-                spin.setValue(val)
-        self._update_footer()
-    def _rebuild_list(self):
-        from .legacy_frame import PalFrame
-        search = self._search_edit.text().lower() if hasattr(self, '_search_edit') else ''
-        clayout = self._list_inner.layout()
-        if clayout:
-            while clayout.count():
-                item = clayout.takeAt(0)
-                w = item.widget()
-                if w:
-                    w.deleteLater()
-        else:
-            clayout = QVBoxLayout(self._list_inner)
-            clayout.setContentsMargins(2, 2, 2, 2)
-            clayout.setSpacing(2)
-            clayout.setAlignment(Qt.AlignTop)
-        self._checkboxes = []
-        self._species_keys = []
-        self._qty_spins = []
-        for cid_upper in sorted(self._species_map.keys()):
-            pals = self._species_map[cid_upper]
-            name = resolve_name(cid_upper, PalFrame._NAMEMAP) or cid_upper
-            if search and search not in name.lower() and search not in cid_upper.lower():
-                continue
-            safe = _strip_prefix_label(name)
-            row = QWidget()
-            row.setStyleSheet('background: transparent;')
-            rl = QHBoxLayout(row)
-            rl.setContentsMargins(4, 1, 4, 1)
-            rl.setSpacing(4)
-            cb = ToggleCheckBtn(f'{safe} ({len(pals)})')
-            cb.setChecked(True)
-            cb.toggled.connect(self._update_footer)
-            rl.addWidget(cb, 1)
-            self._checkboxes.append(cb)
-            self._species_keys.append(cid_upper)
-            if self.mode == 'clone':
-                rl.addWidget(QLabel(t('edit_pals.bulk_qty') if t else 'Qty:'))
-                spin = QSpinBox()
-                spin.setRange(0, 999)
-                spin.setValue(1)
-                spin.setFixedWidth(60)
-                spin.valueChanged.connect(self._update_footer)
-                rl.addWidget(spin)
-                self._qty_spins.append(spin)
-            clayout.addWidget(row)
-        clayout.addStretch()
-        if self.mode == 'clone':
-            self._update_footer()
-        if not self._external_pals:
-            self._update_slot_label()
-    def _set_all_checked(self, checked):
-        for cb in self._checkboxes:
-            cb.setChecked(checked)
     def _on_apply(self):
-        if not self.pal_editor:
-            show_warning(self, t('common.error'), 'Bulk operations not available for this context.')
+        if not self.pal_editor or not self._selected_cid:
             return
-        selected = []
-        qtys = []
-        for i, (cid_upper, cb) in enumerate(zip(self._species_keys, self._checkboxes)):
-            if cb.isChecked():
-                selected.append(cid_upper)
-                if self.mode == 'clone':
-                    qtys.append(self._qty_spins[i].value())
-                else:
-                    qtys.append(len(self._species_map[cid_upper]))
-        if not selected:
-            show_warning(self, t('common.error'), t('edit_pals.bulk_no_selection'))
+        cid_upper = self._selected_cid
+        pals = self._species_map.get(cid_upper, [])
+        if not pals:
             return
-        total_requested = sum(qtys)
         if self.mode == 'clone':
+            qty = self._qty_spin.value()
             free = self._get_total_free()
-            if total_requested > free:
+            if qty > free:
                 show_warning(self, t('common.error'),
-                    t('edit_pals.bulk_not_enough_slots', requested=total_requested, available=free))
+                    t('edit_pals.bulk_not_enough_slots', requested=qty, available=free))
                 return
-        confirm_key = 'edit_pals.bulk_clone_confirm' if self.mode == 'clone' else 'edit_pals.bulk_delete_confirm'
-        if not show_question(self, t('common.confirm'), t(confirm_key, count=len(selected), total=total_requested)):
+            # grab edited raw from PalInfoWidget
+            template_raw = self._pal_info._raw if hasattr(self._pal_info, '_raw') else None
+            if not template_raw:
+                return
+            confirm_key = 'edit_pals.bulk_clone_confirm'
+        else:
+            qty = len(pals)
+            confirm_key = 'edit_pals.bulk_delete_confirm'
+        if not show_question(self, t('common.confirm'), t(confirm_key, count=1, total=qty)):
             return
         def task():
             if self.mode == 'clone':
-                return self._do_bulk_clone(selected, qtys)
-            return self._do_bulk_delete(selected)
+                return self._do_bulk_clone(cid_upper, qty)
+            return self._do_bulk_delete(cid_upper)
         def on_finished(result):
             species_done, pals_done = result
             key = 'edit_pals.bulk_species_cloned' if self.mode == 'clone' else 'edit_pals.bulk_species_deleted'
             self.pal_editor._update_party_slots()
             self.pal_editor._update_palbox_page()
-            if hasattr(self.pal_editor, '_save_dps'):
-                self.pal_editor._save_dps(force=True)
             if hasattr(self.pal_editor, '_update_dashboard_stats'):
                 self.pal_editor._update_dashboard_stats()
             show_information(self, t('common.done'), t(key, count=species_done, total=pals_done))
             self.accept()
         run_with_loading(on_finished, task)
-    def _do_bulk_clone(self, selected_cids, qtys):
+    def _do_bulk_clone(self, cid_upper, qty):
         import uuid
         from palworld_aio.editor.pal_editor.pal_ops import _generate_pal_save_param, _register_pal_instance_to_guild
         pe = self.pal_editor
@@ -1246,138 +1315,134 @@ class BulkSpeciesDialog(FramelessDialog):
                     pass
                 if group_id:
                     break
-        species_done = 0
+        pr = self._pal_info._raw if hasattr(self._pal_info, '_raw') else None
+        if not pr:
+            return (0, 0)
+        nick_base = resolve_name(cid_upper, PalFrame._NAMEMAP) or cid_upper
+        safe_nick = _strip_prefix_label(nick_base)
         pals_done = 0
-        for si, (cid_upper, qty) in enumerate(zip(selected_cids, qtys)):
-            pals = self._species_map[cid_upper]
-            src_pi = pals[0] if pals else None
-            pr = _get_raw_from_item(src_pi) if src_pi else None
-            if not pr:
-                continue
-            nick_base = resolve_name(cid_upper, PalFrame._NAMEMAP) or cid_upper
-            safe_nick = _strip_prefix_label(nick_base)
-            for _ in range(qty):
-                container_id = None
-                is_dps_slot = False
+        for _ in range(qty):
+            container_id = None
+            is_dps_slot = False
+            new_index = None
+            used = set()
+            max_idx = 0
+            if self._from_party and len(pe.party_pals) < 5:
+                container_id = pe.party_container
+                used = set(pe.party_pals.keys())
+                max_idx = 5
+            elif self._from_palbox:
+                container_id = pe.palbox_container
+                used = set(pe.palbox_pal_dict.keys())
+                max_idx = 32 * 30
+            elif self._from_dps and pe.dps_gvas:
+                is_dps_slot = True
+            if not is_dps_slot:
+                if not container_id:
+                    continue
                 new_index = None
-                used = set()
-                max_idx = 0
-                if self._from_party and len(pe.party_pals) < 5:
-                    container_id = pe.party_container
-                    used = set(pe.party_pals.keys())
-                    max_idx = 5
-                elif self._from_palbox:
-                    container_id = pe.palbox_container
-                    used = set(pe.palbox_pal_dict.keys())
-                    max_idx = 32 * 30
-                elif self._from_dps and pe.dps_gvas:
-                    is_dps_slot = True
-                if not is_dps_slot:
-                    if not container_id:
+                for i in range(max_idx):
+                    if i not in used:
+                        new_index = i
+                        break
+                if new_index is None:
+                    continue
+                nick = f'{safe_nick}_clone'
+                new_pal = _generate_pal_save_param(cid_upper, nick, owner_uid, container_id, new_index, group_id)
+                new_raw_target = _get_raw_from_item(new_pal)
+                if not new_raw_target:
+                    continue
+                for field in pr:
+                    if field in ('SlotId', 'OwnerPlayerUId'):
                         continue
-                    new_index = None
-                    for i in range(max_idx):
-                        if i not in used:
-                            new_index = i
-                            break
-                    if new_index is None:
-                        continue
-                    nick = f'{safe_nick}_clone'
-                    new_pal = _generate_pal_save_param(cid_upper, nick, owner_uid, container_id, new_index, group_id)
-                    new_raw_target = _get_raw_from_item(new_pal)
-                    if not new_raw_target:
-                        continue
-                    for field in pr:
-                        if field in ('SlotId', 'OwnerPlayerUId'):
-                            continue
-                        new_raw_target[field] = copy.deepcopy(pr[field])
-                    instance_id = new_pal['key']['InstanceId']['value']
-                    cmap.append(new_pal)
-                    char_containers = safe_nested_get(wsd, ['CharacterContainerSaveData', 'value'], [])
-                    for cont in char_containers:
-                        if safe_nested_get(cont, ['key', 'ID', 'value']) == container_id:
-                            slots = safe_nested_get(cont, ['value', 'Slots', 'value', 'values'], [])
-                            slots.append({'SlotIndex': {'id': None, 'type': 'IntProperty', 'value': new_index}, 'RawData': {'array_type': 'ByteProperty', 'id': None, 'value': {'player_uid': '00000000-0000-0000-0000-000000000000', 'instance_id': instance_id, 'permission_tribe_id': 0}, 'custom_type': '.worldSaveData.CharacterContainerSaveData.Value.Slots.Slots.RawData', 'type': 'ArrayProperty'}})
-                            break
-                    if group_id:
-                        _register_pal_instance_to_guild(instance_id, group_id)
-                    if container_id == pe.party_container:
-                        pe.party_pals[new_index] = new_pal
-                    else:
-                        pe.palbox_pal_dict[new_index] = new_pal
-                    used.add(new_index)
-                    pals_done += 1
+                    new_raw_target[field] = copy.deepcopy(pr[field])
+                instance_id = new_pal['key']['InstanceId']['value']
+                cmap.append(new_pal)
+                char_containers = safe_nested_get(wsd, ['CharacterContainerSaveData', 'value'], [])
+                for cont in char_containers:
+                    if safe_nested_get(cont, ['key', 'ID', 'value']) == container_id:
+                        slots = safe_nested_get(cont, ['value', 'Slots', 'value', 'values'], [])
+                        slots.append({'SlotIndex': {'id': None, 'type': 'IntProperty', 'value': new_index}, 'RawData': {'array_type': 'ByteProperty', 'id': None, 'value': {'player_uid': '00000000-0000-0000-0000-000000000000', 'instance_id': instance_id, 'permission_tribe_id': 0}, 'custom_type': '.worldSaveData.CharacterContainerSaveData.Value.Slots.Slots.RawData', 'type': 'ArrayProperty'}})
+                        break
+                if group_id:
+                    _register_pal_instance_to_guild(instance_id, group_id)
+                if container_id == pe.party_container:
+                    pe.party_pals[new_index] = new_pal
                 else:
-                    eu = '00000000-0000-0000-0000-000000000000'
-                    arr = pe.dps_gvas.properties.get('SaveParameterArray', {}).get('value', {}).get('values', [])
-                    empty_idx = None
-                    for ei in range(len(arr)):
-                        if ei not in pe.dps_pals:
-                            empty_idx = ei
-                            break
-                    if empty_idx is None:
-                        continue
-                    new_raw = copy.deepcopy(pr)
-                    new_inst = str(uuid.uuid4())
-                    new_raw['OwnerPlayerUId'] = {'struct_type': 'Guid', 'struct_id': eu, 'id': None, 'value': str(owner_uid) if owner_uid else eu, 'type': 'StructProperty'}
-                    sid = new_raw.get('SlotId', {}).get('value', {})
-                    cid_cont = sid.get('ContainerId', {}).get('value', {}).get('ID', {})
-                    cid_cont['value'] = new_inst
-                    sid['SlotIndex']['value'] = 0
-                    sp = arr[empty_idx].get('SaveParameter', {}).get('value', {})
-                    sp.clear()
-                    sp.update(new_raw)
-                    inst = arr[empty_idx].get('InstanceId', {}).get('value', {})
-                    inst['PlayerUId'] = {'struct_type': 'Guid', 'struct_id': eu, 'id': None, 'value': str(owner_uid) if owner_uid else eu, 'type': 'StructProperty'}
-                    inst['InstanceId'] = {'struct_type': 'Guid', 'struct_id': eu, 'id': None, 'value': str(uuid.uuid4()), 'type': 'StructProperty'}
-                    inst['DebugName'] = {'id': None, 'type': 'StrProperty', 'value': ''}
-                    pe.dps_pals[empty_idx] = {'data': new_raw}
-                    pals_done += 1
-            species_done += 1
-        return (species_done, pals_done)
-    def _do_bulk_delete(self, selected_cids):
+                    pe.palbox_pal_dict[new_index] = new_pal
+                used.add(new_index)
+                pals_done += 1
+            else:
+                eu = '00000000-0000-0000-0000-000000000000'
+                arr = pe.dps_gvas.properties.get('SaveParameterArray', {}).get('value', {}).get('values', [])
+                empty_idx = None
+                for ei in range(len(arr)):
+                    if ei not in pe.dps_pals:
+                        empty_idx = ei
+                        break
+                if empty_idx is None:
+                    continue
+                new_raw = copy.deepcopy(pr)
+                new_inst = str(uuid.uuid4())
+                new_raw['OwnerPlayerUId'] = {'struct_type': 'Guid', 'struct_id': eu, 'id': None, 'value': str(owner_uid) if owner_uid else eu, 'type': 'StructProperty'}
+                sid = new_raw.get('SlotId', {}).get('value', {})
+                cid_cont = sid.get('ContainerId', {}).get('value', {}).get('ID', {})
+                cid_cont['value'] = new_inst
+                sid['SlotIndex']['value'] = 0
+                sp = arr[empty_idx].get('SaveParameter', {}).get('value', {})
+                sp.clear()
+                sp.update(new_raw)
+                inst = arr[empty_idx].get('InstanceId', {}).get('value', {})
+                inst['PlayerUId'] = {'struct_type': 'Guid', 'struct_id': eu, 'id': None, 'value': str(owner_uid) if owner_uid else eu, 'type': 'StructProperty'}
+                inst['InstanceId'] = {'struct_type': 'Guid', 'struct_id': eu, 'id': None, 'value': str(uuid.uuid4()), 'type': 'StructProperty'}
+                inst['DebugName'] = {'id': None, 'type': 'StrProperty', 'value': ''}
+                pe.dps_pals[empty_idx] = {'data': new_raw}
+                pals_done += 1
+        if hasattr(self.pal_editor, '_save_dps'):
+            self.pal_editor._save_dps(force=True)
+        return (1, pals_done)
+    def _do_bulk_delete(self, cid_upper):
         pe = self.pal_editor
         wsd = constants.loaded_level_json['properties']['worldSaveData']['value']
         cmap = wsd['CharacterSaveParameterMap']['value']
-        species_done = 0
+        pals = list(self._species_map.get(cid_upper, []))
         pals_done = 0
-        for cid_upper in selected_cids:
-            pals = list(self._species_map[cid_upper])
-            for src_pi in pals:
-                pr = _get_raw_from_item(src_pi)
-                if not pr:
-                    continue
-                is_dps_pi = 'data' in src_pi
-                if is_dps_pi:
-                    for abs_idx, dp in list(pe.dps_pals.items()):
-                        if dp is src_pi:
-                            for k in list(pr.keys()):
-                                if k != 'SlotId':
-                                    del pr[k]
-                            pr['CharacterID'] = {'id': None, 'type': 'NameProperty', 'value': 'None'}
-                            if pe.dps_gvas:
-                                arr = pe.dps_gvas.properties.get('SaveParameterArray', {}).get('value', {}).get('values', [])
-                                if abs_idx < len(arr) and isinstance(arr[abs_idx], dict):
-                                    inst = arr[abs_idx].get('InstanceId', {}).get('value', {})
-                                    if isinstance(inst, dict):
-                                        empty_guid = '00000000-0000-0000-0000-000000000000'
-                                        inst['PlayerUId'] = {'struct_type': 'Guid', 'struct_id': empty_guid, 'id': None, 'value': empty_guid, 'type': 'StructProperty'}
-                                        inst['InstanceId'] = {'struct_type': 'Guid', 'struct_id': empty_guid, 'id': None, 'value': empty_guid, 'type': 'StructProperty'}
-                                        inst['DebugName'] = {'id': None, 'type': 'StrProperty', 'value': ''}
-                            del pe.dps_pals[abs_idx]
-                            pals_done += 1
-                            break
-                else:
-                    if src_pi in cmap:
-                        cmap.remove(src_pi)
-                    for idx, pi in list(pe.party_pals.items()):
-                        if pi is src_pi:
-                            del pe.party_pals[idx]
-                            break
-                    for idx, pi in list(pe.palbox_pal_dict.items()):
-                        if pi is src_pi:
-                            del pe.palbox_pal_dict[idx]
-                            break
-                    pals_done += 1
-            species_done += 1
-        return (species_done, pals_done)
+        for src_pi in pals:
+            pr = _get_raw_from_item(src_pi)
+            if not pr:
+                continue
+            is_dps_pi = 'data' in src_pi
+            if is_dps_pi:
+                for abs_idx, dp in list(pe.dps_pals.items()):
+                    if dp is src_pi:
+                        for k in list(pr.keys()):
+                            if k != 'SlotId':
+                                del pr[k]
+                        pr['CharacterID'] = {'id': None, 'type': 'NameProperty', 'value': 'None'}
+                        if pe.dps_gvas:
+                            arr = pe.dps_gvas.properties.get('SaveParameterArray', {}).get('value', {}).get('values', [])
+                            if abs_idx < len(arr) and isinstance(arr[abs_idx], dict):
+                                inst = arr[abs_idx].get('InstanceId', {}).get('value', {})
+                                if isinstance(inst, dict):
+                                    empty_guid = '00000000-0000-0000-0000-000000000000'
+                                    inst['PlayerUId'] = {'struct_type': 'Guid', 'struct_id': empty_guid, 'id': None, 'value': empty_guid, 'type': 'StructProperty'}
+                                    inst['InstanceId'] = {'struct_type': 'Guid', 'struct_id': empty_guid, 'id': None, 'value': empty_guid, 'type': 'StructProperty'}
+                                    inst['DebugName'] = {'id': None, 'type': 'StrProperty', 'value': ''}
+                        del pe.dps_pals[abs_idx]
+                        pals_done += 1
+                        break
+            else:
+                if src_pi in cmap:
+                    cmap.remove(src_pi)
+                for idx, pi in list(pe.party_pals.items()):
+                    if pi is src_pi:
+                        del pe.party_pals[idx]
+                        break
+                for idx, pi in list(pe.palbox_pal_dict.items()):
+                    if pi is src_pi:
+                        del pe.palbox_pal_dict[idx]
+                        break
+                pals_done += 1
+        if hasattr(pe, '_save_dps'):
+            pe._save_dps(force=True)
+        return (1, pals_done)
