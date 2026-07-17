@@ -1554,7 +1554,8 @@ class MainWindow(QMainWindow):
             return
         if move_player_to_guild(player_data[4], guild_data[1]):
             constants.invalidate_container_lookup()
-            self.base_inventory_tab.manager.invalidate_cache()
+            if 'base_inventory_tab' in self.__dict__:
+                self.base_inventory_tab.manager.invalidate_cache()
             self.refresh_all()
             self._show_info(t('Done'), t('guild.move.moved', player=player_data[0], guild=guild_data[0]))
         else:

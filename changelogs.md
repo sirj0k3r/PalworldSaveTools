@@ -1,3 +1,7 @@
+#2.1.3
+- **Move Player to Guild fix** — no longer crashes with `AttributeError` when the Base Inventory tab hasn't been visited yet. Cache invalidation on the uninitialized tab is skipped; the tab reads fresh data when first opened.
+- Bumped version to 2.1.3
+
 #2.1.2
 - **DPS loading speedup** — `RawData` field inside `SaveParameterArray.SaveParameter` now uses skip-decode in GUI path. Saves ~19ms + ~27MB memory for 9600-pal DPS files. Pal editor still accesses all 30+ other fields normally (CharacterID, Level, PassiveSkillList, talents, etc.). Bottleneck identified: remaining ~400-700ms is `properties_until_end` called 9600× per file — a custom batch decoder would be needed for sub-200ms load times.
 - **Restore Map fix** — tool now reads the real Steam/macOS save path (`%LOCALAPPDATA%/Pal/Saved/SaveGames`) instead of the config `last_save_path`, so it finds your actual save folders again. Also handles flat save directories (LocalData.sav in root) in addition to the nested Steam structure
