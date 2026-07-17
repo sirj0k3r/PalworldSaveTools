@@ -1864,5 +1864,14 @@
     "edit_pals.bulk_not_enough_slots": "No hay suficientes espacios libres. Solicitado {requested}, solo {available} disponible.",
     "common.done": "Hecho",
     "edit_pals.bulk_select_species": "Seleccione una especie de la lista",
-    "edit_pals.bulk_species_count": "{count} {nombre} encontrado"
+    "edit_pals.bulk_species_count": "{count} {nombre} encontrado",
+    "edit_pals.tooltip.gender": "Alternar género",
+    "edit_pals.tooltip.predator": "Alternar variante de depredador",
+    "edit_pals.tooltip.boss": "Alternar jefe/variante alfa",
+    "edit_pals.tooltip.lucky": "Alternar suerte/brillante",
+    "edit_pals.tooltip.awakened": "Alternar despertado",
+    "edit_pals.tooltip.cheat": "Alternar modo de trampa: elimina todas las mayúsculas (nivel 255, IVs 255, almas 255)",
+    "edit_pals.tooltip.max_stats": "Max todas las estadísticas de este amigo",
+    "edit_pals.tooltip.dna": "Alternar ADN/bandera importada",
+    "edit_pals.tooltip.favorite": "Alternar nivel de favorito/bloqueo"
 }

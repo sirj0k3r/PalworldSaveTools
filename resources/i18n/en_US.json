@@ -2157,5 +2157,14 @@
     "edit_pals.bulk_not_enough_slots": "Not enough free slots. Requested {requested}, only {available} available.",
     "common.done": "Done",
     "edit_pals.bulk_select_species": "Select a species from the list",
-    "edit_pals.bulk_species_count": "{count} {name} found"
+    "edit_pals.bulk_species_count": "{count} {name} found",
+    "edit_pals.tooltip.gender": "Toggle gender",
+    "edit_pals.tooltip.predator": "Toggle predator variant",
+    "edit_pals.tooltip.boss": "Toggle boss/alpha variant",
+    "edit_pals.tooltip.lucky": "Toggle lucky/shiny",
+    "edit_pals.tooltip.awakened": "Toggle awakened",
+    "edit_pals.tooltip.cheat": "Toggle cheat mode — removes all caps (level 255, IVs 255, souls 255)",
+    "edit_pals.tooltip.max_stats": "Max all stats for this pal",
+    "edit_pals.tooltip.dna": "Toggle DNA/imported flag",
+    "edit_pals.tooltip.favorite": "Toggle favorite/lock level"
 }

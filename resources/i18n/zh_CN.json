@@ -1872,5 +1872,14 @@
     "edit_pals.bulk_not_enough_slots": "没有足够的可用插槽。已请求 {requested}，仅 {available} 可用。",
     "common.done": "完毕",
     "edit_pals.bulk_select_species": "从列表中选择一个物种",
-    "edit_pals.bulk_species_count": "找到 {count} {name}"
+    "edit_pals.bulk_species_count": "找到 {count} {name}",
+    "edit_pals.tooltip.gender": "切换性别",
+    "edit_pals.tooltip.predator": "切换捕食者变体",
+    "edit_pals.tooltip.boss": "切换 boss/alpha 变体",
+    "edit_pals.tooltip.lucky": "切换幸运/闪亮",
+    "edit_pals.tooltip.awakened": "切换唤醒",
+    "edit_pals.tooltip.cheat": "切换作弊模式 — 删除所有上限（等级 255、IV 255、灵魂 255）",
+    "edit_pals.tooltip.max_stats": "最大化该朋友的所有统计数据",
+    "edit_pals.tooltip.dna": "切换 DNA/导入标记",
+    "edit_pals.tooltip.favorite": "切换收藏夹/锁定级别"
 }

@@ -80,9 +80,7 @@ class PalEditorWidget(QWidget, BulkOperationMixin):
         self.setStyleSheet(_PAL_STYLESHEET)
         app = QApplication.instance()
         if app:
-            current = app.styleSheet() or ''
-            if 'QToolTip' not in current:
-                app.setStyleSheet(current + TOOLTIP_STYLE)
+            app.setStyleSheet((app.styleSheet() or '') + TOOLTIP_STYLE)
         root = QHBoxLayout(self)
         root.setContentsMargins(8, 8, 8, 8)
         root.setSpacing(8)

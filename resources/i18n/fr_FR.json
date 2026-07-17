@@ -1852,5 +1852,14 @@
     "edit_pals.bulk_not_enough_slots": "Pas assez de créneaux gratuits. Demandé {requested}, seulement {available} disponible.",
     "common.done": "Fait",
     "edit_pals.bulk_select_species": "Sélectionnez une espèce dans la liste",
-    "edit_pals.bulk_species_count": "{count} {nom} trouvé"
+    "edit_pals.bulk_species_count": "{count} {nom} trouvé",
+    "edit_pals.tooltip.gender": "Changer de sexe",
+    "edit_pals.tooltip.predator": "Basculer la variante du prédateur",
+    "edit_pals.tooltip.boss": "Basculer la variante boss/alpha",
+    "edit_pals.tooltip.lucky": "Basculer chanceux/brillant",
+    "edit_pals.tooltip.awakened": "Basculer réveillé",
+    "edit_pals.tooltip.cheat": "Basculer le mode de triche – supprime toutes les majuscules (niveau 255, IV 255, âmes 255)",
+    "edit_pals.tooltip.max_stats": "Max toutes les statistiques pour ce copain",
+    "edit_pals.tooltip.dna": "Basculer le drapeau ADN/importé",
+    "edit_pals.tooltip.favorite": "Basculer le niveau favori/verrouillage"
 }

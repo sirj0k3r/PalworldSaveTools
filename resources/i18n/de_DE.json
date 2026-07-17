@@ -1894,5 +1894,14 @@
     "edit_pals.bulk_not_enough_slots": "Nicht genügend freie Slots. Angefordert {requested}, nur {available} verfügbar.",
     "common.done": "Erledigt",
     "edit_pals.bulk_select_species": "Wählen Sie eine Art aus der Liste aus",
-    "edit_pals.bulk_species_count": "{count} {name} gefunden"
+    "edit_pals.bulk_species_count": "{count} {name} gefunden",
+    "edit_pals.tooltip.gender": "Geschlecht umschalten",
+    "edit_pals.tooltip.predator": "Raubtiervariante umschalten",
+    "edit_pals.tooltip.boss": "Boss/Alpha-Variante umschalten",
+    "edit_pals.tooltip.lucky": "Schalten Sie zwischen Glück und Glanz um",
+    "edit_pals.tooltip.awakened": "Umschalten aktiviert",
+    "edit_pals.tooltip.cheat": "Cheat-Modus umschalten – alle Obergrenzen werden entfernt (Level 255, IVs 255, Seelen 255)",
+    "edit_pals.tooltip.max_stats": "Maximieren Sie alle Statistiken für diesen Kumpel",
+    "edit_pals.tooltip.dna": "DNA/importierte Flagge umschalten",
+    "edit_pals.tooltip.favorite": "Favorit/Sperrstufe umschalten"
 }

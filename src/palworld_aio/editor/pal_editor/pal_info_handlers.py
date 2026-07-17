@@ -810,3 +810,21 @@ class PalInfoHandlerMixin:
 
         if hasattr(self, '_l_icon'):
             self._l_icon.setToolTip(t('edit_pals.loadouts_hint'))
+        if hasattr(self, 'gender_icon'):
+            self.gender_icon.setToolTip(t('edit_pals.tooltip.gender'))
+        if hasattr(self, 'info_predator_btn'):
+            self.info_predator_btn.setToolTip(t('edit_pals.tooltip.predator'))
+        if hasattr(self, 'info_boss_btn'):
+            self.info_boss_btn.setToolTip(t('edit_pals.tooltip.boss'))
+        if hasattr(self, 'info_lucky_btn'):
+            self.info_lucky_btn.setToolTip(t('edit_pals.tooltip.lucky'))
+        if hasattr(self, 'info_awake_btn'):
+            self.info_awake_btn.setToolTip(t('edit_pals.tooltip.awakened'))
+        if hasattr(self, 'info_cheat_btn'):
+            self.info_cheat_btn.setToolTip(t('edit_pals.tooltip.cheat'))
+        if hasattr(self, 'info_max_btn'):
+            self.info_max_btn.setToolTip(t('edit_pals.tooltip.max_stats'))
+        if hasattr(self, 'info_dna_btn'):
+            self.info_dna_btn.setToolTip(t('edit_pals.tooltip.dna'))
+        if hasattr(self, 'info_fav_btn'):
+            self.info_fav_btn.setToolTip(t('edit_pals.tooltip.favorite'))

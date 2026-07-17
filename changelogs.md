@@ -1,5 +1,6 @@
 #2.1.3
 - **Move Player to Guild fix** — no longer crashes with `AttributeError` when the Base Inventory tab hasn't been visited yet. Cache invalidation on the uninitialized tab is skipped; the tab reads fresh data when first opened.
+- **Pal editor toggle tooltips** — the Gender, Predator, Boss, Lucky, Awakened, Cheat, Max, DNA, and Favorite toggle buttons in the info panel now show themed tooltips on hover, with full i18n support across all 8 languages.
 - Bumped version to 2.1.3
 
 #2.1.2

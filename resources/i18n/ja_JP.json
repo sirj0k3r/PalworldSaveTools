@@ -1870,5 +1870,14 @@
     "edit_pals.bulk_not_enough_slots": "空きスロットが足りません。リクエストされた {requested}、利用可能なのは {available} のみです。",
     "common.done": "終わり",
     "edit_pals.bulk_select_species": "リストから種を選択してください",
-    "edit_pals.bulk_species_count": "{count} {name} が見つかりました"
+    "edit_pals.bulk_species_count": "{count} {name} が見つかりました",
+    "edit_pals.tooltip.gender": "性別の切り替え",
+    "edit_pals.tooltip.predator": "プレデターのバリエーションを切り替えます",
+    "edit_pals.tooltip.boss": "ボス/アルファバリアントの切り替え",
+    "edit_pals.tooltip.lucky": "幸運/光沢を切り替えます",
+    "edit_pals.tooltip.awakened": "覚醒を切り替えます",
+    "edit_pals.tooltip.cheat": "チートモードの切り替え — すべてのキャップを削除します (レベル 255、IV 255、ソウル 255)",
+    "edit_pals.tooltip.max_stats": "この仲間のすべてのステータスを最大化する",
+    "edit_pals.tooltip.dna": "DNA/インポートフラグを切り替えます",
+    "edit_pals.tooltip.favorite": "お気に入り/ロックレベルの切り替え"
 }
