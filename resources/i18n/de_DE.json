@@ -1907,7 +1907,7 @@
     "game_version.tooltip": "Palworld v{version}",
     "common.ok": "OK",
     "common.cancel": "Stornieren",
-    "menu.file.load_backup": "Aus Backup laden...",
+    "menu.file.load_backup": "Load from Backup",
     "backup.no_backups": "Keine Backups gefunden.",
     "backup.invalid": "Im ausgewählten Backup fehlen erforderliche Dateien."
 }

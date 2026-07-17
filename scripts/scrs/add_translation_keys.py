@@ -16,7 +16,7 @@ NEW_TRANSLATIONS = {
     'game_version.tooltip': 'Palworld v{version}',
     'common.ok': 'OK',
     'common.cancel': 'Cancel',
-    'menu.file.load_backup': 'Load from Backup...',
+    'menu.file.load_backup': 'Load from Backup',
     'backup.no_backups': 'No backups found.',
     'backup.invalid': 'Selected backup is missing required files.',
 }

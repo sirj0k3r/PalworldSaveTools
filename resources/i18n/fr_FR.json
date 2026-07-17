@@ -1865,7 +1865,7 @@
     "game_version.tooltip": "Palworld v{version}",
     "common.ok": "D'ACCORD",
     "common.cancel": "Annuler",
-    "menu.file.load_backup": "Charger à partir de la sauvegarde...",
+    "menu.file.load_backup": "Load from Backup",
     "backup.no_backups": "Aucune sauvegarde trouvée.",
     "backup.invalid": "La sauvegarde sélectionnée ne contient pas les fichiers requis."
 }

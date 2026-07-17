@@ -1882,7 +1882,7 @@
     "game_version.tooltip": "팔월드 v{version}",
     "common.ok": "좋아요",
     "common.cancel": "취소",
-    "menu.file.load_backup": "백업에서 로드...",
+    "menu.file.load_backup": "Load from Backup",
     "backup.no_backups": "백업을 찾을 수 없습니다.",
     "backup.invalid": "선택한 백업에 필수 파일이 없습니다."
 }
