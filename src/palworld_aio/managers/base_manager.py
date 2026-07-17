@@ -123,7 +123,6 @@ def export_base_json(loaded_level_json, source_base_id):
     for obj in base_map_objects:
         oid = str(obj.get('MapObjectId', {}).get('value', ''))
         if oid in ['PalBooth', 'ItemBooth']:
-            print(f'Skipping map object {oid} due to known issues')
             continue
         if oid.startswith('PalEgg') and 'Hatching' not in oid and ('Incubator' not in oid):
             continue
@@ -445,6 +444,14 @@ def import_base_json(loaded_level_json, exported_data, target_guild_id, offset=(
             cr['base_camp_id'] = new_base_id
             if cr.get('concrete_model_type') == 'PalMapObjectBreedFarmModel':
                 cr['spawned_egg_instance_ids'] = []
+            if cr.get('concrete_model_type') in ('PalMapObjectItemBoothModel', 'PalMapObjectPalBoothModel'):
+                if 'is_private_lock' in cr:
+                    cr['is_private_lock'] = 0
+            else:
+                if 'private_lock_player_uid' in cr:
+                    cr['private_lock_player_uid'] = '00000000-0000-0000-0000-000000000000'
+                if 'is_private_lock' in cr:
+                    cr['is_private_lock'] = 0
             has_invalid = False
             try:
                 mm = no['ConcreteModel']['value']['ModuleMap']['value']
