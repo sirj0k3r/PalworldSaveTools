@@ -976,9 +976,10 @@ class PalEditorWidget(QWidget, BulkOperationMixin):
         self.pal_info.set_clicked_pal(None)
         self._update_party_slots()
         self._update_palbox_page()
-        self._save_dps(force=True)
-        self._update_dashboard_stats()
+        if self.dps_pals:
+            self._save_dps(force=True)
         show_information(self, t('edit_pals.ctx.bulk_heal'), t('edit_pals.restore_all_success', count=count))
+        self._update_dashboard_stats()
     def _max_all_pals(self):
         cheat = PalFrame._cheat_mode
         cap = 255 if cheat else 100
@@ -1065,9 +1066,10 @@ class PalEditorWidget(QWidget, BulkOperationMixin):
         self.pal_info.set_clicked_pal(None)
         self._update_party_slots()
         self._update_palbox_page()
-        self._save_dps(force=True)
-        self._update_dashboard_stats()
+        if self.dps_pals:
+            self._save_dps(force=True)
         show_information(self, t('edit_pals.ctx.max_all_stats'), t('edit_pals.max_all_success', count=count))
+        self._update_dashboard_stats()
     def _add_new_pal_at_slot(self, slot_index):
         sender = self.sender()
         is_party = sender in self.party_slots

@@ -694,7 +694,7 @@ class BulkSyncAllDialog(FramelessDialog):
         self.pal_editor._update_palbox_page()
         if hasattr(self.pal_editor, '_update_dps_slots'):
             self.pal_editor._update_dps_slots()
-        if hasattr(self.pal_editor, '_save_dps'):
+        if self.pal_editor.dps_pals and hasattr(self.pal_editor, '_save_dps'):
             self.pal_editor._save_dps(force=True)
         show_information(self, 'Bulk Sync All', t('edit_pals.bulk_sync_all_success', count=count))
         self.accept()
