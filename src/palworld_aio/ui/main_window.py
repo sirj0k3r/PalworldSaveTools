@@ -798,52 +798,67 @@ class MainWindow(QMainWindow):
             if dialog in self._active_dialogs:
                 self._active_dialogs.remove(dialog)
     def _on_player_item_action(self, item_id, action, player_uids):
-        from palworld_aio.inventory.base_inventory_manager import remove_item_from_players, add_item_to_players
-        from PySide6.QtWidgets import QMessageBox
-        try:
-            result = None
+        def task():
+            from palworld_aio.inventory.base_inventory_manager import remove_item_from_players, add_item_to_players
             if action == 'remove_all':
                 result = remove_item_from_players(item_id, player_uids=player_uids)
-                if result and result.get('players_affected', 0) > 0:
-                    self._show_info(t('player_item.remove_complete') if t else 'Bulk Remove Complete', t('player_item.removed_from_players').format(count=result.get('removed', 0), players=result.get('players_affected', 0)) if t else f"Removed {result.get('removed', 0)} items from {result.get('players_affected', 0)} player(s).")
-                else:
-                    self._show_info(t('player_item.no_action') if t else 'No Action Taken', t('player_item.no_players_had_item') if t else 'No players had this item.')
+                return ('remove_all', result)
             elif action.startswith('remove_pct:'):
                 pct = float(action.split(':')[1])
                 result = remove_item_from_players(item_id, percentage=pct, player_uids=player_uids)
-                if result and result.get('players_affected', 0) > 0:
-                    self._show_info(t('player_item.remove_complete') if t else 'Bulk Remove Complete', t('player_item.removed_pct_from_players').format(count=result.get('removed', 0), players=result.get('players_affected', 0), pct=int(pct)) if t else f"Removed {pct}% ({result.get('removed', 0)} items) from {result.get('players_affected', 0)} player(s).")
+                return ('remove_pct', result, int(pct))
             elif action.startswith('add:'):
                 parts = action.split(':')
                 quantity = int(parts[1])
                 container_type = parts[2] if len(parts) > 2 else 'key'
                 result = add_item_to_players(item_id, quantity=quantity, container_type=container_type, player_uids=player_uids)
-                if result and result.get('players_affected', 0) > 0:
-                    self._show_info(t('player_item.add_complete') if t else 'Bulk Add Complete', t('player_item.added_to_players').format(count=result.get('added', 0), players=result.get('players_affected', 0)) if t else f"Added {result.get('added', 0)} items to {result.get('players_affected', 0)} player(s).")
+                return ('add', result)
+            return (None, None)
+        def on_finished(result):
+            action_type = result[0]
+            if action_type is None:
+                return
+            if action_type == 'remove_all':
+                r = result[1]
+                if r and r.get('players_affected', 0) > 0:
+                    self._show_info(t('player_item.remove_complete') if t else 'Bulk Remove Complete', t('player_item.removed_from_players').format(count=r.get('removed', 0), players=r.get('players_affected', 0)) if t else f"Removed {r.get('removed', 0)} items from {r.get('players_affected', 0)} player(s).")
+                else:
+                    self._show_info(t('player_item.no_action') if t else 'No Action Taken', t('player_item.no_players_had_item') if t else 'No players had this item.')
+            elif action_type == 'remove_pct':
+                r, pct = result[1], result[2]
+                if r and r.get('players_affected', 0) > 0:
+                    self._show_info(t('player_item.remove_complete') if t else 'Bulk Remove Complete', t('player_item.removed_pct_from_players').format(count=r.get('removed', 0), players=r.get('players_affected', 0), pct=int(pct)) if t else f"Removed {pct}% ({r.get('removed', 0)} items) from {r.get('players_affected', 0)} player(s).")
+            elif action_type == 'add':
+                r = result[1]
+                if r and r.get('players_affected', 0) > 0:
+                    self._show_info(t('player_item.add_complete') if t else 'Bulk Add Complete', t('player_item.added_to_players').format(count=r.get('added', 0), players=r.get('players_affected', 0)) if t else f"Added {r.get('added', 0)} items to {r.get('players_affected', 0)} player(s).")
                 else:
                     self._show_info(t('player_item.no_action') if t else 'No Action Taken', t('player_item.could_not_add') if t else 'Could not add items to any players.')
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            self._show_error(t('player_item.error') if t else 'Error', str(e))
-        if hasattr(self, 'refresh_all'):
-            self.refresh_all()
+            if hasattr(self, 'refresh_all'):
+                self.refresh_all()
+        run_with_loading(on_finished, task)
     def _on_bulk_add_all_effigies(self, player_uids):
-        from palworld_aio.managers.player_manager import max_all_abilities
-        max_all_abilities(player_uids)
-        self._show_info(t('inventory.max_all_abilities_done', default='Abilities maxed.'), t('inventory.max_all_abilities_done', default='Abilities maxed to maximum rank.'))
-        if hasattr(self, 'refresh_all'):
-            self.refresh_all()
+        def task():
+            from palworld_aio.managers.player_manager import max_all_abilities
+            max_all_abilities(player_uids)
+            return True
+        def on_finished(_):
+            self._show_info(t('inventory.max_all_abilities_done', default='Abilities maxed.'), t('inventory.max_all_abilities_done', default='Abilities maxed to maximum rank.'))
+            if hasattr(self, 'refresh_all'):
+                self.refresh_all()
+        run_with_loading(on_finished, task)
     def _on_bulk_edit_abilities(self, player_uids, ability_values):
-        from palworld_aio.managers.player_manager import set_ability_values
-        set_ability_values(player_uids, ability_values)
-        self._show_info(t('inventory.edit_abilities_done', default='Abilities updated.'), t('inventory.edit_abilities_done', default='Ability values applied.'))
-        if hasattr(self, 'refresh_all'):
-            self.refresh_all()
+        def task():
+            from palworld_aio.managers.player_manager import set_ability_values
+            set_ability_values(player_uids, ability_values)
+            return True
+        def on_finished(_):
+            self._show_info(t('inventory.edit_abilities_done', default='Abilities updated.'), t('inventory.edit_abilities_done', default='Ability values applied.'))
+            if hasattr(self, 'refresh_all'):
+                self.refresh_all()
+        run_with_loading(on_finished, task)
     def _on_bulk_add_all_key_items(self, player_uids):
-        from palworld_aio.inventory.inventory_manager import ItemData, PlayerInventory, FOOD_POUCH_ITEMS, ACCESSORY_UNLOCK_ITEMS, WEAPON_UNLOCK_ITEMS
-        from palworld_aio.utils import gvasfile_to_sav
-        from palworld_aio.inventory.dynamic_item import sync_dynamic_items_with_registry
+        from palworld_aio.inventory.inventory_manager import ItemData, PlayerInventory, FOOD_POUCH_ITEMS, ACCESSORY_UNLOCK_ITEMS, WEAPON_UNLOCK_ITEMS, ASSET_TO_RELIC_TYPE
         from resource_resolver import resource_path
         import os, json
         all_items = ItemData.get_all_items()
@@ -854,34 +869,6 @@ class MainWindow(QMainWindow):
         except:
             boss_map = {}
         candidates = [i for i in all_items if i.get('type_a') == 'EPalItemTypeA::Essential' and (i['asset'] not in unlock_assets) and (i.get('sort_id', 0) != 9999) and (i.get('name', '') != i.get('asset', '')) and ('en_text' not in i.get('name', '').lower()) and (not i['asset'].startswith('BossDefeatReward_') or i['asset'] in boss_map)]
-        per_player_missing = {}
-        for uid in player_uids:
-            try:
-                inv = PlayerInventory(uid)
-                if not inv.load():
-                    continue
-                key_container = inv.containers.get('key')
-                existing = {s.get('item_id', '') for s in (key_container.slots if key_container else []) if s.get('item_id', '')}
-                existing.update(inv._bounty_tokens.keys())
-                from palworld_aio.inventory.inventory_manager import ASSET_TO_RELIC_TYPE
-                for asset, rtype in ASSET_TO_RELIC_TYPE.items():
-                    if inv._effigies.get(rtype, 0) > 0:
-                        existing.add(asset)
-                missing = [c['asset'] for c in candidates if c['asset'] not in existing]
-                for item_id in FOOD_POUCH_ITEMS:
-                    if item_id not in existing:
-                        missing.append(item_id)
-                for item_id in ACCESSORY_UNLOCK_ITEMS:
-                    if item_id not in existing:
-                        missing.append(item_id)
-                for item_id in WEAPON_UNLOCK_ITEMS:
-                    if item_id not in existing:
-                        missing.append(item_id)
-                if missing:
-                    per_player_missing[uid] = missing
-            except:
-                continue
-        from palworld_aio.inventory.inventory_manager import is_effigy_item, ASSET_TO_RELIC_TYPE
         effigy_accepted = False
         effigy_qty = 1
         if ASSET_TO_RELIC_TYPE:
@@ -895,134 +882,177 @@ class MainWindow(QMainWindow):
             if dlg.exec() == QDialog.Accepted:
                 effigy_qty = dlg.intValue()
                 effigy_accepted = True
-        if effigy_accepted:
+        def task():
+            nonlocal effigy_accepted, effigy_qty
+            from palworld_aio.utils import gvasfile_to_sav
+            from palworld_aio.inventory.dynamic_item import sync_dynamic_items_with_registry
+            per_player_missing = {}
             for uid in player_uids:
                 try:
                     inv = PlayerInventory(uid)
-                    if inv.load():
-                        inv.set_all_effigy_counts(effigy_qty)
+                    if not inv.load():
+                        continue
+                    key_container = inv.containers.get('key')
+                    existing = {s.get('item_id', '') for s in (key_container.slots if key_container else []) if s.get('item_id', '')}
+                    existing.update(inv._bounty_tokens.keys())
+                    for asset, rtype in ASSET_TO_RELIC_TYPE.items():
+                        if inv._effigies.get(rtype, 0) > 0:
+                            existing.add(asset)
+                    missing = [c['asset'] for c in candidates if c['asset'] not in existing]
+                    for item_id in FOOD_POUCH_ITEMS:
+                        if item_id not in existing:
+                            missing.append(item_id)
+                    for item_id in ACCESSORY_UNLOCK_ITEMS:
+                        if item_id not in existing:
+                            missing.append(item_id)
+                    for item_id in WEAPON_UNLOCK_ITEMS:
+                        if item_id not in existing:
+                            missing.append(item_id)
+                    if missing:
+                        per_player_missing[uid] = missing
                 except:
-                    pass
-        total_missing = sum((len(v) for v in per_player_missing.values()))
-        if not total_missing:
-            self._show_info(t('player_item.add_complete') if t else 'Add All Key Items', t('inventory.no_new_items') if t else 'All key items already present.')
+                    continue
+            if effigy_accepted:
+                for uid in player_uids:
+                    try:
+                        inv = PlayerInventory(uid)
+                        if inv.load():
+                            inv.set_all_effigy_counts(effigy_qty)
+                    except:
+                        pass
+            total_missing = sum((len(v) for v in per_player_missing.values()))
+            if not total_missing:
+                return (0, 0)
+            players_affected = 0
+            for uid, item_ids in per_player_missing.items():
+                try:
+                    inv = PlayerInventory(uid)
+                    if not inv.load():
+                        continue
+                    key_container = inv.containers.get('key')
+                    if key_container:
+                        std_container = key_container._standardized_container
+                        slots_needed = len(key_container.slots) + len(item_ids)
+                        if slots_needed > std_container.max_slots:
+                            new_max = slots_needed + 50
+                            std_container.expand_capacity(new_max)
+                            std_container.container_data['value']['SlotNum']['value'] = new_max
+                    for item_id in item_ids:
+                        inv.add_item('key', item_id, 1)
+                    wsd = constants.loaded_level_json['properties']['worldSaveData']['value']
+                    item_containers = wsd.get('ItemContainerSaveData', {}).get('value', [])
+                    container_lookup = {}
+                    for c in item_containers:
+                        cid = c.get('key', {}).get('ID', {}).get('value', '')
+                        if cid:
+                            container_lookup[cid] = c
+                    for ctype, inventory_container in inv.containers.items():
+                        cid = str(inventory_container.container_id)
+                        if cid in container_lookup:
+                            raw_slots = inventory_container._standardized_container.get_raw_slots()
+                            container_lookup[cid]['value']['Slots']['value']['values'] = raw_slots
+                    sync_dynamic_items_with_registry(inv.containers)
+                    gvasfile_to_sav(inv.player_gvas, os.path.join(constants.current_save_path, 'Players', f"{str(uid).replace('-', '').upper()}.sav"))
+                    players_affected += 1
+                except Exception as e:
+                    print(f'Error adding key items to player {uid}: {e}')
+                    continue
+            if players_affected > 0:
+                constants.invalidate_container_lookup()
+            return (total_missing, players_affected)
+        def on_finished(result):
+            total_missing, players_affected = result
+            if total_missing == 0:
+                self._show_info(t('player_item.add_complete') if t else 'Add All Key Items', t('inventory.no_new_items') if t else 'All key items already present.')
+            else:
+                self._show_info(t('player_item.add_complete') if t else 'Bulk Add Complete', f'Added {total_missing} key items to {players_affected} player(s).')
             if hasattr(self, 'refresh_all'):
                 self.refresh_all()
-            return
-        players_affected = 0
-        for uid, item_ids in per_player_missing.items():
-            try:
-                inv = PlayerInventory(uid)
-                if not inv.load():
-                    continue
-                key_container = inv.containers.get('key')
-                if key_container:
-                    std_container = key_container._standardized_container
-                    slots_needed = len(key_container.slots) + len(item_ids)
-                    if slots_needed > std_container.max_slots:
-                        new_max = slots_needed + 50
-                        std_container.expand_capacity(new_max)
-                        std_container.container_data['value']['SlotNum']['value'] = new_max
-                for item_id in item_ids:
-                    inv.add_item('key', item_id, 1)
-                wsd = constants.loaded_level_json['properties']['worldSaveData']['value']
-                item_containers = wsd.get('ItemContainerSaveData', {}).get('value', [])
-                container_lookup = {}
-                for c in item_containers:
-                    cid = c.get('key', {}).get('ID', {}).get('value', '')
-                    if cid:
-                        container_lookup[cid] = c
-                for ctype, inventory_container in inv.containers.items():
-                    cid = str(inventory_container.container_id)
-                    if cid in container_lookup:
-                        raw_slots = inventory_container._standardized_container.get_raw_slots()
-                        container_lookup[cid]['value']['Slots']['value']['values'] = raw_slots
-                sync_dynamic_items_with_registry(inv.containers)
-                gvasfile_to_sav(inv.player_gvas, os.path.join(constants.current_save_path, 'Players', f"{str(uid).replace('-', '').upper()}.sav"))
-                players_affected += 1
-            except Exception as e:
-                print(f'Error adding key items to player {uid}: {e}')
-                continue
-        if players_affected > 0:
-            constants.invalidate_container_lookup()
-        self._show_info(t('player_item.add_complete') if t else 'Bulk Add Complete', f'Added {total_missing} key items to {players_affected} player(s).')
-        if hasattr(self, 'refresh_all'):
-            self.refresh_all()
+        run_with_loading(on_finished, task)
     def _on_bulk_unlock_all_map(self, player_uids):
-        import json, os
-        from palworld_aio.inventory.inventory_manager import PlayerInventory
-        from palworld_aio.utils import gvasfile_to_sav, sav_to_gvasfile
-        from boot_paths import ROOT_DIR
-        ft_path = resource_path(str(ROOT_DIR), 'game_data', 'fast_travel_points.json')
-        areas_path = resource_path(str(ROOT_DIR), 'game_data', 'world_map_areas.json')
-        ft_data = json.load(open(ft_path, 'r'))
-        area_ids = json.load(open(areas_path, 'r'))
-        ft_guids = sorted(ft_data.keys())
-        all_area_keys = sorted(set(area_ids if isinstance(area_ids, list) else area_ids.get('areas', [])))
-        players_affected = 0
-        for uid in player_uids:
-            try:
-                uid_clean = str(uid).replace('-', '').upper()
-                sav_path = os.path.join(constants.current_save_path, 'Players', f'{uid_clean}.sav')
-                existing = sav_to_gvasfile(sav_path) if os.path.exists(sav_path) else None
-                if existing:
-                    eprops = existing.properties if hasattr(existing, 'properties') else existing.get('properties', {})
-                    esave = eprops.get('SaveData', {}).get('value', {})
-                    erecord = esave.get('RecordData', {}).get('value', {})
-                    eft = erecord.get('FastTravelPointUnlockFlag', {})
-                    eentries = eft.get('value', [])
-                    eft_set = {e['key'] for e in eentries if e.get('value', False)}
-                    if eft_set == set(ft_guids):
-                        players_affected += 1
+        def task():
+            import json, os
+            from palworld_aio.inventory.inventory_manager import PlayerInventory
+            from palworld_aio.utils import gvasfile_to_sav, sav_to_gvasfile
+            from boot_paths import ROOT_DIR
+            ft_path = resource_path(str(ROOT_DIR), 'game_data', 'fast_travel_points.json')
+            areas_path = resource_path(str(ROOT_DIR), 'game_data', 'world_map_areas.json')
+            ft_data = json.load(open(ft_path, 'r'))
+            area_ids = json.load(open(areas_path, 'r'))
+            ft_guids = sorted(ft_data.keys())
+            all_area_keys = sorted(set(area_ids if isinstance(area_ids, list) else area_ids.get('areas', [])))
+            players_affected = 0
+            for uid in player_uids:
+                try:
+                    uid_clean = str(uid).replace('-', '').upper()
+                    sav_path = os.path.join(constants.current_save_path, 'Players', f'{uid_clean}.sav')
+                    existing = sav_to_gvasfile(sav_path) if os.path.exists(sav_path) else None
+                    if existing:
+                        eprops = existing.properties if hasattr(existing, 'properties') else existing.get('properties', {})
+                        esave = eprops.get('SaveData', {}).get('value', {})
+                        erecord = esave.get('RecordData', {}).get('value', {})
+                        eft = erecord.get('FastTravelPointUnlockFlag', {})
+                        eentries = eft.get('value', [])
+                        eft_set = {e['key'] for e in eentries if e.get('value', False)}
+                        if eft_set == set(ft_guids):
+                            players_affected += 1
+                            continue
+                    inv = PlayerInventory(uid)
+                    if not inv.load():
                         continue
-                inv = PlayerInventory(uid)
-                if not inv.load():
+                    gvas = inv.player_gvas
+                    props = gvas.properties if hasattr(gvas, 'properties') else gvas.get('properties', {})
+                    save_data = props.get('SaveData', {}).get('value', {})
+                    if not save_data:
+                        continue
+                    record_data = save_data.setdefault('RecordData', {'value': {}, 'type': 'StructProperty'})['value']
+                    ft_flag = record_data.setdefault('FastTravelPointUnlockFlag', {'key_type': 'NameProperty', 'value_type': 'BoolProperty', 'key_struct_type': None, 'value_struct_type': None, 'id': None, 'value': [], 'type': 'MapProperty'})
+                    ft_flag['value'] = [{'key': g, 'value': True} for g in ft_guids]
+                    area_flag = record_data.setdefault('FindAreaFlagMap', {'key_type': 'NameProperty', 'value_type': 'BoolProperty', 'key_struct_type': None, 'value_struct_type': None, 'id': None, 'value': [], 'type': 'MapProperty'})
+                    area_flag['value'] = [{'key': k, 'value': True} for k in all_area_keys]
+                    wm_flag = record_data.setdefault('UnlockedWorldMapFlags', {'key_type': 'NameProperty', 'value_type': 'BoolProperty', 'key_struct_type': None, 'value_struct_type': None, 'id': None, 'value': [], 'type': 'MapProperty'})
+                    wm_flag['value'] = [{'key': 'MainMap', 'value': True}, {'key': 'Tree', 'value': True}]
+                    gvasfile_to_sav(gvas, os.path.join(constants.current_save_path, 'Players', f"{str(uid).replace('-', '').upper()}.sav"))
+                    players_affected += 1
+                except Exception as e:
+                    print(f'Error unlocking map for player {uid}: {e}')
                     continue
-                gvas = inv.player_gvas
-                props = gvas.properties if hasattr(gvas, 'properties') else gvas.get('properties', {})
-                save_data = props.get('SaveData', {}).get('value', {})
-                if not save_data:
-                    continue
-                record_data = save_data.setdefault('RecordData', {'value': {}, 'type': 'StructProperty'})['value']
-                ft_flag = record_data.setdefault('FastTravelPointUnlockFlag', {'key_type': 'NameProperty', 'value_type': 'BoolProperty', 'key_struct_type': None, 'value_struct_type': None, 'id': None, 'value': [], 'type': 'MapProperty'})
-                ft_flag['value'] = [{'key': g, 'value': True} for g in ft_guids]
-                area_flag = record_data.setdefault('FindAreaFlagMap', {'key_type': 'NameProperty', 'value_type': 'BoolProperty', 'key_struct_type': None, 'value_struct_type': None, 'id': None, 'value': [], 'type': 'MapProperty'})
-                area_flag['value'] = [{'key': k, 'value': True} for k in all_area_keys]
-                wm_flag = record_data.setdefault('UnlockedWorldMapFlags', {'key_type': 'NameProperty', 'value_type': 'BoolProperty', 'key_struct_type': None, 'value_struct_type': None, 'id': None, 'value': [], 'type': 'MapProperty'})
-                wm_flag['value'] = [{'key': 'MainMap', 'value': True}, {'key': 'Tree', 'value': True}]
-                gvasfile_to_sav(gvas, os.path.join(constants.current_save_path, 'Players', f"{str(uid).replace('-', '').upper()}.sav"))
-                players_affected += 1
-            except Exception as e:
-                print(f'Error unlocking map for player {uid}: {e}')
-                continue
-        self._show_info(t('player_item.add_complete') if t else 'Unlock Complete', t('inventory.unlock_all_map_bulk_success.msg', count=players_affected, default=f'Unlocked map + fast travel for {players_affected} player(s).'))
+            return players_affected
+        def on_finished(players_affected):
+            self._show_info(t('player_item.add_complete') if t else 'Unlock Complete', t('inventory.unlock_all_map_bulk_success.msg', count=players_affected, default=f'Unlocked map + fast travel for {players_affected} player(s).'))
+        run_with_loading(on_finished, task)
     def _on_player_pal_action(self, item_id, action, player_uids):
-        from palworld_aio.editor.edit_pals import delete_pal_from_all, remove_skill_from_all_pals
-        from PySide6.QtWidgets import QMessageBox
-        try:
+        def task():
+            from palworld_aio.editor.edit_pals import delete_pal_from_all, remove_skill_from_all_pals
             if action.startswith('delete_pal:'):
                 pal_id = action.split(':')[1]
                 result = delete_pal_from_all(pal_id)
-                if result and result.get('pals_removed', 0) > 0:
-                    self._show_info(t('player_pal.remove_complete') if t else 'Bulk Pal Remove Complete', t('player_pal.pals_removed_everywhere').format(count=result.get('pals_removed', 0), affected=result.get('affected_count', 0)) if t else f"Removed {result.get('pals_removed', 0)} pals from {result.get('affected_count', 0)} players/bases everywhere.")
-                else:
-                    self._show_info(t('player_pal.no_action') if t else 'No Action Taken', t('player_pal.no_pals_had_pal') if t else 'No pals of that type were found.')
+                return ('delete_pal', result)
             elif action.startswith('remove_all:'):
                 parts = action.split(':')
                 active_skill_id = parts[1] if len(parts) > 1 and parts[1] else None
                 passive_skill_id = parts[2] if len(parts) > 2 and parts[2] else None
                 scope = parts[3] if len(parts) > 3 and parts[3] else 'all'
                 result = remove_skill_from_all_pals(active_skill_id=active_skill_id, passive_skill_id=passive_skill_id, scope=scope)
-                if result and result.get('skills_removed', 0) > 0:
-                    self._show_info(t('player_pal.skill_remove_complete') if t else 'Bulk Skill Remove Complete', t('player_pal.skill_removed_from_all').format(count=result.get('skills_removed', 0), pals=result.get('pals_affected', 0)) if t else f"Removed {result.get('skills_removed', 0)} skills from {result.get('pals_affected', 0)} pals (players + bases).")
+                return ('remove_skill', result)
+            return (None, None)
+        def on_finished(result):
+            action_type, r = result
+            if action_type is None:
+                return
+            if action_type == 'delete_pal':
+                if r and r.get('pals_removed', 0) > 0:
+                    self._show_info(t('player_pal.remove_complete') if t else 'Bulk Pal Remove Complete', t('player_pal.pals_removed_everywhere').format(count=r.get('pals_removed', 0), affected=r.get('affected_count', 0)) if t else f"Removed {r.get('pals_removed', 0)} pals from {r.get('affected_count', 0)} players/bases everywhere.")
+                else:
+                    self._show_info(t('player_pal.no_action') if t else 'No Action Taken', t('player_pal.no_pals_had_pal') if t else 'No pals of that type were found.')
+            elif action_type == 'remove_skill':
+                if r and r.get('skills_removed', 0) > 0:
+                    self._show_info(t('player_pal.skill_remove_complete') if t else 'Bulk Skill Remove Complete', t('player_pal.skill_removed_from_all').format(count=r.get('skills_removed', 0), pals=r.get('pals_affected', 0)) if t else f"Removed {r.get('skills_removed', 0)} skills from {r.get('pals_affected', 0)} pals (players + bases).")
                 else:
                     self._show_info(t('player_pal.no_action') if t else 'No Action Taken', t('player_pal.no_pals_had_skill') if t else 'No pals had the selected skills.')
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            self._show_error(t('player_pal.error') if t else 'Error', str(e))
-        if hasattr(self, 'refresh_all'):
-            self.refresh_all()
+            if hasattr(self, 'refresh_all'):
+                self.refresh_all()
+        run_with_loading(on_finished, task)
     def _on_player_selected(self, data):
         if data:
             self.results_widget.set_player(data[0])

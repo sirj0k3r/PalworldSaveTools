@@ -5,6 +5,7 @@ from PySide6.QtGui import QPixmap, QFont, QCursor
 from i18n import t, init_language
 from resource_resolver import get_base_dir, get_resources_dir, resource_path
 _result_data = {'status': 'idle', 'data': None}
+_queued_next = None
 def get_base_directory():
     return get_base_dir()
 def get_src_directory():
@@ -325,8 +326,9 @@ def is_loading_active():
     return _result_data.get('status') == 'running'
 
 def run_with_loading(callback, func, *args, parent=None, **kwargs):
-    global _result_data
+    global _result_data, _queued_next
     if _result_data.get('status') == 'running':
+        _queued_next = (callback, func, args, kwargs, parent)
         return
     on_error = kwargs.pop('on_error', None)
     _result_data.update({'status': 'running', 'data': None})
@@ -372,6 +374,7 @@ def run_with_loading(callback, func, *args, parent=None, **kwargs):
                     dialog.exec()
             elif callback:
                 callback(res)
+            _dequeue_next()
         QTimer.singleShot(100, monitor)
         return
     def cleanup():
@@ -424,8 +427,15 @@ def run_with_loading(callback, func, *args, parent=None, **kwargs):
                     cleanup()
             else:
                 cleanup()
-            QTimer.singleShot(1000, lambda: (callback(res) if callback else None, cleanup()))
+            QTimer.singleShot(1000, lambda: (callback(res) if callback else None, cleanup(), _dequeue_next()))
     QTimer.singleShot(100, monitor)
+def _dequeue_next():
+    global _queued_next
+    if not _queued_next:
+        return
+    callback, func, args, kwargs, parent = _queued_next
+    _queued_next = None
+    run_with_loading(callback, func, *args, parent=parent, **kwargs)
 class ErrorDialog(QDialog):
     def __init__(self, error_text, parent=None):
         super().__init__(parent)

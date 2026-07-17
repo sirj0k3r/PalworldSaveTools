@@ -1689,8 +1689,6 @@ class MapTab(QWidget):
                                         _register_pal_instance_to_guild(ch['key']['InstanceId']['value'], target_guild_id)
                                         break
                 constants.invalidate_container_lookup()
-                if self.parent_window and hasattr(self.parent_window, 'base_inventory_tab'):
-                    self.parent_window.base_inventory_tab.manager.invalidate_cache()
             return ('success', target_guild_id)
         def on_finished(result):
             status, payload = result
@@ -1699,6 +1697,8 @@ class MapTab(QWidget):
             elif status == 'same_guild':
                 show_information(self, t('info.title') if t else 'Info', t('base.reassign.same_guild') if t else 'Base already belongs to this guild.')
             elif status == 'success':
+                if self.parent_window and hasattr(self.parent_window, 'base_inventory_tab'):
+                    self.parent_window.base_inventory_tab.manager.invalidate_cache()
                 self.refresh()
                 if self.parent_window:
                     self.parent_window.refresh_all()
@@ -1968,8 +1968,6 @@ class MapTab(QWidget):
                     exported_data = load_base_file(file_path)
                     if import_base_json(constants.loaded_level_json, exported_data, guild_id):
                         constants.invalidate_container_lookup()
-                        if self.parent_window and hasattr(self.parent_window, 'base_inventory_tab'):
-                            self.parent_window.base_inventory_tab.manager.invalidate_cache()
                         successful_imports += 1
                         try:
                             raw_t = exported_data['base_camp']['value']['RawData']['value']['transform']['translation']
@@ -1988,6 +1986,8 @@ class MapTab(QWidget):
             return (successful_imports, failed_imports, failed_files, imported_coords_list)
         def on_finished(result):
             successful_imports, failed_imports, failed_files, imported_coords_list = result
+            if self.parent_window and hasattr(self.parent_window, 'base_inventory_tab'):
+                self.parent_window.base_inventory_tab.manager.invalidate_cache()
             self.refresh()
             if self.parent_window:
                 self.parent_window.refresh_all()
