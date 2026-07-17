@@ -274,3 +274,4 @@ SKP_PALWORLD_CUSTOM_PROPERTIES['.worldSaveData.MapObjectSaveData.MapObjectSaveDa
 SKP_PALWORLD_CUSTOM_PROPERTIES['.worldSaveData.MapObjectSaveData.MapObjectSaveData.WorldScale3D'] = (skip_decode, skip_encode)
 SKP_PALWORLD_CUSTOM_PROPERTIES['.worldSaveData.FoliageGridSaveDataMap'] = (skip_decode, skip_encode)
 SKP_PALWORLD_CUSTOM_PROPERTIES['.worldSaveData.MapObjectSpawnerInStageSaveData'] = (skip_decode, skip_encode)
+SKP_PALWORLD_CUSTOM_PROPERTIES['.SaveParameterArray.SaveParameter.RawData'] = (skip_decode, skip_encode)
