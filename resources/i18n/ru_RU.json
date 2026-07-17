@@ -1881,7 +1881,7 @@
     "game_version.tooltip": "Палмир v{version}",
     "common.ok": "ХОРОШО",
     "common.cancel": "Отмена",
-    "menu.file.load_backup": "Load from Backup",
+    "menu.file.load_backup": "Загрузить из резервной копии",
     "backup.no_backups": "Резервные копии не найдены.",
     "backup.invalid": "В выбранной резервной копии отсутствуют необходимые файлы."
 }

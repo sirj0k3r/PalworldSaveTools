@@ -1885,7 +1885,7 @@
     "game_version.tooltip": "友世界 v{version}",
     "common.ok": "好的",
     "common.cancel": "取消",
-    "menu.file.load_backup": "Load from Backup",
+    "menu.file.load_backup": "从备份加载",
     "backup.no_backups": "未找到备份。",
     "backup.invalid": "所选备份缺少所需文件。"
 }

@@ -1883,7 +1883,7 @@
     "game_version.tooltip": "パルワールド v{version}",
     "common.ok": "わかりました",
     "common.cancel": "キャンセル",
-    "menu.file.load_backup": "Load from Backup",
+    "menu.file.load_backup": "バックアップからロード",
     "backup.no_backups": "バックアップが見つかりませんでした。",
     "backup.invalid": "選択したバックアップに必要なファイルがありません。"
 }

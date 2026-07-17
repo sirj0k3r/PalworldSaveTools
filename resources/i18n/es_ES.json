@@ -1877,7 +1877,7 @@
     "game_version.tooltip": "Mundo pal v{version}",
     "common.ok": "DE ACUERDO",
     "common.cancel": "Cancelar",
-    "menu.file.load_backup": "Load from Backup",
+    "menu.file.load_backup": "Cargar desde copia de seguridad",
     "backup.no_backups": "No se encontraron copias de seguridad.",
     "backup.invalid": "A la copia de seguridad seleccionada le faltan los archivos necesarios."
 }

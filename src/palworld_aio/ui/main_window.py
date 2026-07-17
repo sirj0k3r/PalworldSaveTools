@@ -1182,7 +1182,7 @@ class MainWindow(QMainWindow):
         from PySide6.QtWidgets import QDialog, QVBoxLayout, QListWidget, QPushButton, QHBoxLayout
         from resource_resolver import get_data_base
         from loading_manager import show_warning
-        from palsav import sav_to_gvasfile
+        from palworld_aio.utils import sav_to_gvasfile
         backup_dir = os.path.abspath(os.path.join(get_data_base(), 'Backups', 'AllinOneTools'))
         if not os.path.isdir(backup_dir):
             show_warning(self, t('error.title'), t('backup.no_backups'))
@@ -1194,7 +1194,8 @@ class MainWindow(QMainWindow):
             folder = os.path.join(backup_dir, name)
             if not os.path.isfile(os.path.join(folder, 'Level.sav')) or not os.path.isdir(os.path.join(folder, 'Players')):
                 continue
-            ts = name.replace('PalworldSave_backup_', '').replace('_', ' ', 1)
+            ts_raw = name.replace('PalworldSave_backup_', '')
+            ts = f'{ts_raw[:4]}-{ts_raw[4:6]}-{ts_raw[6:8]} {ts_raw[9:11]}:{ts_raw[11:13]}:{ts_raw[13:]}'
             world = 'Unknown World'
             meta_path = os.path.join(folder, 'LevelMeta.sav')
             if os.path.isfile(meta_path):
