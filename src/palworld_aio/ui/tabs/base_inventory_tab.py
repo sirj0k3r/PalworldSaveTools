@@ -3020,11 +3020,7 @@ class BaseInventoryTab(QWidget):
                 if guild_id == '__clear__':
                     self._clear_guild_selection()
                 elif guild_id:
-                    QApplication.setOverrideCursor(Qt.WaitCursor)
-                    try:
-                        self._on_guild_changed(guild_id)
-                    finally:
-                        QApplication.restoreOverrideCursor()
+                    self._on_guild_changed(guild_id)
             popup.close()
         list_widget.itemClicked.connect(select_guild)
         popup.setFixedWidth(self.guild_button.width())
@@ -3084,11 +3080,7 @@ class BaseInventoryTab(QWidget):
                 if base_id == '__clear__':
                     self._clear_base_selection()
                 elif base_id:
-                    QApplication.setOverrideCursor(Qt.WaitCursor)
-                    try:
-                        self._on_base_changed(base_id)
-                    finally:
-                        QApplication.restoreOverrideCursor()
+                    self._on_base_changed(base_id)
             popup.close()
         list_widget.itemClicked.connect(select_base)
         popup.setFixedWidth(self.base_button.width())
@@ -3108,8 +3100,20 @@ class BaseInventoryTab(QWidget):
         self.replace_button.setEnabled(False)
         self._clear_display()
     def _load_guilds(self):
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        try:
+        def task():
+            guilds = self.manager.load_guilds()
+            if not guilds:
+                return ('no_guilds', None)
+            guilds_with_bases = []
+            for guild in guilds:
+                bases = self.manager.load_bases_for_guild(guild['id'])
+                if bases:
+                    guilds_with_bases.append(guild)
+            if not guilds_with_bases:
+                return ('no_guilds_with_bases', guilds)
+            return ('loaded', guilds_with_bases)
+        def on_finished(result):
+            status, payload = result
             self._guilds_data = []
             self._bases_data = []
             self._current_guild_id = None
@@ -3118,34 +3122,26 @@ class BaseInventoryTab(QWidget):
             self._current_base_name = ''
             self.guild_button.setText(t('base_inventory.select_guild') if t else 'Select Guild')
             self.base_button.setText(t('base_inventory.select_base') if t else 'Select Base')
-            guilds = self.manager.load_guilds()
-            if not guilds:
+            if status == 'no_guilds':
                 self.guild_button.setText(t('base_inventory.no_save_loaded') if t else 'No save file loaded')
                 self.guild_button.setEnabled(False)
                 self.base_button.setText(t('base_inventory.select_base') if t else 'Select Base')
                 self.base_button.setEnabled(False)
                 self.replace_button.setEnabled(False)
                 self._clear_display()
-                return
-            guilds_with_bases = []
-            for guild in guilds:
-                bases = self.manager.load_bases_for_guild(guild['id'])
-                if bases:
-                    guilds_with_bases.append(guild)
-            if not guilds_with_bases:
-                self._guilds_data = guilds
+            elif status == 'no_guilds_with_bases':
+                self._guilds_data = payload
                 self.guild_button.setText(t('base_inventory.no_guilds_with_bases') if t else 'No guilds with bases found')
                 self.guild_button.setEnabled(True)
                 self.base_button.setText(t('base_inventory.no_bases_available') if t else 'No bases available')
                 self.base_button.setEnabled(False)
                 self._clear_display()
-                return
-            self._guilds_data = guilds_with_bases
-            self.guild_button.setEnabled(True)
-            self.base_button.setEnabled(True)
-            self._clear_display()
-        finally:
-            QApplication.restoreOverrideCursor()
+            elif status == 'loaded':
+                self._guilds_data = payload
+                self.guild_button.setEnabled(True)
+                self.base_button.setEnabled(True)
+                self._clear_display()
+        run_with_loading(on_finished, task)
     def _on_guild_changed(self, guild_id):
         if guild_id is None:
             self._bases_data = []
@@ -3154,12 +3150,14 @@ class BaseInventoryTab(QWidget):
             self.base_button.setText(t('base_inventory.select_base') if t else 'Select Base')
             self._clear_display()
             return
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        try:
-            self._current_guild_id = guild_id
+        def task():
             guild = next((g for g in self._guilds_data if str(g['id']) == str(guild_id)), None)
-            self._current_guild_name = f"{guild['name']} (Level {guild['level']})" if guild else str(guild_id)
-            self.guild_button.setText(self._current_guild_name)
+            self._current_guild_id = guild_id
+            name = f"{guild['name']} (Level {guild['level']})" if guild else str(guild_id)
+            return name
+        def on_finished(name):
+            self._current_guild_name = name
+            self.guild_button.setText(name)
             guild_id_key = str(guild_id).replace('-', '').lower()
             if hasattr(self, '_structure_locations') and self._structure_locations and guild_id_key and (guild_id_key in self._structure_locations):
                 self._load_bases_for_guild_filtered_by_structure(guild_id)
@@ -3167,8 +3165,7 @@ class BaseInventoryTab(QWidget):
                 self._load_bases_for_guild_filtered(guild_id)
             else:
                 self._load_bases_for_guild(guild_id)
-        finally:
-            QApplication.restoreOverrideCursor()
+        run_with_loading(on_finished, task)
     def _load_bases_for_guild(self, guild_id):
         self._bases_data = []
         self._current_base_id = None
@@ -3241,19 +3238,37 @@ class BaseInventoryTab(QWidget):
         base = next((b for b in self._bases_data if str(b['id']) == str(base_id)), None)
         self._current_base_name = str(base_id)[:8] if base else str(base_id)[:8]
         self.base_button.setText(self._current_base_name)
-        guild_id_key = str(self._current_guild_id).replace('-', '').lower() if self._current_guild_id else None
-        base_id_key = str(base_id).replace('-', '').lower()
-        if hasattr(self, '_structure_locations') and self._structure_locations and guild_id_key and (guild_id_key in self._structure_locations):
-            self._load_structures_for_base(base_id)
-        elif hasattr(self, '_item_locations') and self._item_locations and guild_id_key and (guild_id_key in self._item_locations) and base_id_key and (base_id_key in self._item_locations.get(guild_id_key, {})):
-            self._load_containers_for_base_filtered(base_id)
-        else:
-            self._load_containers_for_base(base_id)
-        if self._current_tab == 1 and self._current_base_id:
-            from palworld_aio.inventory.base_inventory_manager import get_base_worker_pals
-            pals = get_base_worker_pals(self._current_base_id)
-            self.base_pals_widget.set_pals(pals, self._current_base_id)
-    def _load_containers_for_base(self, base_id):
+        def task():
+            guild_id = self._current_guild_id
+            guild_id_key = str(guild_id).replace('-', '').lower() if guild_id else None
+            base_id_key = str(base_id).replace('-', '').lower()
+            if hasattr(self, '_structure_locations') and self._structure_locations and guild_id_key and (guild_id_key in self._structure_locations):
+                base_data = self.manager.load_containers_for_base(base_id)
+                base_id_key2 = str(base_id).replace('-', '').lower()
+                guild_id_key2 = str(guild_id).replace('-', '').lower() if guild_id else None
+                return ('structures', base_data, base_id_key2, guild_id_key2)
+            elif hasattr(self, '_item_locations') and self._item_locations and guild_id_key and (guild_id_key in self._item_locations) and base_id_key and (base_id_key in self._item_locations.get(guild_id_key, {})):
+                base_data = self.manager.load_containers_for_base(base_id)
+                return ('filtered', base_data)
+            else:
+                base_data = self.manager.load_containers_for_base(base_id)
+                return ('containers', base_data)
+        def on_finished(result):
+            mode, containers = result[0], result[1]
+            if mode == 'structures':
+                base_id_key2 = result[2]
+                guild_id_key2 = result[3]
+                self._load_structures_for_base(base_id, containers=containers)
+            elif mode == 'filtered':
+                self._load_containers_for_base_filtered(base_id, containers=containers)
+            else:
+                self._load_containers_for_base(base_id, containers=containers)
+            if self._current_tab == 1 and self._current_base_id:
+                from palworld_aio.inventory.base_inventory_manager import get_base_worker_pals
+                pals = get_base_worker_pals(self._current_base_id)
+                self.base_pals_widget.set_pals(pals, self._current_base_id)
+        run_with_loading(on_finished, task)
+    def _load_containers_for_base(self, base_id, containers=None):
         self.container_list.clear()
         guild_id = self._current_guild_id
         if guild_id:
@@ -3261,7 +3276,8 @@ class BaseInventoryTab(QWidget):
             base_info = next((b for b in bases if str(b['id']) == str(base_id)), None)
             if base_info:
                 self.manager.current_base = base_info
-        containers = self.manager.load_containers_for_base(base_id)
+        if containers is None:
+            containers = self.manager.load_containers_for_base(base_id)
         for container in containers:
             self.container_list.add_container(container)
         if containers:
@@ -3271,7 +3287,7 @@ class BaseInventoryTab(QWidget):
             self.container_info.set_container_info(None)
             self.inventory_grid.clear()
         self._show_content()
-    def _load_containers_for_base_filtered(self, base_id):
+    def _load_containers_for_base_filtered(self, base_id, containers=None):
         self.container_list.clear()
         guild_id = self._current_guild_id
         guild_id_key = str(guild_id).replace('-', '').lower() if guild_id else None
@@ -3282,7 +3298,7 @@ class BaseInventoryTab(QWidget):
                 if base_id_key and base_id_key in guild_data:
                     filtered_containers = guild_data[base_id_key]
                     if filtered_containers:
-                        all_containers = self.manager.load_containers_for_base(base_id)
+                        all_containers = containers if containers is not None else self.manager.load_containers_for_base(base_id)
                         for container in all_containers:
                             container_id_key = str(container['id']).replace('-', '').lower()
                             if container_id_key in filtered_containers:
@@ -3299,7 +3315,7 @@ class BaseInventoryTab(QWidget):
                 self._load_containers_for_base(base_id)
         else:
             self._load_containers_for_base(base_id)
-    def _load_structures_for_base(self, base_id):
+    def _load_structures_for_base(self, base_id, containers=None):
         self.container_list.clear()
         self.inventory_grid.clear()
         base_id_key = str(base_id).replace('-', '').lower() if base_id else None
@@ -3311,7 +3327,7 @@ class BaseInventoryTab(QWidget):
         struct_name = self.selected_structure_name or structure_asset or 'Structure'
         base_data = self._structure_locations[guild_id_key]
         instance_ids = base_data.get(base_id_key, [])
-        all_containers = self.manager.load_containers_for_base(base_id)
+        all_containers = containers if containers is not None else self.manager.load_containers_for_base(base_id)
         sa_lower = structure_asset.lower()
         matching_containers = []
         for c in all_containers:
@@ -3721,17 +3737,24 @@ class BaseInventoryTab(QWidget):
         if not self.selected_item_id:
             self._reset_filters()
             return
-        QApplication.setOverrideCursor(Qt.WaitCursor)
         start_time = time.time()
-        try:
+        def task():
             item_locations = find_item_locations_efficient(self.selected_item_id)
-            self._guilds_data = []
             if item_locations:
                 all_guilds = self.manager.load_guilds()
+                guilds_data = []
                 for guild in all_guilds:
                     guild_id_key = str(guild['id']).replace('-', '').lower()
                     if guild_id_key in item_locations:
-                        self._guilds_data.append(guild)
+                        guilds_data.append(guild)
+                return ('found', item_locations, guilds_data)
+            else:
+                return ('not_found', None, None)
+        def on_finished(result):
+            nonlocal start_time
+            status, item_locations, guilds_data = result
+            if status == 'found':
+                self._guilds_data = guilds_data
                 self._item_locations = item_locations
                 if self._guilds_data:
                     self._on_guild_changed(self._guilds_data[0]['id'])
@@ -3744,12 +3767,11 @@ class BaseInventoryTab(QWidget):
                 self.selected_item_name = None
                 self.item_button.setText(t('base_inventory.all_items') if t else 'All Items')
                 self.clear_item_button.setVisible(False)
-        finally:
-            QApplication.restoreOverrideCursor()
             elapsed = time.time() - start_time
             if elapsed > 0.5:
                 if hasattr(self._main_window, 'status_bar'):
                     self._main_window.status_bar.showMessage(f'Item filter completed in {elapsed:.2f}s', 3000)
+        run_with_loading(on_finished, task)
     def _reset_filters(self):
         self._item_locations = None
         self._structure_locations = None
@@ -4036,18 +4058,25 @@ class BaseInventoryTab(QWidget):
             else:
                 self._show_warning(t('base_inventory.no_structures_removed') if t else 'No structures found to remove')
     def _filter_guilds_and_bases_by_structure(self, structure_asset, silent=False):
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        try:
+        def task():
             from palworld_aio.inventory.base_inventory_manager import find_structure_locations_efficient
             locations = find_structure_locations_efficient(structure_asset)
-            self._structure_locations = locations
-            self._guilds_data = []
             if locations:
                 all_guilds = self.manager.load_guilds()
+                guilds_data = []
                 for guild in all_guilds:
                     guild_id_key = str(guild['id']).replace('-', '').lower()
                     if guild_id_key in locations:
-                        self._guilds_data.append(guild)
+                        guilds_data.append(guild)
+                return ('found', locations, guilds_data)
+            else:
+                return ('not_found', None, None)
+        def on_finished(result):
+            status, locations, guilds_data = result
+            self._structure_locations = locations
+            self._guilds_data = []
+            if status == 'found':
+                self._guilds_data = guilds_data
                 if self._guilds_data:
                     self._on_guild_changed(self._guilds_data[0]['id'])
                     if hasattr(self._main_window, 'status_bar'):
@@ -4061,8 +4090,7 @@ class BaseInventoryTab(QWidget):
                 self.clear_structure_button.setVisible(False)
                 self._structure_locations = None
                 self._load_guilds()
-        finally:
-            QApplication.restoreOverrideCursor()
+        run_with_loading(on_finished, task)
     def _modify_container_slots(self):
         if not self.manager.inventory_container:
             self._show_warning(t('base_inventory.select_container_first') if t else 'Please select a container first')

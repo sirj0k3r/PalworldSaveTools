@@ -1500,28 +1500,25 @@ class MapTab(QWidget):
             show_warning(self, t('warning.title') if t else 'Warning', t('deletion.warning.protected_base') if t else f"Base {base_data['base_id']} is in exclusion list and cannot be deleted.")
             return
         reply = show_question(self, t('confirm.title') if t else 'Confirm', t('confirm.delete_base') if t else f"Delete base at X:{int(base_data['coords'][0])},Y:{int(base_data['coords'][1])}?")
-        if reply:
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-            try:
-                img_x, img_y = base_data['img_coords']
-                self._play_effect(DeleteEffect, img_x, img_y)
-                base_entry = base_data['data']
-                guild_id = base_data['guild_id']
-                delete_base_camp(base_entry, guild_id)
-                constants.invalidate_container_lookup()
-                if self.parent_window and hasattr(self.parent_window, 'base_inventory_tab'):
-                    self.parent_window.base_inventory_tab.manager.invalidate_cache()
-                self.refresh()
-                if self.parent_window:
-                    self.parent_window.refresh_all()
-                self._hide_all_radius_rings()
-                if hasattr(self, 'toggle_base_radius_rings') and self.toggle_base_radius_rings.isChecked():
-                    self._show_all_radius_rings()
-                show_information(self, t('success.title') if t else 'Success', t('base.delete.success') if t else 'Base deleted successfully')
-            except Exception as e:
-                show_critical(self, t('error.title') if t else 'Error', f'Failed to delete base: {str(e)}')
-            finally:
-                QApplication.restoreOverrideCursor()
+        if not reply:
+            return
+        def task():
+            base_entry = base_data['data']
+            guild_id = base_data['guild_id']
+            delete_base_camp(base_entry, guild_id)
+            constants.invalidate_container_lookup()
+            return True
+        def on_finished(success):
+            img_x, img_y = base_data['img_coords']
+            self._play_effect(DeleteEffect, img_x, img_y)
+            self.refresh()
+            if self.parent_window:
+                self.parent_window.refresh_all()
+            self._hide_all_radius_rings()
+            if hasattr(self, 'toggle_base_radius_rings') and self.toggle_base_radius_rings.isChecked():
+                self._show_all_radius_rings()
+            show_information(self, t('success.title') if t else 'Success', t('base.delete.success') if t else 'Base deleted successfully')
+        run_with_loading(on_finished, task)
     def _export_base(self, base_data):
         bid = str(base_data['base_id'])
         default_name = f'base_{bid[:8]}'
@@ -1574,53 +1571,52 @@ class MapTab(QWidget):
                 show_warning(self, t('error.title') if t else 'Error', 'Failed to clone base')
         run_with_loading(on_finished, task)
     def _adjust_base_radius(self, base_data):
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        try:
-            bid = str(base_data['base_id'])
-            wsd = constants.loaded_level_json['properties']['worldSaveData']['value']
-            base_camp_data = wsd.get('BaseCampSaveData', {}).get('value', [])
-            src_base_entry = next((b for b in base_camp_data if str(b['key']).replace('-', '').lower() == bid.replace('-', '').lower()), None)
-            if not src_base_entry:
-                show_warning(self, t('error.title') if t else 'Error', t('base.export.not_found') if t else 'Base data not found')
+        bid = str(base_data['base_id'])
+        wsd = constants.loaded_level_json['properties']['worldSaveData']['value']
+        base_camp_data = wsd.get('BaseCampSaveData', {}).get('value', [])
+        src_base_entry = next((b for b in base_camp_data if str(b['key']).replace('-', '').lower() == bid.replace('-', '').lower()), None)
+        if not src_base_entry:
+            show_warning(self, t('error.title') if t else 'Error', t('base.export.not_found') if t else 'Base data not found')
+            return
+        current_radius = src_base_entry['value']['RawData']['value'].get('area_range', 3500.0)
+        current_percent = int(round(current_radius / 35.0))
+        self._navigate_to_base(base_data)
+        from ...editor.dialogs import RadiusPreviewDialog
+        dialog = RadiusPreviewDialog(t('base.radius.title') if t else 'Adjust Base Radius', t('base.radius.prompt') if t else f'Current radius: {current_percent}% ({int(current_radius)})\nEnter new radius percentage:', current_radius, self)
+        self._cleanup_preview_ring()
+        self._setup_preview_ring(base_data)
+        dialog.valueChanged.connect(self._on_preview_radius_changed)
+        result = dialog.exec()
+        new_radius = dialog.result_value
+        self._cleanup_preview_ring()
+        if result != QDialog.Accepted or new_radius is None or new_radius == current_radius:
+            return
+        def task():
+            return update_base_area_range(constants.loaded_level_json, bid, new_radius)
+        def on_finished(success):
+            if not success:
+                show_critical(self, t('error.title') if t else 'Error', t('base.radius.failed') if t else 'Failed to update base radius')
                 return
-            current_radius = src_base_entry['value']['RawData']['value'].get('area_range', 3500.0)
-            current_percent = int(round(current_radius / 35.0))
-            self._navigate_to_base(base_data)
-            from ...editor.dialogs import RadiusPreviewDialog
-            dialog = RadiusPreviewDialog(t('base.radius.title') if t else 'Adjust Base Radius', t('base.radius.prompt') if t else f'Current radius: {current_percent}% ({int(current_radius)})\nEnter new radius percentage:', current_radius, self)
-            self._cleanup_preview_ring()
-            self._setup_preview_ring(base_data)
-            dialog.valueChanged.connect(self._on_preview_radius_changed)
-            result = dialog.exec()
-            new_radius = dialog.result_value
-            self._cleanup_preview_ring()
-            if result == QDialog.Accepted and new_radius is not None and (new_radius != current_radius):
-                if update_base_area_range(constants.loaded_level_json, bid, new_radius):
-                    selected_base_id = None
-                    if self.selected_base_marker:
-                        selected_base_id = self.selected_base_marker.base_data.get('base_id')
-                    if self.current_radius_ring:
-                        self.current_radius_ring.update_radius(new_radius)
-                    self.refresh()
-                    if self.parent_window:
-                        self.parent_window.refresh_all()
-                    if hasattr(self, 'toggle_base_radius_rings') and self.toggle_base_radius_rings.isChecked():
-                        self._show_all_radius_rings()
-                    if selected_base_id:
-                        for marker in self.base_markers:
-                            if marker.base_data.get('base_id') == selected_base_id:
-                                self.selected_base_marker = marker
-                                marker.setSelected(True)
-                                marker.start_glow()
-                                break
-                    new_percent = int(round(new_radius / 35.0))
-                    show_information(self, t('success.title') if t else 'Success', t('base.radius.updated', radius=f'{new_percent}% ({int(new_radius)})') if t else f'Base radius updated to {new_percent}% ({int(new_radius)})\n\n⚠ Load this save in-game for structures to be reassigned.')
-                else:
-                    show_critical(self, t('error.title') if t else 'Error', t('base.radius.failed') if t else 'Failed to update base radius')
-        except Exception as e:
-            show_critical(self, t('error.title') if t else 'Error', f'Failed to adjust base radius: {str(e)}')
-        finally:
-            QApplication.restoreOverrideCursor()
+            selected_base_id = None
+            if self.selected_base_marker:
+                selected_base_id = self.selected_base_marker.base_data.get('base_id')
+            if self.current_radius_ring:
+                self.current_radius_ring.update_radius(new_radius)
+            self.refresh()
+            if self.parent_window:
+                self.parent_window.refresh_all()
+            if hasattr(self, 'toggle_base_radius_rings') and self.toggle_base_radius_rings.isChecked():
+                self._show_all_radius_rings()
+            if selected_base_id:
+                for marker in self.base_markers:
+                    if marker.base_data.get('base_id') == selected_base_id:
+                        self.selected_base_marker = marker
+                        marker.setSelected(True)
+                        marker.start_glow()
+                        break
+            new_percent = int(round(new_radius / 35.0))
+            show_information(self, t('success.title') if t else 'Success', t('base.radius.updated', radius=f'{new_percent}% ({int(new_radius)})') if t else f'Base radius updated to {new_percent}% ({int(new_radius)})\n\n⚠ Load this save in-game for structures to be reassigned.')
+        run_with_loading(on_finished, task)
     def _reassign_base(self, base_data):
         from palworld_aio.editor.dialogs import ScrollableGuildSelectionDialog
         current_guild_id = base_data.get('guild_id', '')
@@ -1631,21 +1627,18 @@ class MapTab(QWidget):
         target_guild_id = ScrollableGuildSelectionDialog.get_guild(guilds_for_selection, self)
         if not target_guild_id:
             return
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        try:
+        def task():
             bid = str(base_data['base_id']).replace('-', '').lower()
             wsd = constants.loaded_level_json['properties']['worldSaveData']['value']
             base_camp_data = wsd.get('BaseCampSaveData', {}).get('value', [])
             src_base_entry = next((b for b in base_camp_data if str(b['key']).replace('-', '').lower() == bid), None)
             if not src_base_entry:
-                show_warning(self, t('error.title') if t else 'Error', 'Base not found in save data')
-                return
+                return ('not_found', None)
             src_base_raw = src_base_entry['value']['RawData']['value']
             old_guild_id = str(src_base_raw.get('group_id_belong_to', '')).replace('-', '').lower()
             target_gid_clean = str(target_guild_id).replace('-', '').lower()
             if old_guild_id == target_gid_clean:
-                show_information(self, t('info.title') if t else 'Info', t('base.reassign.same_guild') if t else 'Base already belongs to this guild.')
-                return
+                return ('same_guild', None)
             src_base_raw['group_id_belong_to'] = UUID.from_str(target_guild_id)
             group_map = wsd.get('GroupSaveDataMap', {}).get('value', [])
             source_guild_level = 1
@@ -1697,18 +1690,25 @@ class MapTab(QWidget):
                 constants.invalidate_container_lookup()
                 if self.parent_window and hasattr(self.parent_window, 'base_inventory_tab'):
                     self.parent_window.base_inventory_tab.manager.invalidate_cache()
-            self.refresh()
-            if self.parent_window:
-                self.parent_window.refresh_all()
-            self._hide_all_radius_rings()
-            if hasattr(self, 'toggle_base_radius_rings') and self.toggle_base_radius_rings.isChecked():
-                self._show_all_radius_rings()
-            target_name = self.guilds_data.get(target_guild_id, {}).get('guild_name', target_guild_id)
-            show_information(self, t('success.title') if t else 'Success', t('base.reassign.success', name=target_name) if t else f'Base reassigned to guild "{target_name}"')
-        except Exception as e:
-            show_critical(self, t('error.title') if t else 'Error', f'Failed to reassign base: {str(e)}')
-        finally:
-            QApplication.restoreOverrideCursor()
+            return ('success', target_guild_id)
+        def on_finished(result):
+            status, payload = result
+            if status == 'not_found':
+                show_warning(self, t('error.title') if t else 'Error', 'Base not found in save data')
+            elif status == 'same_guild':
+                show_information(self, t('info.title') if t else 'Info', t('base.reassign.same_guild') if t else 'Base already belongs to this guild.')
+            elif status == 'success':
+                self.refresh()
+                if self.parent_window:
+                    self.parent_window.refresh_all()
+                self._hide_all_radius_rings()
+                if hasattr(self, 'toggle_base_radius_rings') and self.toggle_base_radius_rings.isChecked():
+                    self._show_all_radius_rings()
+                target_name = self.guilds_data.get(target_guild_id, {}).get('guild_name', target_guild_id)
+                show_information(self, t('success.title') if t else 'Success', t('base.reassign.success', name=target_name) if t else f'Base reassigned to guild "{target_name}"')
+        def on_error(err):
+            show_critical(self, t('error.title') if t else 'Error', f'Failed to reassign base: {str(err)}')
+        run_with_loading(on_finished, task, on_error=on_error)
     def _move_base_coords(self, base_data):
         reply = show_question(self, t('base.move_coords.title') if t else 'Change Base Coordinates', t('base.move_coords.warning') if t else 'WARNING: Moving a base to different coordinates can negatively impact your game.\n\nThe base may:\n- Evaluate incorrectly (weird AI behavior)\n- Collide with rocks, trees, structures, or terrain\n- Have foundation/clipping issues\n- Cause Pal pathfinding problems\n\nThis tool cannot detect terrain, collisions, or world geometry.\nProceed only if you understand these risks.\n\nContinue?')
         if not reply:
@@ -1728,8 +1728,7 @@ class MapTab(QWidget):
         self._cleanup_coord_picker()
         base_data = self._coord_picker_base
         self._coord_picker_base = None
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        try:
+        def task():
             width = float(self.map_width)
             height = float(self.map_height)
             wx = scene_x / width * 2000 - 1000
@@ -1740,14 +1739,12 @@ class MapTab(QWidget):
             base_list = wsd.get('BaseCampSaveData', {}).get('value', [])
             base_entry = next((b for b in base_list if str(b['key']).replace('-', '').lower() == bid), None)
             if not base_entry:
-                show_warning(self, t('error.title') if t else 'Error', t('base.export.not_found') if t else 'Base not found in save data')
-                return
+                return (False, 'not_found')
             old_trans = base_entry['value']['RawData']['value']['transform']['translation']
             dx = new_save_x - old_trans['x']
             dy = new_save_y - old_trans['y']
             if dx == 0 and dy == 0:
-                show_information(self, t('info.title') if t else 'Info', 'New coordinates are the same as current.')
-                return
+                return (False, 'same')
             old_trans['x'] += dx
             old_trans['y'] += dy
             try:
@@ -1785,17 +1782,24 @@ class MapTab(QWidget):
                             tr['translation']['y'] += dy
                     except:
                         pass
+            constants.invalidate_container_lookup()
+            return (True, (scene_x, scene_y))
+        def on_finished(result):
+            success, payload = result
+            if not success:
+                if payload == 'not_found':
+                    show_warning(self, t('error.title') if t else 'Error', t('base.export.not_found') if t else 'Base not found in save data')
+                elif payload == 'same':
+                    show_information(self, t('info.title') if t else 'Info', 'New coordinates are the same as current.')
+                return
+            scene_x, scene_y = payload
             effect = CoordChangeEffect(scene_x, scene_y)
             self.scene.addItem(effect)
-            constants.invalidate_container_lookup()
             self.refresh()
             if self.parent_window:
                 self.parent_window.refresh_all()
             show_information(self, t('success.title') if t else 'Success', t('base.move_coords.success') if t else 'Base coordinates updated successfully.')
-        except Exception as e:
-            show_critical(self, t('error.title') if t else 'Error', f'Failed to move base: {str(e)}')
-        finally:
-            QApplication.restoreOverrideCursor()
+        run_with_loading(on_finished, task)
     def _on_coord_picker_cancel(self, pos=None):
         if self._coord_picker_active:
             self._cleanup_coord_picker()
@@ -1821,15 +1825,13 @@ class MapTab(QWidget):
         dx, dy, dz = dialog.result_value
         if dx == 0 and dy == 0 and dz == 0:
             return
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        try:
+        def task():
             bid = str(base_data['base_id']).replace('-', '').lower()
             wsd = constants.loaded_level_json['properties']['worldSaveData']['value']
             base_list = wsd.get('BaseCampSaveData', {}).get('value', [])
             base_entry = next((b for b in base_list if str(b['key']).replace('-', '').lower() == bid), None)
             if not base_entry:
-                show_warning(self, t('error.title') if t else 'Error', t('base.export.not_found') if t else 'Base not found')
-                return
+                return False
             base_entry['value']['RawData']['value']['transform']['translation']['x'] += dx
             base_entry['value']['RawData']['value']['transform']['translation']['y'] += dy
             base_entry['value']['RawData']['value']['transform']['translation']['z'] += dz
@@ -1875,29 +1877,30 @@ class MapTab(QWidget):
                     except:
                         pass
             constants.invalidate_container_lookup()
+            return True
+        def on_finished(success):
+            if not success:
+                show_warning(self, t('error.title') if t else 'Error', t('base.export.not_found') if t else 'Base not found')
+                return
             self.refresh()
             if self.parent_window:
                 self.parent_window.refresh_all()
             show_information(self, t('success.title') if t else 'Success', t('base.nudge.success') if t else 'Base nudged successfully.')
-        except Exception as e:
-            show_critical(self, t('error.title') if t else 'Error', f'Failed to nudge base: {str(e)}')
-        finally:
-            QApplication.restoreOverrideCursor()
+        run_with_loading(on_finished, task)
     def _rename_guild(self, guild_id):
         current_name = self.guilds_data.get(guild_id, {}).get('guild_name', '')
         new_name = InputDialog.get_text(t('guild.rename.title') if t else 'Rename Guild', t('guild.rename.prompt') if t else 'Enter new guild name:', self, initial_text=current_name)
         if new_name:
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-            try:
+            def task():
                 rename_guild(guild_id, new_name)
+            def on_finished(_):
                 self.refresh()
                 if self.parent_window:
                     self.parent_window.refresh_all()
                 show_information(self, t('success.title') if t else 'Success', t('guild.rename.success') if t else 'Guild renamed successfully')
-            except Exception as e:
-                show_critical(self, t('error.title') if t else 'Error', f'Failed to rename guild: {str(e)}')
-            finally:
-                QApplication.restoreOverrideCursor()
+            def on_error(err):
+                show_critical(self, t('error.title') if t else 'Error', f'Failed to rename guild: {str(err)}')
+            run_with_loading(on_finished, task, on_error=on_error)
     def _delete_guild(self, guild_id):
         from ...managers.data_manager import delete_guild, load_exclusions
         guild_name = self.guilds_data.get(guild_id, {}).get('guild_name', 'Unknown')
@@ -1934,9 +1937,10 @@ class MapTab(QWidget):
                 pass
         reply = show_question(self, t('confirm.title') if t else 'Confirm', f'Delete guild "{guild_name}" and all {base_count} bases?\n\nThis will also delete all characters owned by guild members.')
         if reply:
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-            try:
-                if delete_guild(guild_id):
+            def task():
+                return delete_guild(guild_id)
+            def on_finished(success):
+                if success:
                     self.refresh()
                     if self.parent_window:
                         self.parent_window.refresh_all()
@@ -1946,10 +1950,9 @@ class MapTab(QWidget):
                     show_information(self, t('success.title') if t else 'Success', t('guild.delete.success') if t else 'Guild and all bases deleted successfully')
                 else:
                     show_warning(self, t('error.title') if t else 'Error', 'Failed to delete guild - guild not found or not a guild type')
-            except Exception as e:
-                show_critical(self, t('error.title') if t else 'Error', f'Failed to delete guild: {str(e)}')
-            finally:
-                QApplication.restoreOverrideCursor()
+            def on_error(err):
+                show_critical(self, t('error.title') if t else 'Error', f'Failed to delete guild: {str(err)}')
+            run_with_loading(on_finished, task, on_error=on_error)
     def _import_base_to_guild(self, guild_id):
         file_paths, _ = QFileDialog.getOpenFileNames(self, t('base.import_multi') if t else 'Import Bases(Multi-File)', '', 'Base Files (*.json *.pstbase)')
         if not file_paths:
@@ -2069,9 +2072,9 @@ class MapTab(QWidget):
         if uid_clean in [ex.replace('-', '').lower() for ex in constants.exclusions.get('players', [])]:
             show_warning(self, t('warning.title') if t else 'Warning', t('deletion.warning.protected_player') if t else f'Player "{player_name}" is in exclusion list and cannot be deleted.')
             return
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        try:
+        def task():
             delete_player(player_uid)
+        def on_finished(_):
             self.refresh()
             if self.parent_window:
                 self.parent_window.refresh_all()
@@ -2079,55 +2082,54 @@ class MapTab(QWidget):
             if hasattr(self, 'toggle_base_radius_rings') and self.toggle_base_radius_rings.isChecked():
                 self._show_all_radius_rings()
             show_information(self, t('Done') if t else 'Done', t('deletion.player_deleted') if t else 'Player deleted')
-        finally:
-            QApplication.restoreOverrideCursor()
+        run_with_loading(on_finished, task)
     def _rename_player(self, player_data):
         player_uid = player_data.get('player_uid', '')
         current_name = player_data.get('player_name', 'Unknown')
         new_name = InputDialog.get_text(t('player.rename.title') if t else 'Rename Player', t('player.rename.prompt') if t else 'Enter new player name:', self, initial_text=current_name)
         if new_name:
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-            try:
+            def task():
                 from ...managers.player_manager import rename_player
-                if rename_player(player_uid, new_name):
+                return rename_player(player_uid, new_name)
+            def on_finished(success):
+                if success:
                     self.refresh()
                     if self.parent_window:
                         self.parent_window.refresh_all()
                     show_information(self, t('success.title') if t else 'Success', t('player.rename.success') if t else 'Player renamed successfully')
                 else:
                     show_warning(self, t('error.title') if t else 'Error', 'Failed to rename player')
-            except Exception as e:
-                show_critical(self, t('error.title') if t else 'Error', f'Failed to rename player: {str(e)}')
-            finally:
-                QApplication.restoreOverrideCursor()
+            def on_error(err):
+                show_critical(self, t('error.title') if t else 'Error', f'Failed to rename player: {str(err)}')
+            run_with_loading(on_finished, task, on_error=on_error)
     def _unlock_viewing_cage(self, player_data):
         player_uid = player_data.get('player_uid', '')
         player_name = player_data.get('player_name', 'Unknown')
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        try:
+        def task():
             from ...managers.func_manager import unlock_viewing_cage_for_player
-            if unlock_viewing_cage_for_player(player_uid, self):
+            return unlock_viewing_cage_for_player(player_uid, self)
+        def on_finished(success):
+            if success:
                 show_information(self, t('success.title') if t else 'Success', t('player.viewing_cage.unlocked') if t else 'Viewing Cage unlocked successfully.')
             else:
                 show_warning(self, t('error.title') if t else 'Error', t('player.viewing_cage.failed') if t else 'Failed to unlock viewing cage')
-        except Exception as e:
-            show_critical(self, t('error.title') if t else 'Error', f'Failed to unlock viewing cage: {str(e)}')
-        finally:
-            QApplication.restoreOverrideCursor()
+        def on_error(err):
+            show_critical(self, t('error.title') if t else 'Error', f'Failed to unlock viewing cage: {str(err)}')
+        run_with_loading(on_finished, task, on_error=on_error)
     def _unlock_technologies(self, player_data):
         player_uid = player_data.get('player_uid', '')
         player_name = player_data.get('player_name', 'Unknown')
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        try:
+        def task():
             from ...managers.func_manager import unlock_all_technologies_for_player
-            if unlock_all_technologies_for_player(player_uid, self):
+            return unlock_all_technologies_for_player(player_uid, self)
+        def on_finished(success):
+            if success:
                 show_information(self, t('success.title') if t else 'Success', t('player.unlock_technologies.success') if t else 'Unlock All Technologies completed')
             else:
                 show_warning(self, t('error.title') if t else 'Error', t('player.unlock_technologies.failed') if t else 'Unlock All Technologies failed')
-        except Exception as e:
-            show_critical(self, t('error.title') if t else 'Error', f'Failed to unlock technologies: {str(e)}')
-        finally:
-            QApplication.restoreOverrideCursor()
+        def on_error(err):
+            show_critical(self, t('error.title') if t else 'Error', f'Failed to unlock technologies: {str(err)}')
+        run_with_loading(on_finished, task, on_error=on_error)
     def _setup_preview_ring(self, base_data):
         if not isinstance(self.selected_base_marker, BaseMarker):
             return
@@ -2337,39 +2339,37 @@ class MapTab(QWidget):
         file_path, _ = QFileDialog.getSaveFileName(self, t('zone_management.export_title') if t else 'Export Protection Zones', default_name, 'JSON Files(*.json)')
         if not file_path:
             return
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        try:
+        def task():
             zone_data = zone_manager.export_zones()
             json_tools.dump(zone_data, file_path, indent=2)
+        def on_finished(_):
             show_information(self, t('success.title') if t else 'Success', t('zone_management.export_success') if t else 'Protection zones exported successfully')
-        except Exception as e:
-            show_critical(self, t('error.title') if t else 'Error', f"{(t('zone_management.export_failed') if t else 'Failed to export zones')}: {str(e)}")
-        finally:
-            QApplication.restoreOverrideCursor()
+        def on_error(err):
+            show_critical(self, t('error.title') if t else 'Error', f"{(t('zone_management.export_failed') if t else 'Failed to export zones')}: {str(err)}")
+        run_with_loading(on_finished, task, on_error=on_error)
     def _import_zones(self):
         from palworld_aio.managers import zone_manager
         file_path, _ = QFileDialog.getOpenFileName(self, t('zone_management.import_title') if t else 'Import Protection Zones', '', 'JSON Files(*.json)')
         if not file_path:
             return
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        try:
+        def task():
             zone_data = json_tools.load(file_path)
-            if zone_manager.import_zones(zone_data):
+            return zone_manager.import_zones(zone_data)
+        def on_finished(success):
+            if success:
                 self._update_zone_items()
                 show_information(self, t('success.title') if t else 'Success', t('zone_management.import_success') if t else 'Protection zones imported successfully')
             else:
                 show_warning(self, t('error.title') if t else 'Error', t('zone_management.import_failed') if t else 'Failed to import zones. Invalid file format.')
-        except Exception as e:
-            show_critical(self, t('error.title') if t else 'Error', f"{(t('zone_management.import_failed') if t else 'Failed to import zones')}: {str(e)}")
-        finally:
-            QApplication.restoreOverrideCursor()
+        def on_error(err):
+            show_critical(self, t('error.title') if t else 'Error', f"{(t('zone_management.import_failed') if t else 'Failed to import zones')}: {str(err)}")
+        run_with_loading(on_finished, task, on_error=on_error)
     def _clear_zones(self):
         from palworld_aio.managers import zone_manager
         confirmed = show_question(self, t('zone_exclusion.delete_zone') if t else 'Delete Zone', t('zone_exclusion.confirm_delete_all') if t else 'Are you sure you want to delete all zones?')
         if confirmed:
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-            try:
+            def task():
                 zone_manager.clear_all_zones()
+            def on_finished(_):
                 self._update_zone_items()
-            finally:
-                QApplication.restoreOverrideCursor()
+            run_with_loading(on_finished, task)

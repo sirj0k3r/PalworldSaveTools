@@ -410,7 +410,6 @@ class SlotNumUpdaterApp(QDialog):
             self.clear_search_btn.setEnabled(False)
             self.select_all_btn.setEnabled(False)
             self.select_none_btn.setEnabled(False)
-            QApplication.setOverrideCursor(Qt.WaitCursor)
         else:
             self.browse_button.setEnabled(True)
             self.apply_selected_btn.setEnabled(True)
@@ -421,7 +420,6 @@ class SlotNumUpdaterApp(QDialog):
             self.clear_search_btn.setEnabled(True)
             self.select_all_btn.setEnabled(True)
             self.select_none_btn.setEnabled(True)
-            QApplication.restoreOverrideCursor()
     def populate_table(self):
         self.table.setRowCount(len(self.player_containers))
         for row, container in enumerate(self.player_containers):

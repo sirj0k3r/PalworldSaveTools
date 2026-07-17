@@ -328,6 +328,7 @@ def run_with_loading(callback, func, *args, parent=None, **kwargs):
     global _result_data
     if _result_data.get('status') == 'running':
         return
+    on_error = kwargs.pop('on_error', None)
     _result_data.update({'status': 'running', 'data': None})
     start_ts = time.time()
     try:
@@ -360,12 +361,15 @@ def run_with_loading(callback, func, *args, parent=None, **kwargs):
             res = _result_data['data']
             _result_data['status'] = 'idle'
             if isinstance(res, str) and 'Traceback' in res:
-                try:
-                    trans = {'title': t('error.overlay.title'), 'close': t('error.overlay.close'), 'copy': t('error.overlay.copy')}
-                except:
-                    trans = {'title': 'AN ERROR OCCURRED', 'close': 'CLOSE', 'copy': 'COPY'}
-                dialog = ErrorDialog(res, parent=parent)
-                dialog.exec()
+                if on_error:
+                    on_error(res)
+                else:
+                    try:
+                        trans = {'title': t('error.overlay.title'), 'close': t('error.overlay.close'), 'copy': t('error.overlay.copy')}
+                    except:
+                        trans = {'title': 'AN ERROR OCCURRED', 'close': 'CLOSE', 'copy': 'COPY'}
+                    dialog = ErrorDialog(res, parent=parent)
+                    dialog.exec()
             elif callback:
                 callback(res)
         QTimer.singleShot(100, monitor)
@@ -395,11 +399,14 @@ def run_with_loading(callback, func, *args, parent=None, **kwargs):
         res = _result_data['data']
         _result_data['status'] = 'idle'
         if isinstance(res, str) and 'Traceback' in res:
-            try:
-                trans = {'title': t('error.overlay.title'), 'close': t('error.overlay.close'), 'copy': t('error.overlay.copy')}
-            except:
-                trans = {'title': 'AN ERROR OCCURRED', 'close': 'CLOSE', 'copy': 'COPY'}
-            if loader_proc and loader_proc.poll() is None:
+            if on_error:
+                on_error(res)
+                cleanup()
+            elif loader_proc and loader_proc.poll() is None:
+                try:
+                    trans = {'title': t('error.overlay.title'), 'close': t('error.overlay.close'), 'copy': t('error.overlay.copy')}
+                except:
+                    trans = {'title': 'AN ERROR OCCURRED', 'close': 'CLOSE', 'copy': 'COPY'}
                 try:
                     loader_proc.stdin.write((json.dumps({'cmd': 'error', 'text': res, **trans}) + '\n').encode())
                     loader_proc.stdin.flush()
@@ -417,7 +424,7 @@ def run_with_loading(callback, func, *args, parent=None, **kwargs):
                     cleanup()
             else:
                 cleanup()
-            QTimer.singleShot(1000, lambda: (cleanup(), callback(res) if callback else None))
+            QTimer.singleShot(1000, lambda: (callback(res) if callback else None, cleanup()))
     QTimer.singleShot(100, monitor)
 class ErrorDialog(QDialog):
     def __init__(self, error_text, parent=None):

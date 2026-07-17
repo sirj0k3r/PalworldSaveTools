@@ -66,14 +66,13 @@ class PalEditorTab(QWidget):
         self.current_player_uid = uid
         self.current_player_name = name
         self.player_select_btn.setText(display)
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        try:
+        def task():
             self.pal_editor_widget.set_player(uid, name)
+        def on_finished(_):
             self.placeholder_label.hide()
             self.pal_editor_widget.show()
             self.pal_editor_widget.apply_player_ui()
-        finally:
-            QApplication.restoreOverrideCursor()
+        run_with_loading(on_finished, task)
     def make_current(self):
         self.placeholder_label.hide()
         self.pal_editor_widget.show()
@@ -89,12 +88,11 @@ class PalEditorTab(QWidget):
     def clear_player(self):
         if self._syncing:
             return
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        try:
+        def task():
+            pass
+        def on_finished(_):
             self._clear_editor()
-        finally:
-            QApplication.restoreOverrideCursor()
-        self.current_player_uid = None
+            self.current_player_uid = None
         self.current_player_name = None
         self.player_select_btn.setText(t('inventory.select_player', default='Select Player...'))
     def _open_player_popup(self):
@@ -122,16 +120,22 @@ class PalEditorTab(QWidget):
                 self.parent_window.inventory_tab._select_player_ref_only(uid, name, display)
                 self._syncing = False
             if is_loading_active():
-                QApplication.setOverrideCursor(Qt.WaitCursor)
-                try:
+                def task():
                     self.pal_editor_widget.set_player(uid, name)
+                    if hasattr(self.parent_window, 'inventory_tab'):
+                        return get_player_inventory(uid)
+                    return None
+                def on_loaded(inv):
+                    if self.current_player_uid is not None and str(self.current_player_uid) != str(uid):
+                        return
                     self.placeholder_label.hide()
                     self.pal_editor_widget.show()
                     self.pal_editor_widget.apply_player_ui()
-                    if hasattr(self.parent_window, 'inventory_tab'):
+                    if hasattr(self.parent_window, 'inventory_tab') and inv is not None:
+                        self._syncing = True
                         self.parent_window.inventory_tab.select_player(uid, name, display)
-                finally:
-                    QApplication.restoreOverrideCursor()
+                        self._syncing = False
+                run_with_loading(on_loaded, task)
                 return
             def task():
                 self.pal_editor_widget.set_player(uid, name)

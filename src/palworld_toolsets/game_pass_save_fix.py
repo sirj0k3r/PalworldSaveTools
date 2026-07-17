@@ -437,16 +437,15 @@ class GamePassSaveFixWidget(QWidget):
     def generate_random_name(length=32):
         return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
     def move_save_steam(self, saveName):
-        try:
-            from common import get_preferred_save_path
-            steam_default = get_preferred_save_path()
-            initial = steam_default if os.path.isdir(steam_default) else root_dir
-            self.raise_()
-            self.activateWindow()
-            destination = QFileDialog.getExistingDirectory(self, t('xgp.ui.select_destination'), initial)
-            if not destination:
-                return
-            QApplication.setOverrideCursor(Qt.WaitCursor)
+        from common import get_preferred_save_path
+        steam_default = get_preferred_save_path()
+        initial = steam_default if os.path.isdir(steam_default) else root_dir
+        self.raise_()
+        self.activateWindow()
+        destination = QFileDialog.getExistingDirectory(self, t('xgp.ui.select_destination'), initial)
+        if not destination:
+            return
+        def task():
             if hasattr(self, 'direct_saves_map') and saveName in self.direct_saves_map:
                 source_base = self.direct_saves_map[saveName]
             else:
@@ -456,8 +455,7 @@ class GamePassSaveFixWidget(QWidget):
             if not os.path.isdir(source_base):
                 raise FileNotFoundError(t('xgp.err.source_not_found', src=source_base))
             if not os.path.isfile(os.path.join(source_base, 'Level.sav')):
-                self.message_signal.emit('critical', t('Error'), t('xgp.err.convert_failed', err='Missing Level.sav in save root'))
-                return
+                return ('missing_level', None)
             def ignore(_, names):
                 return {n for n in names if n in {'Level', 'Slot1', 'Slot2', 'Slot3'}}
             original_folder_name = os.path.basename(source_base)
@@ -473,13 +471,18 @@ class GamePassSaveFixWidget(QWidget):
             os.makedirs(xgp_out, exist_ok=True)
             shutil.copytree(source_base, os.path.join(xgp_out, new_name), dirs_exist_ok=True, ignore=ignore)
             shutil.copytree(source_base, os.path.join(destination, new_name), dirs_exist_ok=True, ignore=ignore)
-            self.message_signal.emit('info', t('Success'), t('xgp.msg.convert_copied', dest=destination))
-        except Exception as e:
-            print(t('xgp.err.copy_exception', err=e))
+            return ('success', destination)
+        def on_finished(result):
+            status, payload = result
+            if status == 'missing_level':
+                self.message_signal.emit('critical', t('Error'), t('xgp.err.convert_failed', err='Missing Level.sav in save root'))
+            elif status == 'success':
+                self.message_signal.emit('info', t('Success'), t('xgp.msg.convert_copied', dest=payload))
+        def on_error(error_msg):
+            print(t('xgp.err.copy_exception', err=error_msg))
             traceback.print_exc()
-            self.message_signal.emit('critical', t('Error'), t('xgp.err.copy_failed', err=e))
-        finally:
-            QApplication.restoreOverrideCursor()
+            self.message_signal.emit('critical', t('Error'), t('xgp.err.copy_failed', err=error_msg))
+        run_with_loading(on_finished, task, on_error=on_error)
     def is_admin(self):
         try:
             return ctypes.windll.shell32.IsUserAnAdmin() != 0

@@ -836,12 +836,11 @@ def transfer_all_characters():
         source_player_list.clearSelection()
         target_player_list.clearSelection()
         show_information(None, t('Transfer Successful'), t('All players transferred!'))
-    QApplication.setOverrideCursor(Qt.WaitCursor)
-    try:
+    def task():
         worker()
-    finally:
-        QApplication.restoreOverrideCursor()
-    on_bulk_finished()
+    def on_finished(_):
+        on_bulk_finished()
+    run_with_loading(on_finished, task)
 def main(skip_msgbox=False, skip_gui=False):
     global host_guid, targ_uid, exported_map, selected_source_player, selected_target_player
     if not all([level_sav_path, t_level_sav_path, selected_source_player]):
@@ -910,41 +909,44 @@ def main(skip_msgbox=False, skip_gui=False):
                 source_player_list.clearSelection()
                 target_player_list.clearSelection()
             return False
-    QApplication.setOverrideCursor(Qt.WaitCursor)
-    try:
+    def task():
         src_players_folder = os.path.join(os.path.dirname(level_sav_path), 'Players')
         tgt_players_folder = os.path.join(os.path.dirname(t_level_sav_path), 'Players')
         os.makedirs(tgt_players_folder, exist_ok=True)
         if _TRANSFER_STEPS['character']:
             if not transfer_character_only(host_guid, targ_uid):
                 print('[FAIL]Character + containers')
-                return
+                return False
             print('[SUCCESS]Character + containers')
         if _TRANSFER_STEPS['tech_data']:
             if not transfer_tech_and_data():
                 print('[FAIL]Tech + data')
-                return
+                return False
             print('[SUCCESS]Tech + data')
         if _TRANSFER_STEPS['inventory']:
             if not transfer_inventory_only():
                 print('[FAIL]Inventory')
-                return
+                return False
             print('[SUCCESS]Inventory')
         if _TRANSFER_STEPS['guild']:
             if not transfer_guild(targ_lvl, targ_json, host_guid, targ_uid, source_guild_dict):
                 print('[FAIL]Guild transfer')
-                return
+                return False
             print('[SUCCESS]Guild transfer')
         if _TRANSFER_STEPS['pals']:
             if not transfer_pals_only():
                 print('[FAIL]Pals')
-                return
+                return False
             print('[SUCCESS]Pals')
         gather_and_update_dynamic_containers()
         if _TRANSFER_STEPS['timestamps']:
             sync_player_timestamps(targ_uid, targ_lvl)
         modified_target_players.add(selected_target_player)
         modified_targets_data[selected_target_player] = (fast_deepcopy(targ_json), targ_json_gvas, selected_source_player)
+        return True
+    def on_finished(success):
+        if not success:
+            return
         if not skip_gui:
             load_players(targ_lvl, is_source=False)
         selected_source_player = None
@@ -958,8 +960,7 @@ def main(skip_msgbox=False, skip_gui=False):
             target_player_list.clearSelection()
         if not skip_msgbox:
             show_information(None, t('Transfer Successful'), t("Transfer successful in memory! Hit 'Save Changes' to save."))
-    finally:
-        QApplication.restoreOverrideCursor()
+    run_with_loading(on_finished, task)
     return True
 def _normalize_lid(lid):
     if hasattr(lid, 'raw_bytes'):
