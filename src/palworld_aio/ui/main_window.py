@@ -402,7 +402,7 @@ class MainWindow(QMainWindow):
         self.guilds_panel.item_selected.connect(self._on_guild_selected)
         self.guilds_panel.tree.customContextMenuRequested.connect(self._show_guild_context_menu)
         splitter.addWidget(self.guilds_panel)
-        self.guild_members_panel = SearchPanel('deletion.guild_members', ['deletion.col.member', 'deletion.col.last_seen', 'deletion.col.level', 'deletion.col.pals', 'deletion.col.uid'], [200, 120, 60, 100, 300])
+        self.guild_members_panel = SearchPanel('deletion.guild_members', ['deletion.col.member', 'deletion.col.last_seen', 'deletion.col.level', 'deletion.col.pals', 'deletion.col.uid', 'deletion.col.role'], [200, 120, 60, 100, 300, 80])
         self.guild_members_panel.item_selected.connect(self._on_guild_member_selected)
         self.guild_members_panel.tree.customContextMenuRequested.connect(self._show_guild_member_context_menu)
         splitter.addWidget(self.guild_members_panel)
@@ -1065,8 +1065,9 @@ class MainWindow(QMainWindow):
             for m in members:
                 prefix = '[L]' if m['is_leader'] else ''
                 last_sort = m.get('last_sort')
-                sort_keys = {1: last_sort if last_sort is not None else float('inf'), 2: int(m['level']) if str(m['level']).isdigit() else 0, 3: int(m['pals']) if str(m['pals']).isdigit() else 0}
-                self.guild_members_panel.add_item([prefix + m['name'], m['lastseen'], m['level'], m['pals'], m['uid']], sort_keys=sort_keys)
+                rl = m.get('role_label', '')
+                sort_keys = {1: last_sort if last_sort is not None else float('inf'), 2: int(m['level']) if str(m['level']).isdigit() else 0, 3: int(m['pals']) if str(m['pals']).isdigit() else 0, 5: m.get('role', 3)}
+                self.guild_members_panel.add_item([prefix + m['name'], m['lastseen'], m['level'], m['pals'], m['uid'], rl], sort_keys=sort_keys)
     def _on_guild_member_selected(self, data):
         if data:
             name = data[0].replace('[L]', '')
@@ -1133,7 +1134,19 @@ class MainWindow(QMainWindow):
         guild_data = self.guilds_panel.get_selected_data()
         if not guild_data:
             return
+        role = None
+        for pdata in (get_guild_members(guild_data[1]) or []):
+            if str(pdata.get('uid', '')).replace('-', '').lower() == str(item.text(4)).replace('-', '').lower():
+                role = pdata.get('role', 3)
+                break
         menu = ScrollableContextMenu(self)
+        menu.add_label(t('guild.menu.set_role') if t else 'Set Role')
+        for rv, rl in [(1, 'guild_master'), (2, 'submaster'), (3, 'member'), (4, 'guest')]:
+            rkey = f'guild.role.{rl}'
+            label = t(rkey) if t else rl.replace('_', ' ').title()
+            chk = '✓ ' if rv == role else '  '
+            menu.add_item(f'role_{rv}', f'{chk}{label}')
+        menu.add_sep()
         menu.add_action(self._create_action(t('guild.ctx.make_leader'), lambda: self._make_leader(guild_data[1], item.text(4))))
         menu.add_action(self._create_action(t('guild.unlock_lab_research.menu') if t else 'Unlock All Lab Research', lambda: self._unlock_all_lab_research_for_guild(guild_data[1])))
         menu.add_sep()
@@ -1144,7 +1157,10 @@ class MainWindow(QMainWindow):
         menu.add_action(self._create_action(t('player.reset_timestamp.menu') if t else 'Reset Timestamp', lambda: self._reset_player_timestamp(item.text(4))))
         menu.add_sep()
         menu.add_action(self._create_action('Set Player Level' if not t else t('player.set_level'), lambda: self._set_player_level(item.text(4))))
-        menu.exec(self.guild_members_panel.tree.viewport().mapToGlobal(pos))
+        result = menu.exec(self.guild_members_panel.tree.viewport().mapToGlobal(pos))
+        if result and result.startswith('role_'):
+            role_val = int(result.split('_')[1])
+            self._set_guild_member_role(guild_data[1], item.text(4), role_val)
     def _show_base_context_menu(self, pos):
         item = self.bases_panel.tree.itemAt(pos)
         if not item:
@@ -1814,6 +1830,14 @@ class MainWindow(QMainWindow):
         make_member_leader(gid, uid)
         self.refresh_all()
         self._show_info(t('Done'), t('guild.leader_changed'))
+    def _set_guild_member_role(self, gid, uid, role):
+        from palworld_aio.managers.guild_manager import set_member_role
+        set_member_role(gid, uid, role)
+        self.refresh_all()
+        gdata = self.guilds_panel.get_selected_data()
+        if gdata:
+            self._on_guild_selected(gdata)
+        self._show_info(t('Done'), t('guild.role_updated'))
     def _import_base_to_guild(self, gid):
         file_paths, _ = QFileDialog.getOpenFileNames(self, 'Select Base Files', '', 'Base Files (*.json *.pstbase)')
         if not file_paths:

@@ -1889,5 +1889,12 @@
     "lang.pt_BR": "ポルトガル語",
     "port.test": "ポートテスト",
     "edit_pals.max_all_ivs": "すべての IV を最大化する",
-    "edit_pals.max_all_souls": "すべてのソウルを最大化する"
+    "edit_pals.max_all_souls": "すべてのソウルを最大化する",
+    "deletion.col.role": "役割",
+    "guild.role.member": "メンバー",
+    "guild.menu.set_role": "役割を設定する",
+    "guild.role_updated": "役割が更新されました",
+    "guild.role.guild_master": "ギルドマスター",
+    "guild.role.submaster": "サブマスター",
+    "guild.role.guest": "ゲスト"
 }

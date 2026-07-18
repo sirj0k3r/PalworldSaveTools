@@ -1888,5 +1888,12 @@
     "lang.pt_BR": "포르투갈어",
     "port.test": "포트 테스트",
     "edit_pals.max_all_ivs": "모든 IV 최대화",
-    "edit_pals.max_all_souls": "모든 영혼을 최대화하세요"
+    "edit_pals.max_all_souls": "모든 영혼을 최대화하세요",
+    "deletion.col.role": "역할",
+    "guild.role.member": "회원",
+    "guild.menu.set_role": "역할 설정",
+    "guild.role_updated": "역할이 업데이트되었습니다.",
+    "guild.role.guild_master": "길드 조합원",
+    "guild.role.submaster": "서브마스터",
+    "guild.role.guest": "손님"
 }

@@ -1883,5 +1883,12 @@
     "lang.pt_BR": "portugués",
     "port.test": "pruebas de puerto",
     "edit_pals.max_all_ivs": "Max todos los IV",
-    "edit_pals.max_all_souls": "Max todas las almas"
+    "edit_pals.max_all_souls": "Max todas las almas",
+    "deletion.col.role": "Role",
+    "guild.role.member": "Miembro",
+    "guild.menu.set_role": "Establecer rol",
+    "guild.role_updated": "Rol actualizado",
+    "guild.role.guild_master": "Maestro del gremio",
+    "guild.role.submaster": "submaestro",
+    "guild.role.guest": "Invitado"
 }

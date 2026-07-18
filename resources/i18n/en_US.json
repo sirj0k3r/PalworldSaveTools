@@ -2175,5 +2175,12 @@
     "backup.invalid": "Selected backup is missing required files.",
     "lang.pt_BR": "Português",
     "edit_pals.max_all_ivs": "Max all IVs",
-    "edit_pals.max_all_souls": "Max all souls"
+    "edit_pals.max_all_souls": "Max all souls",
+    "deletion.col.role": "Role",
+    "guild.role.member": "Member",
+    "guild.menu.set_role": "Set Role",
+    "guild.role_updated": "Role updated",
+    "guild.role.guild_master": "Guild Master",
+    "guild.role.submaster": "Submaster",
+    "guild.role.guest": "Guest"
 }

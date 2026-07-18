@@ -1,4 +1,5 @@
 #2.1.4
+- **Guild member roles** — right-click a guild member to set their role: Guild Master, Submaster, Member, or Guest. Promoting to Guild Master reassigns admin to the target and demotes the old leader to Submaster. Role column visible in the guild members list.
 - **Export base crash fixed** — exporting a single base from the guild tree list no longer crashes with `UnboundLocalError: cannot access local variable 'file_path'`. The `task()` closure now correctly captures the outer `file_path` via `nonlocal`.
 - **Inventory tab crash on startup fixed** — loading a save on a fresh profile no longer crashes with `IndexError: list index out of range` in `_update_level_display`. The EXP table fallback was padded to 80 entries, and the level guard now checks against table length instead of hardcoded 80.
 - **Technology points auto-save** — Technology Points and Ancient Technology Points spinners now save to the player `.sav` file immediately on change, no need to click Apply. Max All Stats also saves these values.

@@ -1891,5 +1891,12 @@
     "lang.pt_BR": "葡萄牙语",
     "port.test": "端口测试",
     "edit_pals.max_all_ivs": "最大所有 IV",
-    "edit_pals.max_all_souls": "最大化所有灵魂"
+    "edit_pals.max_all_souls": "最大化所有灵魂",
+    "deletion.col.role": "角色",
+    "guild.role.member": "成员",
+    "guild.menu.set_role": "设置角色",
+    "guild.role_updated": "角色更新",
+    "guild.role.guild_master": "公会会长",
+    "guild.role.submaster": "副站长",
+    "guild.role.guest": "客人"
 }

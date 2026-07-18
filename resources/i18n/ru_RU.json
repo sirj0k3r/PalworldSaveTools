@@ -1887,5 +1887,12 @@
     "lang.pt_BR": "Португальский",
     "port.test": "тестирование портов",
     "edit_pals.max_all_ivs": "Максимум всех капельниц",
-    "edit_pals.max_all_souls": "Макс все души"
+    "edit_pals.max_all_souls": "Макс все души",
+    "deletion.col.role": "Роль",
+    "guild.role.member": "Член",
+    "guild.menu.set_role": "Установить роль",
+    "guild.role_updated": "Роль обновлена",
+    "guild.role.guild_master": "Мастер гильдии",
+    "guild.role.submaster": "Субмастер",
+    "guild.role.guest": "Гость"
 }

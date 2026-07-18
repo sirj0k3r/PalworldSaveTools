@@ -25,8 +25,19 @@ NEW_TRANSLATIONS = {
     'func_manager.max_all_pals.confirm_cheat': 'This will max all stats (level 255, IVs 255, souls 255, rank 5) for ALL pals in the save. Continue?',
     'edit_pals.max_all_ivs': 'Max all IVs',
     'edit_pals.max_all_souls': 'Max all souls',
+    'deletion.col.role': 'Role',
+    'guild.role.guild_master': 'Guild Master',
+    'guild.role.submaster': 'Submaster',
+    'guild.role.member': 'Member',
+    'guild.role.guest': 'Guest',
+    'guild.menu.set_role': 'Set Role',
+    'guild.role_updated': 'Role updated',
 }
-OLD_KEYS = []
+OLD_KEYS = [
+    'guild.role.none',
+    'guild.role.leader',
+    'guild.role.officer',
+]
 def _clean_uv_locks():
     for p in [Path.cwd() / 'uv.lock', PROJECT_ROOT / 'uv.lock']:
         if p.exists():

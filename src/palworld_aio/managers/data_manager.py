@@ -7,6 +7,9 @@ from palworld_aio import constants
 from palworld_aio.utils import are_equal_uuids, as_uuid, fast_deepcopy
 from palworld_aio.inventory.container_ownership import ContainerOwnership
 from resource_resolver import resource_path
+
+GUILD_ROLE_LABELS = {1: 'Guild Master', 2: 'Submaster', 3: 'Member', 4: 'Guest'}
+
 def normalize_uid(uid):
     if isinstance(uid, dict):
         uid = uid.get('value', uid)
@@ -100,7 +103,9 @@ def get_guild_members(gid):
             level = constants.player_levels.get(uid.replace('-', ''), '?')
             pals = constants.PLAYER_PAL_COUNTS.get(uid.lower(), 0)
             is_leader = as_uuid(uid) == admin_uid
-            out.append({'uid': uid, 'name': name, 'lastseen': lastseen, 'last_sort': last_sort, 'level': level, 'pals': pals, 'is_leader': is_leader})
+            role = p.get('role', 3)
+            role_label = GUILD_ROLE_LABELS.get(role, f'?{role}')
+            out.append({'uid': uid, 'name': name, 'lastseen': lastseen, 'last_sort': last_sort, 'level': level, 'pals': pals, 'is_leader': is_leader, 'role': role, 'role_label': role_label})
         if out and (not any((m['is_leader'] for m in out))):
             out[0]['is_leader'] = True
         return out

@@ -1913,5 +1913,12 @@
     "lang.pt_BR": "Portugiesisch",
     "port.test": "Porttests",
     "edit_pals.max_all_ivs": "Max alle Infusionen",
-    "edit_pals.max_all_souls": "Max alle Seelen"
+    "edit_pals.max_all_souls": "Max alle Seelen",
+    "deletion.col.role": "Rolle",
+    "guild.role.member": "Mitglied",
+    "guild.menu.set_role": "Rolle festlegen",
+    "guild.role_updated": "Rolle aktualisiert",
+    "guild.role.guild_master": "Gildenmeister",
+    "guild.role.submaster": "Submaster",
+    "guild.role.guest": "Gast"
 }

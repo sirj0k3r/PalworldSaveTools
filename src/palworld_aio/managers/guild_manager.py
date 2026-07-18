@@ -649,10 +649,11 @@ def make_member_leader(guild_id, player_uid):
     for g in group_data_list:
         if are_equal_uuids(g['key'], guild_id):
             raw = g['value']['RawData']['value']
+            admin_norm = str(raw.get('admin_player_uid', '')).replace('-', '').lower()
             raw['admin_player_uid'] = player_uid
             for p in raw.get('players', []):
                 pp_norm = str(p.get('player_uid', '')).replace('-', '').lower()
-                p['role'] = 1 if pp_norm == pu_norm else 3
+                p['role'] = 1 if pp_norm == pu_norm else (2 if pp_norm == admin_norm and pp_norm != pu_norm else p.get('role', 3))
             return True
     return False
 def rename_guild(guild_id, new_name):
@@ -668,6 +669,33 @@ def rename_guild(guild_id, new_name):
                     constants.base_guild_lookup[base_id]['GuildName'] = new_name
             return True
     return False
+def set_member_role(guild_id, player_uid, role):
+    if not constants.loaded_level_json:
+        return False
+    role = max(1, min(4, role))
+    wsd = constants.loaded_level_json['properties']['worldSaveData']['value']
+    pu_norm = str(player_uid).replace('-', '').lower()
+    for g in wsd['GroupSaveDataMap']['value']:
+        if are_equal_uuids(g['key'], guild_id):
+            raw = g['value']['RawData']['value']
+            admin_norm = str(raw.get('admin_player_uid', '')).replace('-', '').lower()
+            if role == 1:
+                # Promoting to Guild Master: old admin -> Submaster (2)
+                raw['admin_player_uid'] = player_uid
+                for p in raw.get('players', []):
+                    pn = str(p.get('player_uid', '')).replace('-', '').lower()
+                    if pn == pu_norm:
+                        p['role'] = 1
+                    elif pn == admin_norm and pn != pu_norm:
+                        p['role'] = 2
+            else:
+                for p in raw.get('players', []):
+                    if str(p.get('player_uid', '')).replace('-', '').lower() == pu_norm:
+                        p['role'] = role
+                        break
+            return True
+    return False
+
 def set_guild_level(guild_id, level):
     if not constants.loaded_level_json:
         return False

@@ -1871,5 +1871,12 @@
     "lang.pt_BR": "Portugais",
     "port.test": "test des ports",
     "edit_pals.max_all_ivs": "Maximiser toutes les IV",
-    "edit_pals.max_all_souls": "Max toutes les âmes"
+    "edit_pals.max_all_souls": "Max toutes les âmes",
+    "deletion.col.role": "Rôle",
+    "guild.role.member": "Membre",
+    "guild.menu.set_role": "Définir le rôle",
+    "guild.role_updated": "Rôle mis à jour",
+    "guild.role.guild_master": "Maître de guilde",
+    "guild.role.submaster": "Sous-maître",
+    "guild.role.guest": "Invité"
 }
