@@ -15,7 +15,7 @@ from . import data as _data
 from .data import _ensure_skill_data
 from . import icons as _icons
 from .icons import _partner_desc_to_html, _strip_prefix_label
-from .pal_ops import _generate_pal_save_param, _get_raw_from_item, _learn_all_skills_raw, _register_pal_instance_to_guild, _set_work_suitability
+from .pal_ops import _generate_pal_save_param, _get_raw_from_item, _learn_all_skills_raw, _register_pal_instance_to_guild
 from .legacy_frame import PalFrame
 from .pal_info_widget import PalInfoWidget
 from .widgets import FramelessDialog, SkillSlotFrame
@@ -451,12 +451,6 @@ class BulkSyncPalDialog(FramelessDialog):
                         ew['value']['values'] = normalized
                     else:
                         target_raw['EquipWaza'] = normalized
-            t_cid = extract_value(target_raw, 'CharacterID', '')
-            t_base = _data.get_pal_base_data(t_cid)
-            t_ws_base = t_base.get('work_suitabilities', {}) if t_base else {}
-            for k, v in t_ws_base.items():
-                if v > 0:
-                    _set_work_suitability(target_raw, k, 10)
         self.pal_editor.pal_info._refresh()
         self.pal_editor._update_party_slots()
         self.pal_editor._update_palbox_page()
@@ -682,12 +676,6 @@ class BulkSyncAllDialog(FramelessDialog):
                         ew['value']['values'] = normalized
                     else:
                         target_raw['EquipWaza'] = normalized
-            t_cid = extract_value(target_raw, 'CharacterID', '')
-            t_base = _data.get_pal_base_data(t_cid)
-            t_ws_base = t_base.get('work_suitabilities', {}) if t_base else {}
-            for k, v in t_ws_base.items():
-                if v > 0:
-                    _set_work_suitability(target_raw, k, 10)
             count += 1
         self.pal_editor.pal_info._refresh()
         self.pal_editor._update_party_slots()
