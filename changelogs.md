@@ -6,6 +6,9 @@
 - **Max All Stats loading fix** — the "Max All Stats" button no longer causes an infinite loading screen. The full save reload cascade was removed since the UI already updates synchronously.
 - **Max All Stats saving fix** — Level.sav stats, TP, and ATP all saved correctly when using Max All Stats. Data loss on player switch after Max All Stats is fixed.
 - **Pal editor soul/IV quick-max** — the souls and IV icons in the pal info panel are now clickable buttons that max all souls or all IVs at once, with proper hover styling and tooltips.
+- **Windows builds now use cx_Freeze** — replaced Nuitka .exe with cx_Freeze standalone .7z archive. Build time dropped from ~15min to ~2min. No more false-positive antivirus flags on VirusTotal.
+- **Release notes simplified** — removed multi-language changelog from releases. English-only changelog extracted directly from `changelogs.md`.
+- **New test workflow** — `Test cx_Freeze Standalone Build` workflow for isolated standalone testing with draft releases.
 - Bumped version to 2.1.4
 
 #2.1.3
