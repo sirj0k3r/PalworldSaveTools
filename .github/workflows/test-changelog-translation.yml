@@ -1,0 +1,29 @@
+name: Test Changelog Translation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  translate-changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+      - name: Install dependencies
+        run: uv pip install --system deep-translator
+      - name: Run changelog translation
+        run: uv run --system python scripts/scrs/translate_changelog.py
+      - name: Upload multilang changelog
+        uses: actions/upload-artifact@v7
+        with:
+          name: multilang-changelog
+          path: CHANGELOG.multilang.md
+      - name: Print result
+        run: cat CHANGELOG.multilang.md
