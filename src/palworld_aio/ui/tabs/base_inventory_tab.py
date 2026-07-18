@@ -3525,6 +3525,7 @@ class BaseInventoryTab(QWidget):
         wsd = constants.loaded_level_json.get('properties', {}).get('worldSaveData', {}).get('value', {})
         char_containers = wsd.get('CharacterContainerSaveData', {}).get('value', [])
         cmap = wsd.get('CharacterSaveParameterMap', {}).get('value', [])
+        instance_lookup = {str(c.get('key', {}).get('InstanceId', {}).get('value', '')).replace('-', '').lower(): c for c in cmap}
         char_container_id = container_info.get('booth_char_container_id', '')
         if not char_container_id:
             return
@@ -3539,7 +3540,7 @@ class BaseInventoryTab(QWidget):
                         if isinstance(raw_val, dict):
                             inst_id = str(raw_val.get('instance_id', '')).replace('-', '').lower()
                             if inst_id and inst_id != '00000000000000000000000000000000':
-                                pal_entry = next((e for e in cmap if str(e.get('key', {}).get('InstanceId', {}).get('value', '')).replace('-', '').lower() == inst_id), None)
+                                pal_entry = instance_lookup.get(inst_id)
                                 if pal_entry and pal_entry in cmap:
                                     cmap.remove(pal_entry)
                                 owner_raw = safe_nested_get(pal_entry, ['value', 'RawData', 'value', 'object', 'SaveParameter', 'value', 'OwnerPlayerUId', 'value'])

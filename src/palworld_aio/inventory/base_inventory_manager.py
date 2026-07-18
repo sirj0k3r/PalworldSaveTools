@@ -16,6 +16,7 @@ import time
 from PySide6.QtCore import QTimer
 from resource_resolver import resource_path
 BOOTH_TYPES = {'PalMapObjectItemBoothModel', 'PalMapObjectPalBoothModel'}
+_BOSS_KEY_CACHE = None
 
 def get_base_containers(base_id):
     if not constants.loaded_level_json:
@@ -1280,14 +1281,19 @@ def remove_item_from_players(item_id, percentage=None, player_uids=None):
         return {'removed': 0, 'players_affected': 0, 'containers_modified': 0}
 
 def _load_boss_key_map():
+    global _BOSS_KEY_CACHE
+    if _BOSS_KEY_CACHE is not None:
+        return _BOSS_KEY_CACHE
     try:
         import json, os
         from resource_resolver import resource_path
         from palworld_aio import constants as _c
         path = resource_path(_c.get_base_path(), 'game_data', 'boss_mapping.json')
         with open(path, 'r', encoding='utf-8') as f:
-            return json.load(f).get('boss_defeat_flag_map', {})
+            _BOSS_KEY_CACHE = json.load(f).get('boss_defeat_flag_map', {})
+            return _BOSS_KEY_CACHE
     except:
+        _BOSS_KEY_CACHE = {}
         return {}
 
 def _cleanup_boss_defeat_flags_in_save_data(save_data, item_id):
@@ -1339,6 +1345,7 @@ def get_base_worker_pals(base_id):
         return []
     slot_values = wc.get('value', {}).get('Slots', {}).get('value', {}).get('values', [])
     char_map = wsd.get('CharacterSaveParameterMap', {}).get('value', [])
+    instance_lookup = {str(c.get('key', {}).get('InstanceId', {}).get('value', '')).replace('-', '').lower(): c for c in char_map}
     pals = []
     for slot in slot_values:
         try:
@@ -1347,7 +1354,7 @@ def get_base_worker_pals(base_id):
             slot_index = slot.get('SlotIndex', {}).get('value', 0)
             if not instance_id or instance_id == '00000000000000000000000000000000':
                 continue
-            char_entry = next((c for c in char_map if str(c.get('key', {}).get('InstanceId', {}).get('value', '')).replace('-', '').lower() == instance_id), None)
+            char_entry = instance_lookup.get(instance_id)
             if not char_entry:
                 continue
             pals.append({'slot_index': slot_index, 'instance_id': instance_id, 'character_entry': char_entry})
@@ -1373,6 +1380,13 @@ def add_item_to_players(item_id, quantity=1, container_type='key', player_uids=N
     from palworld_aio.inventory.inventory_manager import PlayerInventory
     from palworld_aio.utils import gvasfile_to_sav
     import os
+    wsd = constants.loaded_level_json['properties']['worldSaveData']['value']
+    item_containers = wsd.get('ItemContainerSaveData', {}).get('value', [])
+    container_lookup = {}
+    for c in item_containers:
+        cid = c.get('key', {}).get('ID', {}).get('value', '')
+        if cid:
+            container_lookup[cid] = c
     added = 0
     players_affected = 0
     for uid in (player_uids or []):
@@ -1388,13 +1402,6 @@ def add_item_to_players(item_id, quantity=1, container_type='key', player_uids=N
                 if std.add_item(item_id, 1):
                     added += 1
             if added > 0:
-                wsd = constants.loaded_level_json['properties']['worldSaveData']['value']
-                item_containers = wsd.get('ItemContainerSaveData', {}).get('value', [])
-                container_lookup = {}
-                for c in item_containers:
-                    cid = c.get('key', {}).get('ID', {}).get('value', '')
-                    if cid:
-                        container_lookup[cid] = c
                 for ctype, inventory_container in inv.containers.items():
                     cid = str(inventory_container.container_id)
                     if cid in container_lookup:
@@ -1566,6 +1573,7 @@ def remove_structure_from_guilds(structure_asset, guild_ids=None):
                     cc_id_norm = char_container_id.replace('-', '').lower()
                     char_containers = wsd.get('CharacterContainerSaveData', {}).get('value', [])
                     cmap = wsd.get('CharacterSaveParameterMap', {}).get('value', [])
+                    instance_lookup = {str(c.get('key', {}).get('InstanceId', {}).get('value', '')).replace('-', '').lower(): c for c in cmap}
                     for cc in char_containers:
                         try:
                             cid = str(cc.get('key', {}).get('ID', {}).get('value', '')).replace('-', '').lower()
@@ -1576,7 +1584,7 @@ def remove_structure_from_guilds(structure_asset, guild_ids=None):
                                     if isinstance(raw_val, dict):
                                         inst_id = str(raw_val.get('instance_id', '')).replace('-', '').lower()
                                         if inst_id and inst_id != '00000000000000000000000000000000':
-                                                pal_entry = next((e for e in cmap if str(e.get('key', {}).get('InstanceId', {}).get('value', '')).replace('-', '').lower() == inst_id), None)
+                                                pal_entry = instance_lookup.get(inst_id)
                                                 if pal_entry and pal_entry in cmap:
                                                     cmap.remove(pal_entry)
                                                 owner_raw = pal_entry.get('value', {}).get('RawData', {}).get('value', {}).get('object', {}).get('SaveParameter', {}).get('value', {}).get('OwnerPlayerUId', {}).get('value') if pal_entry else None

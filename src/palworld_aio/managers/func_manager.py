@@ -94,28 +94,6 @@ def is_entity_in_exclusion_zones(entity_data):
     except Exception as e:
         logging.warning(f'Failed to check zone exclusion: {e}')
         return False
-def build_player_levels():
-    if not constants.loaded_level_json:
-        return
-    char_map = constants.loaded_level_json['properties']['worldSaveData']['value'].get('CharacterSaveParameterMap', {}).get('value', [])
-    uid_level_map = defaultdict(lambda: 1)
-    for entry in char_map:
-        try:
-            sp = entry['value']['RawData']['value']['object']['SaveParameter']
-            if sp['struct_type'] != 'PalIndividualCharacterSaveParameter':
-                continue
-            sp_val = sp['value']
-            if not sp_val.get('IsPlayer', {}).get('value', False):
-                continue
-            key = entry.get('key', {})
-            uid_obj = key.get('PlayerUId', {})
-            uid = str(uid_obj.get('value', '') if isinstance(uid_obj, dict) else uid_obj)
-            level = extract_value(sp_val, 'Level', 1)
-            if uid:
-                uid_level_map[uid.replace('-', '')] = level
-        except:
-            continue
-    constants.player_levels = dict(uid_level_map)
 def delete_player_pals(wsd, to_delete_uids):
     char_save_map = wsd.get('CharacterSaveParameterMap', {}).get('value', [])
     removed_pals = 0
@@ -163,6 +141,7 @@ def clean_character_save_parameter_map(data_source, valid_uids):
 def delete_empty_guilds(parent=None):
     if not constants.loaded_level_json:
         return 0
+    from palworld_aio.managers.save_manager import build_player_levels
     build_player_levels()
     wsd = constants.loaded_level_json['properties']['worldSaveData']['value']
     group_data = wsd['GroupSaveDataMap']['value']
@@ -209,6 +188,7 @@ def delete_empty_guilds(parent=None):
 def delete_inactive_players(days_threshold, parent=None):
     if not constants.loaded_level_json:
         return 0
+    from palworld_aio.managers.save_manager import build_player_levels
     build_player_levels()
     wsd = constants.loaded_level_json['properties']['worldSaveData']['value']
     tick_now = wsd['GameTimeSaveData']['value']['RealDateTimeTicks']['value']
@@ -369,6 +349,7 @@ def delete_duplicated_players(parent=None):
 def delete_unreferenced_data(parent=None):
     if not constants.loaded_level_json:
         return {}
+    from palworld_aio.managers.save_manager import build_player_levels
     build_player_levels()
     def normalize_uid(uid):
         if isinstance(uid, dict):
@@ -1511,6 +1492,7 @@ def modify_container_slots(new_slot_num, parent=None, container_id=None):
         import copy
         map_objects = wsd.get('MapObjectSaveData', {}).get('value', {}).get('values', [])
         valid_container_ids = set()
+        container_id_to_map_obj_id = {}
         for obj in map_objects:
             map_object_id = obj.get('MapObjectId', {}).get('value')
             if map_object_id and ('ItemChest' in map_object_id or 'GuildChest' in map_object_id):
@@ -1527,6 +1509,7 @@ def modify_container_slots(new_slot_num, parent=None, container_id=None):
                                 target_id = module_raw.get('target_container_id')
                                 if target_id:
                                     valid_container_ids.add(str(target_id))
+                                    container_id_to_map_obj_id[str(target_id)] = map_object_id
                                 break
         guild_extra_map = wsd.get('GuildExtraSaveDataMap', {}).get('value', [])
         for guild_entry in guild_extra_map:
@@ -1594,22 +1577,8 @@ def modify_container_slots(new_slot_num, parent=None, container_id=None):
                         continue
                     value = cont['value']
                     current_slot_num = value.get('SlotNum', {}).get('value', 0)
-                    linked = False
-                    map_object_id = 'Unknown'
-                    for obj in map_objects:
-                        module_map = obj.get('ConcreteModel', {}).get('value', {}).get('ModuleMap', {}).get('value', [])
-                        for module in module_map:
-                            if module.get('key') == 'EPalMapObjectConcreteModelModuleType::ItemContainer':
-                                module_raw = module.get('value', {}).get('RawData', {}).get('value', {})
-                                if str(module_raw.get('target_container_id')) == container_id_str:
-                                    map_object_id = obj.get('MapObjectId', {}).get('value', 'Unknown')
-                                    linked = True
-                                    break
-                        if linked:
-                            break
-                    is_guild_chest = container_id_str in valid_container_ids
-                    if not linked and (not is_guild_chest):
-                        continue
+                    linked = container_id_str in container_id_to_map_obj_id
+                    map_object_id = container_id_to_map_obj_id.get(container_id_str, 'Unknown')
                     slots = value.get('Slots', {}).get('value', {}).get('values', [])
                     if current_slot_num == new_slot_num:
                         continue
@@ -2371,16 +2340,6 @@ def scan_illegal_pals_by_owner():
                     if result:
                         player_containers[result[0]] = result[1]
     cmap = constants.loaded_level_json['properties']['worldSaveData']['value'].get('CharacterSaveParameterMap', {}).get('value', [])
-    for item in cmap:
-        try:
-            raw_p = item.get('value', {}).get('RawData', {}).get('value', {}).get('object', {}).get('SaveParameter', {}).get('value', {})
-            if 'IsPlayer' in raw_p:
-                uid = item.get('key', {}).get('PlayerUId', {}).get('value')
-                nn = raw_p.get('NickName', {}).get('value', 'Unknown')
-                if uid:
-                    owner_nicknames[str(uid).replace('-', '').lower()] = nn
-        except:
-            pass
     players_by_uid = {}
     valid_player_uids = set()
     wsd = constants.loaded_level_json['properties']['worldSaveData']['value']
@@ -2400,6 +2359,15 @@ def scan_illegal_pals_by_owner():
                 }
     result = defaultdict(lambda: {'illegals': [], 'pal_count': 0, 'player_name': 'Unknown', 'guild_name': 'Unknown', 'level': 1})
     for entry in cmap:
+        try:
+            raw_p = entry.get('value', {}).get('RawData', {}).get('value', {}).get('object', {}).get('SaveParameter', {}).get('value', {})
+            if 'IsPlayer' in raw_p:
+                uid = entry.get('key', {}).get('PlayerUId', {}).get('value')
+                nn = raw_p.get('NickName', {}).get('value', 'Unknown')
+                if uid:
+                    owner_nicknames[str(uid).replace('-', '').lower()] = nn
+        except:
+            pass
         try:
             is_illegal, illegal_markers = check_is_illegal_pal(entry)
         except:
@@ -2533,22 +2501,19 @@ def fix_illegal_pals_in_save(parent=None, selected_uids=None):
                         if result:
                             player_containers[result[0]] = result[1]
         cmap = constants.loaded_level_json['properties']['worldSaveData']['value'].get('CharacterSaveParameterMap', {}).get('value', [])
-        for item in cmap:
+        selected_uids_set = {u.replace('-', '').lower() for u in (selected_uids or [])} if selected_uids else None
+        illegal_pals_by_owner = defaultdict(list)
+        illegal_pals_by_player_file = defaultdict(list)
+        for entry in cmap:
             try:
-                raw_p = item.get('value', {}).get('RawData', {}).get('value', {}).get('object', {}).get('SaveParameter', {}).get('value', {})
+                raw_p = entry.get('value', {}).get('RawData', {}).get('value', {}).get('object', {}).get('SaveParameter', {}).get('value', {})
                 if 'IsPlayer' in raw_p:
-                    uid = item.get('key', {}).get('PlayerUId', {}).get('value')
+                    uid = entry.get('key', {}).get('PlayerUId', {}).get('value')
                     nn = raw_p.get('NickName', {}).get('value', 'Unknown')
                     if uid:
                         owner_nicknames[str(uid).replace('-', '').lower()] = nn
             except:
                 pass
-        selected_uids_set = {u.replace('-', '').lower() for u in (selected_uids or [])} if selected_uids else None
-        illegal_pals_by_owner = defaultdict(list)
-        illegal_pals_by_player_file = defaultdict(list)
-        wsd = constants.loaded_level_json['properties']['worldSaveData']['value']
-        cmap = wsd.get('CharacterSaveParameterMap', {}).get('value', [])
-        for entry in cmap:
             try:
                 is_illegal, illegal_markers = check_is_illegal_pal(entry)
             except Exception as e:

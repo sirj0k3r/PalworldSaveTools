@@ -24,6 +24,56 @@ from palworld_aio import constants
 from palworld_aio.utils import sav_to_json, json_to_sav, sav_to_gvas_wrapper, wrapper_to_sav, sav_to_gvasfile, extract_value, sanitize_filename, format_duration_short, resolve_name
 from palworld_aio.inventory.container_ownership import ContainerOwnership
 from palworld_aio.managers.func_manager import check_is_illegal_pal
+
+
+def build_player_levels():
+    if not constants.loaded_level_json:
+        return
+    char_map = constants.loaded_level_json['properties']['worldSaveData']['value'].get('CharacterSaveParameterMap', {}).get('value', [])
+    uid_level_map = defaultdict(lambda: 1)
+    uid_entry_map = {}
+    for entry in char_map:
+        try:
+            sp = entry['value']['RawData']['value']['object']['SaveParameter']
+            if sp['struct_type'] != 'PalIndividualCharacterSaveParameter':
+                continue
+            sp_val = sp['value']
+            if not sp_val.get('IsPlayer', {}).get('value', False):
+                continue
+            key = entry.get('key', {})
+            uid_obj = key.get('PlayerUId', {})
+            uid = str(uid_obj.get('value', '') if isinstance(uid_obj, dict) else uid_obj)
+            level = extract_value(sp_val, 'Level', 1)
+            if uid:
+                clean = uid.replace('-', '')
+                uid_level_map[clean] = level
+                uid_entry_map[clean] = entry
+        except Exception:
+            continue
+    constants.player_levels = dict(uid_level_map)
+    constants.player_character_cache = uid_entry_map
+
+
+def count_owned_pals(level_json):
+    owned_count = {}
+    try:
+        level_data = level_json['properties']['worldSaveData']['value']
+        char_map = level_data['CharacterSaveParameterMap']['value']
+        ownership = ContainerOwnership.build(char_map, level_data.get('CharacterContainerSaveData', {}).get('value', []))
+        for item in char_map:
+            try:
+                sp = item['value']['RawData']['value']['object']['SaveParameter']['value']
+                owner_uid = sp.get('OwnerPlayerUId', {}).get('value')
+                effective = ownership.get_effective_owner(item.get('key', {}).get('InstanceId', {}).get('value'), owner_uid)
+                if effective:
+                    owned_count[effective] = owned_count.get(effective, 0) + 1
+            except:
+                continue
+    except:
+        pass
+    return owned_count
+
+
 class SaveManager(QObject):
     load_started = Signal()
     load_finished = Signal(bool)
@@ -75,7 +125,7 @@ class SaveManager(QObject):
         scan_and_protect_death_bags()
         from palworld_aio.inventory.dynamic_item_manager import get_dynamic_item_manager
         get_dynamic_item_manager().sync_with_save_data(constants.loaded_level_json)
-        self._build_player_levels()
+        build_player_levels()
         if not constants.loaded_level_json:
             return False
         data_source = constants.loaded_level_json['properties']['worldSaveData']['value']
@@ -161,7 +211,7 @@ class SaveManager(QObject):
         constants.invalidate_container_lookup()
         from palworld_aio.managers.func_manager import scan_and_protect_death_bags
         scan_and_protect_death_bags()
-        self._build_player_levels()
+        build_player_levels()
         if not constants.loaded_level_json:
             raise Exception('Failed to parse Level.sav')
         data_source = constants.loaded_level_json['properties']['worldSaveData']['value']
@@ -298,31 +348,7 @@ class SaveManager(QObject):
     def _sanitize_for_alignment(self, text):
         return re.sub('[^\\x00-\\x7F\\u00C0-\\u017F\\u0080-\\u00BF]', '', text)
     def _build_player_levels(self):
-        if not constants.loaded_level_json:
-            return
-        char_map = constants.loaded_level_json['properties']['worldSaveData']['value'].get('CharacterSaveParameterMap', {}).get('value', [])
-        uid_level_map = defaultdict(lambda: 1)
-        uid_entry_map = {}
-        for entry in char_map:
-            try:
-                sp = entry['value']['RawData']['value']['object']['SaveParameter']
-                if sp['struct_type'] != 'PalIndividualCharacterSaveParameter':
-                    continue
-                sp_val = sp['value']
-                if not sp_val.get('IsPlayer', {}).get('value', False):
-                    continue
-                key = entry.get('key', {})
-                uid_obj = key.get('PlayerUId', {})
-                uid = str(uid_obj.get('value', '') if isinstance(uid_obj, dict) else uid_obj)
-                level = extract_value(sp_val, 'Level', 1)
-                if uid:
-                    clean = uid.replace('-', '')
-                    uid_level_map[clean] = level
-                    uid_entry_map[clean] = entry
-            except Exception:
-                continue
-        constants.player_levels = dict(uid_level_map)
-        constants.player_character_cache = uid_entry_map
+        build_player_levels()
     def _count_pals_found(self, data, player_pals_count, log_folder, current_save_path, guild_name_map, illegal_pals_by_owner=None):
         from resource_resolver import get_data_base
         base_dir = get_data_base()
@@ -567,24 +593,6 @@ class SaveManager(QObject):
             full_path = os.path.join(logs_dir, logger_dir)
             os.makedirs(full_path, exist_ok=True)
     def _process_scan_log(self, data_source, playerdir, log_folder, guild_name_map, base_path, illegal_pals_by_owner=None, owner_nicknames=None):
-        def count_owned_pals(level_json):
-            owned_count = {}
-            try:
-                level_data = level_json['properties']['worldSaveData']['value']
-                char_map = level_data['CharacterSaveParameterMap']['value']
-                ownership = ContainerOwnership.build(char_map, level_data.get('CharacterContainerSaveData', {}).get('value', []))
-                for item in char_map:
-                    try:
-                        sp = item['value']['RawData']['value']['object']['SaveParameter']['value']
-                        owner_uid = sp.get('OwnerPlayerUId', {}).get('value')
-                        effective = ownership.get_effective_owner(item.get('key', {}).get('InstanceId', {}).get('value'), owner_uid)
-                        if effective:
-                            owned_count[effective] = owned_count.get(effective, 0) + 1
-                    except:
-                        continue
-            except:
-                pass
-            return owned_count
         owned_counts = count_owned_pals(constants.loaded_level_json)
         scan_log_path = os.path.join(log_folder, 'scan_save.log')
         players_log_path = os.path.join(log_folder, 'players.log')
@@ -1006,24 +1014,6 @@ class SaveManager(QObject):
         os.makedirs(json_logger_folder, exist_ok=True)
         player_data = []
         tick = data_source['GameTimeSaveData']['value']['RealDateTimeTicks']['value']
-        def count_owned_pals(level_json):
-            owned_count = {}
-            try:
-                level_data = level_json['properties']['worldSaveData']['value']
-                char_map = level_data['CharacterSaveParameterMap']['value']
-                ownership = ContainerOwnership.build(char_map, level_data.get('CharacterContainerSaveData', {}).get('value', []))
-                for item in char_map:
-                    try:
-                        sp = item['value']['RawData']['value']['object']['SaveParameter']['value']
-                        owner_uid = sp.get('OwnerPlayerUId', {}).get('value')
-                        effective = ownership.get_effective_owner(item.get('key', {}).get('InstanceId', {}).get('value'), owner_uid)
-                        if effective:
-                            owned_count[effective] = owned_count.get(effective, 0) + 1
-                    except:
-                        continue
-            except:
-                pass
-            return owned_count
         owned_counts = count_owned_pals(constants.loaded_level_json)
         if constants.srcGuildMapping:
             for gid, gdata in constants.srcGuildMapping.GroupSaveDataMap.items():

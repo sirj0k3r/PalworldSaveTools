@@ -6,6 +6,7 @@ from i18n import t
 from palworld_aio import constants
 from palworld_aio.utils import are_equal_uuids, as_uuid, fast_deepcopy
 from palworld_aio.inventory.container_ownership import ContainerOwnership
+from functools import lru_cache
 from resource_resolver import resource_path
 
 GUILD_ROLE_LABELS = {1: 'Guild Master', 2: 'Submaster', 3: 'Member', 4: 'Guest'}
@@ -845,6 +846,7 @@ def format_passive_description(p_info):
             ev_str = str(int(ev)) if isinstance(ev, float) and ev == int(ev) else f'{ev:.0f}' if isinstance(ev, float) else str(ev)
             p_desc = p_desc.replace(f'{{EffectValue{ei}}}', ev_str)
     return p_desc
+@lru_cache(maxsize=32)
 def load_game_data_map(fname, key):
     base_dir = constants.get_base_path()
     fp = resource_path(base_dir, 'game_data', fname)

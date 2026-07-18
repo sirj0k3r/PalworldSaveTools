@@ -184,7 +184,8 @@ def run_aio():
         print(f'Save loaded in {t1 - t0:.2f} seconds')
         from palworld_aio.managers.func_manager import scan_and_protect_death_bags
         scan_and_protect_death_bags()
-        save_manager._build_player_levels()
+        from palworld_aio.managers.save_manager import build_player_levels
+        build_player_levels()
         if not constants.loaded_level_json:
             print('Error: Failed to load save')
             sys.exit(1)

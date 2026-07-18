@@ -1687,19 +1687,18 @@ class MapTab(QWidget):
                     wd_cont = next((c for c in char_containers if str(c.get('key', {}).get('ID', {}).get('value', '')).replace('-', '').lower() == wd_cid_norm), None)
                     if wd_cont:
                         char_map = wsd.get('CharacterSaveParameterMap', {}).get('value', [])
+                        char_lookup = {str(c.get('key', {}).get('InstanceId', {}).get('value', '')).replace('-', '').lower(): c for c in char_map}
                         wd_slots = wd_cont['value']['Slots']['value'].get('values', [])
                         new_target_gid_obj = UUID.from_str(target_guild_id)
                         for slot in wd_slots:
                             s_raw = slot.get('RawData', {}).get('value', {})
                             inst_id = str(s_raw.get('instance_id', '')).replace('-', '').lower()
                             if inst_id and inst_id != '00000000-0000-0000-0000-000000000000':
-                                for ch in char_map:
-                                    ch_inst = str(ch.get('key', {}).get('InstanceId', {}).get('value', '')).replace('-', '').lower()
-                                    if ch_inst == inst_id:
-                                        ch['value']['RawData']['value']['group_id'] = new_target_gid_obj
-                                        from palworld_aio.editor.edit_pals import _register_pal_instance_to_guild
-                                        _register_pal_instance_to_guild(ch['key']['InstanceId']['value'], target_guild_id)
-                                        break
+                                ch = char_lookup.get(inst_id)
+                                if ch:
+                                    ch['value']['RawData']['value']['group_id'] = new_target_gid_obj
+                                    from palworld_aio.editor.edit_pals import _register_pal_instance_to_guild
+                                    _register_pal_instance_to_guild(ch['key']['InstanceId']['value'], target_guild_id)
                 constants.invalidate_container_lookup()
             return ('success', target_guild_id)
         def on_finished(result):

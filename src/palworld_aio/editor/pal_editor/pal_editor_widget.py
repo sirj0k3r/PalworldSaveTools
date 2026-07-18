@@ -607,15 +607,16 @@ class PalEditorWidget(QWidget, BulkOperationMixin):
             return
         dlg = BulkSyncPalDialog(pal_item, self, self)
         dlg.exec()
-    def _delete_pal_at_slot(self, slot_index, is_party=None):
+    def _delete_pal_at_slot(self, slot_index, is_party=None, confirm=True):
         if is_party is None:
             is_party = self.selected_pal_slot and self.selected_pal_slot[0] == 'party'
         if is_party:
             if slot_index in self.party_pals:
                 pal = self.party_pals[slot_index]
-                reply = show_question(self, t('edit_pals.confirm_delete'), 'Delete this pal?')
-                if not reply:
-                    return
+                if confirm:
+                    reply = show_question(self, t('edit_pals.confirm_delete'), 'Delete this pal?')
+                    if not reply:
+                        return
                 try:
                     cmap = constants.loaded_level_json['properties']['worldSaveData']['value']['CharacterSaveParameterMap']['value']
                     if pal in cmap:
@@ -633,9 +634,10 @@ class PalEditorWidget(QWidget, BulkOperationMixin):
             abs_idx = (self.current_box_index - 1) * 30 + slot_index
             if abs_idx in self.palbox_pal_dict:
                 pal = self.palbox_pal_dict[abs_idx]
-                reply = show_question(self, t('edit_pals.confirm_delete'), 'Delete this pal?')
-                if not reply:
-                    return
+                if confirm:
+                    reply = show_question(self, t('edit_pals.confirm_delete'), 'Delete this pal?')
+                    if not reply:
+                        return
                 try:
                     cmap = constants.loaded_level_json['properties']['worldSaveData']['value']['CharacterSaveParameterMap']['value']
                     if pal in cmap:
@@ -650,41 +652,7 @@ class PalEditorWidget(QWidget, BulkOperationMixin):
                 self._update_dashboard_stats()
                 self._decrement_pal_count()
     def _delete_pal_at_slot_direct(self, slot_index, is_party=None):
-        if is_party is None:
-            is_party = self.selected_pal_slot and self.selected_pal_slot[0] == 'party'
-        if is_party:
-            if slot_index in self.party_pals:
-                pal = self.party_pals[slot_index]
-                try:
-                    cmap = constants.loaded_level_json['properties']['worldSaveData']['value']['CharacterSaveParameterMap']['value']
-                    if pal in cmap:
-                        cmap.remove(pal)
-                except Exception:
-                    pass
-                del self.party_pals[slot_index]
-                self._update_party_slots()
-                self.pal_info.last_clicked_data = None
-                self.pal_info._hovered_data = None
-                self.pal_info._clear_display()
-                self._update_dashboard_stats()
-                self._decrement_pal_count()
-        else:
-            abs_idx = (self.current_box_index - 1) * 30 + slot_index
-            if abs_idx in self.palbox_pal_dict:
-                pal = self.palbox_pal_dict[abs_idx]
-                try:
-                    cmap = constants.loaded_level_json['properties']['worldSaveData']['value']['CharacterSaveParameterMap']['value']
-                    if pal in cmap:
-                        cmap.remove(pal)
-                except Exception:
-                    pass
-                del self.palbox_pal_dict[abs_idx]
-                self._update_palbox_page()
-                self.pal_info.last_clicked_data = None
-                self.pal_info._hovered_data = None
-                self.pal_info._clear_display()
-                self._update_dashboard_stats()
-                self._decrement_pal_count()
+        self._delete_pal_at_slot(slot_index, is_party, confirm=False)
     def _clone_pal(self, sender):
         if not hasattr(sender, 'pal_data') or sender.pal_data is None:
             return
