@@ -670,6 +670,9 @@ class PalDefenderDialog(ThemedDialog):
         self.hide_no_bases_cb = ToggleCheckBtn(t('paldefender.hide_no_bases') if t else 'Hide guilds with no bases')
         self.hide_no_bases_cb.setChecked(True)
         opts_row.addWidget(self.hide_no_bases_cb)
+        self.use_new_coords_cb = ToggleCheckBtn(t('kill_nearest_base.use_new_coords') if t else 'Use New Coordinates')
+        self.use_new_coords_cb.setChecked(False)
+        opts_row.addWidget(self.use_new_coords_cb)
         opts_row.addStretch()
         filter_layout.addLayout(opts_row)
         btn_row = QHBoxLayout()
@@ -925,6 +928,8 @@ class PalDefenderDialog(ThemedDialog):
         if not checked_ids:
             self._log('No guilds selected. Check guilds in the list first.')
             return
+        import palworld_coord
+        use_new = self.use_new_coords_cb.isChecked()
         guild_lookup = {g['id']: g for g in self._guild_data}
         kill_commands = []
         log_lines = []
@@ -937,8 +942,9 @@ class PalDefenderDialog(ThemedDialog):
             log_lines.append(f'=== Guild: {guild_name} ({guild_uid}) ===')
             log_lines.append('  [Base Locations]')
             for i, base in enumerate(ge['bases'], 1):
-                kill_commands.append(f"killnearestbase {base['x']} {base['y']} {base['z']}")
-                log_lines.append(f"    Base {i} - [{base['x']}, {base['y']}]")
+                pt = palworld_coord.sav_to_map(base['x'], base['y'], new=use_new)
+                kill_commands.append(f"killnearestbase {pt.x} {pt.y} {base['z']}")
+                log_lines.append(f"    Base {i} - [{pt.x}, {pt.y}] (raw: {base['x']}, {base['y']})")
             log_lines.append('  [Members]')
             for pi in ge['players']:
                 log_lines.append(f"    Player: {pi['name']}")
