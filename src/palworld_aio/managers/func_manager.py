@@ -1682,7 +1682,7 @@ def repair_items(parent=None):
                         if not isinstance(it_raw, dict):
                             continue
                         sid = it_raw.get('static_id', '')
-                        if not sid or get_item_type(sid) not in ('weapon', 'armor', 'egg'):
+                        if not sid or get_item_type(sid) not in ('weapon', 'armor'):
                             continue
                         did = it_raw.get('dynamic_id', {})
                         if not isinstance(did, dict):
@@ -1700,7 +1700,7 @@ def repair_items(parent=None):
                         repaired_count += 1
                     continue
                 static_id = item.get('static_id', '')
-                if not static_id or get_item_type(static_id) not in ('weapon', 'armor', 'egg'):
+                if not static_id or get_item_type(static_id) not in ('weapon', 'armor'):
                     continue
                 dynamic_id = item.get('dynamic_id', {})
                 if not isinstance(dynamic_id, dict):

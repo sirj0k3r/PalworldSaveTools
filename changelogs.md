@@ -1,4 +1,5 @@
 #2.1.5
+- **Repair All Items no longer breaks eggs** — eggs store pal data (stats, passives, skills) in their dynamic item entry. Regenerating egg IDs destroyed that data, turning eggs blank. Repair now skips eggs entirely — they have no durability to fix.
 - **Wiki tab sort improvements** — the pals category in the built-in wiki now defaults to sorting by Paldeck number. Unknown/unlisted pals sort to the bottom instead of showing at index 0. Sort toggle behavior changed: clicking an active sort button now reverses direction instead of clearing the sort, matching typical list behavior.
 - **Player level shows 1 instead of ?** — players who never leveled up now display as level 1 everywhere instead of a confusing `?` in hover overlays, map markers, guild lists, and export data.
 - **PalDefender coordinates fixed** — `killnearestbase` commands were using wrong coordinates, making them destroy the wrong bases. Now correctly targets the bases you selected.
