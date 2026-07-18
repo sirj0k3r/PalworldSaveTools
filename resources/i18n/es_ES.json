@@ -1881,5 +1881,7 @@
     "backup.no_backups": "No se encontraron copias de seguridad.",
     "backup.invalid": "A la copia de seguridad seleccionada le faltan los archivos necesarios.",
     "lang.pt_BR": "portugués",
-    "port.test": "pruebas de puerto"
+    "port.test": "pruebas de puerto",
+    "edit_pals.max_all_ivs": "Max todos los IV",
+    "edit_pals.max_all_souls": "Max todas las almas"
 }

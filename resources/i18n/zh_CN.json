@@ -1889,5 +1889,7 @@
     "backup.no_backups": "未找到备份。",
     "backup.invalid": "所选备份缺少所需文件。",
     "lang.pt_BR": "葡萄牙语",
-    "port.test": "端口测试"
+    "port.test": "端口测试",
+    "edit_pals.max_all_ivs": "最大所有 IV",
+    "edit_pals.max_all_souls": "最大化所有灵魂"
 }

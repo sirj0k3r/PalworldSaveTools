@@ -2173,5 +2173,7 @@
     "menu.file.load_backup": "Carregar do backup",
     "backup.no_backups": "Nenhum backup encontrado.",
     "backup.invalid": "O backup selecionado não contém os arquivos necessários.",
-    "lang.pt_BR": "Português"
+    "lang.pt_BR": "Português",
+    "edit_pals.max_all_ivs": "Máximo de todos os IVs",
+    "edit_pals.max_all_souls": "Max todas as almas"
 }

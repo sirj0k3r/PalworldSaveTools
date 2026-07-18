@@ -262,7 +262,10 @@ def _load_exp_table():
         return [data[lvl]['TotalEXP'] for lvl in levels]
     except Exception as e:
         print(f'Error loading EXP table: {e}')
-        return [0]
+        fallback = [0]
+        while len(fallback) < 80:
+            fallback.append(fallback[-1] + 100)
+        return fallback
 EXP_TABLE = _load_exp_table()
 class StatsPanelWidget(QFrame):
     HERO_STATS = [
@@ -413,6 +416,7 @@ class StatsPanelWidget(QFrame):
         self.tp_spin.setRange(0, 9999999)
         self.tp_spin.setFixedWidth(90)
         self.tp_spin.setStyleSheet('QSpinBox { background: rgba(255,255,255,0.06); color: #e2e8f0; border: 1px solid rgba(125,211,252,0.2); border-radius: 3px; padding: 2px; font-size: 11px; } QSpinBox:focus { border-color: rgba(125,211,252,0.4); }')
+        self.tp_spin.valueChanged.connect(self._on_tp_changed)
         tp_l.addWidget(self.tp_label)
         tp_l.addStretch()
         tp_l.addWidget(self.tp_spin)
@@ -429,6 +433,7 @@ class StatsPanelWidget(QFrame):
         self.atp_spin.setRange(0, 9999999)
         self.atp_spin.setFixedWidth(90)
         self.atp_spin.setStyleSheet('QSpinBox { background: rgba(255,255,255,0.06); color: #e2e8f0; border: 1px solid rgba(125,211,252,0.2); border-radius: 3px; padding: 2px; font-size: 11px; } QSpinBox:focus { border-color: rgba(125,211,252,0.4); }')
+        self.atp_spin.valueChanged.connect(self._on_atp_changed)
         atp_l.addWidget(self.atp_label)
         atp_l.addStretch()
         atp_l.addWidget(self.atp_spin)
@@ -556,7 +561,7 @@ class StatsPanelWidget(QFrame):
         self.level_input.blockSignals(True)
         self.level_input.setText(str(self._current_level))
         self.level_input.blockSignals(False)
-        if self._current_level >= 80:
+        if self._current_level >= len(EXP_TABLE):
             self.exp_bar.setValue(100)
         else:
             cur_exp = EXP_TABLE[self._current_level - 1]
@@ -625,7 +630,25 @@ class StatsPanelWidget(QFrame):
         while p and not hasattr(p, '_save_stats_to_raw_data'):
             p = p.parentWidget()
         if p:
-            run_with_loading(lambda _: None, p._save_stats_to_raw_data)
+            uid = p.current_player_uid
+            lvl = self._current_level
+            exp = self._current_exp
+            stats = dict(self._stat_values)
+            def task():
+                p._save_stats_to_raw_data_inner(uid, lvl, exp, stats)
+            run_with_loading(lambda _: None, task)
+
+    def _on_tp_changed(self, val):
+        if not self._player_uid:
+            return
+        from palworld_aio.managers.player_manager import set_player_tech_points
+        set_player_tech_points(self._player_uid, val)
+
+    def _on_atp_changed(self, val):
+        if not self._player_uid:
+            return
+        from palworld_aio.managers.player_manager import set_player_boss_tech_points
+        set_player_boss_tech_points(self._player_uid, val)
 
     def _apply_style(self):
         self.setStyleSheet(STATS_PANEL_STYLE)
@@ -666,6 +689,8 @@ class StatsPanelWidget(QFrame):
         self._update_level_display()
 
     def _load_abilities(self):
+        self.tp_spin.blockSignals(True)
+        self.atp_spin.blockSignals(True)
         for w in self._ability_widgets:
             w['cur_label'].setText('0')
             w['spinner'].setValue(0)
@@ -703,6 +728,9 @@ class StatsPanelWidget(QFrame):
         except Exception as e:
             self._ability_status.setText(f'Error: {e}')
             self._ability_status.setStyleSheet('color: #f87171; font-size: 10px; padding: 2px 4px;')
+        finally:
+            self.tp_spin.blockSignals(False)
+            self.atp_spin.blockSignals(False)
 
     def _on_apply_abilities(self):
         if not self._player_uid:
@@ -763,8 +791,12 @@ class StatsPanelWidget(QFrame):
         for w in self._ability_widgets:
             w['cur_label'].setText('0')
             w['spinner'].setValue(0)
+        self.tp_spin.blockSignals(True)
+        self.atp_spin.blockSignals(True)
         self.tp_spin.setValue(0)
         self.atp_spin.setValue(0)
+        self.tp_spin.blockSignals(False)
+        self.atp_spin.blockSignals(False)
         self._ability_status.setText('')
 class InventoryGridWidget(QWidget):
     item_added = Signal(int, str, int)
@@ -2270,20 +2302,26 @@ class PlayerInventoryTab(QWidget):
                 self.player_select_btn.setText(player['display'])
                 break
     def _save_stats_to_raw_data(self):
-        if not self.current_player_uid or not constants.loaded_level_json:
+        if not self.current_player_uid:
             return
-        uid_clean = str(self.current_player_uid).replace('-', '')
+        self._save_stats_to_raw_data_inner(
+            self.current_player_uid,
+            self.stats_panel.get_level(),
+            self.stats_panel.get_exp(),
+            self.stats_panel.get_stats(),
+        )
+    def _save_stats_to_raw_data_inner(self, player_uid, new_level, new_exp, modified_stats):
+        _t0 = __import__('time').time()
+        if not constants.loaded_level_json:
+            print(f'[inner] no loaded_level_json, return: {__import__("time").time() - _t0:.3f}s')
+            return
+        uid_clean = str(player_uid).replace('-', '')
         wsd = constants.loaded_level_json['properties']['worldSaveData']['value']
         char_map = wsd.get('CharacterSaveParameterMap', {}).get('value', [])
-        modified_stats = self.stats_panel.get_stats()
-        new_level = self.stats_panel.get_level()
-        new_exp = self.stats_panel.get_exp()
+        print(f'[inner] setup done, char_map len={len(char_map)}: {__import__("time").time() - _t0:.3f}s')
         from palworld_aio.managers.player_manager import set_player_level
-        set_player_level(self.current_player_uid, new_level)
-        if hasattr(self.parent_window, '_refresh_players'):
-            self.parent_window._refresh_players()
-        if hasattr(self.parent_window, 'pal_editor_tab'):
-            self.parent_window.pal_editor_tab.refresh()
+        set_player_level(player_uid, new_level)
+        print(f'[inner] set_player_level done: {__import__("time").time() - _t0:.3f}s')
         stat_map_reverse = {'hp': '最大HP', 'stamina': '最大SP', 'attack': '攻撃力', 'defense': '防御力', 'work_speed': '作業速度', 'weight': '所持重量'}
         for entry in char_map:
             raw = entry.get('value', {}).get('RawData', {}).get('value', {})
@@ -2294,8 +2332,8 @@ class PlayerInventoryTab(QWidget):
             if not sp_val.get('IsPlayer', {}).get('value'):
                 continue
             uid_obj = entry.get('key', {}).get('PlayerUId', {})
-            player_uid = str(uid_obj.get('value', '')).replace('-', '') if isinstance(uid_obj, dict) else ''
-            if player_uid == uid_clean:
+            player_uid_cur = str(uid_obj.get('value', '')).replace('-', '') if isinstance(uid_obj, dict) else ''
+            if player_uid_cur == uid_clean:
                 if 'Exp' in sp_val:
                     sp_val['Exp']['value'] = new_exp
                 got_list = sp_val.get('GotStatusPointList')
@@ -2313,7 +2351,9 @@ class PlayerInventoryTab(QWidget):
                                     else:
                                         status_item['StatusPoint'] = {'value': stat_point}
                                     break
+                print(f'[inner] done: {__import__("time").time() - _t0:.3f}s')
                 return
+        print(f'[inner] player not found in char_map: {__import__("time").time() - _t0:.3f}s')
     def _update_raw_save_data_with_recursive_clean(self, container_type, container, slot_index):
         if not self.inventory or not container:
             return

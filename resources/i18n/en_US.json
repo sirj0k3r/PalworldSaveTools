@@ -2173,5 +2173,7 @@
     "menu.file.load_backup": "Load from Backup",
     "backup.no_backups": "No backups found.",
     "backup.invalid": "Selected backup is missing required files.",
-    "lang.pt_BR": "Português"
+    "lang.pt_BR": "Português",
+    "edit_pals.max_all_ivs": "Max all IVs",
+    "edit_pals.max_all_souls": "Max all souls"
 }

@@ -1,3 +1,12 @@
+#2.1.4
+- **Export base crash fixed** — exporting a single base from the guild tree list no longer crashes with `UnboundLocalError: cannot access local variable 'file_path'`. The `task()` closure now correctly captures the outer `file_path` via `nonlocal`.
+- **Inventory tab crash on startup fixed** — loading a save on a fresh profile no longer crashes with `IndexError: list index out of range` in `_update_level_display`. The EXP table fallback was padded to 80 entries, and the level guard now checks against table length instead of hardcoded 80.
+- **Technology points auto-save** — Technology Points and Ancient Technology Points spinners now save to the player `.sav` file immediately on change, no need to click Apply. Max All Stats also saves these values.
+- **Max All Stats loading fix** — the "Max All Stats" button no longer causes an infinite loading screen. The full save reload cascade was removed since the UI already updates synchronously.
+- **Max All Stats saving fix** — Level.sav stats, TP, and ATP all saved correctly when using Max All Stats. Data loss on player switch after Max All Stats is fixed.
+- **Pal editor soul/IV quick-max** — the souls and IV icons in the pal info panel are now clickable buttons that max all souls or all IVs at once, with proper hover styling and tooltips.
+- Bumped version to 2.1.4
+
 #2.1.3
 - **Portuguese (Brazil) translations** — added full Brazilian Portuguese language support. All 2171 UI strings translated. Selectable from the menu under Languages.
 - **READMEs updated** — added Cheat Mode, Export/Import `.pstpal`, Base Change Coordinates, Base Nudge, and other missing features to all 9 README translations.

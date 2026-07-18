@@ -295,6 +295,20 @@ class PalInfoHandlerMixin:
         if dlg.exec() == QDialog.Accepted:
             self._raw[key] = {'id': None, 'type': 'ByteProperty', 'value': {'type': 'None', 'value': dlg.intValue()}}
             self._recalc_hp()
+    def _on_max_ivs_click(self):
+        if not self._raw:
+            return
+        cap = 255 if PalFrame._cheat_mode else 100
+        for key in ('Talent_HP', 'Talent_Shot', 'Talent_Defense'):
+            self._raw[key] = {'id': None, 'type': 'ByteProperty', 'value': {'type': 'None', 'value': cap}}
+        self._recalc_hp()
+    def _on_max_souls_click(self):
+        if not self._raw:
+            return
+        cap = 255 if PalFrame._cheat_mode else 20
+        for key in ('Rank_HP', 'Rank_Attack', 'Rank_Defence', 'Rank_CraftSpeed'):
+            self._raw[key] = {'id': None, 'type': 'ByteProperty', 'value': {'type': 'None', 'value': cap}}
+        self._recalc_hp()
 
     def _on_active_skill_click(self, slot_idx, pos=None):
         cid = extract_value(self._raw, 'CharacterID', '') if self._raw else ''

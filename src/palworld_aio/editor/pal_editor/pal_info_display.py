@@ -337,10 +337,10 @@ class PalInfoDisplayMixin:
             bp = _icons._get_ui_icon_pixmap('buildup', 14)
             if bp:
                 self.soul_buildup_icon.setPixmap(bp)
-                self.soul_row_icon.setPixmap(bp)
+                self.soul_row_icon.setIcon(QIcon(bp))
             ivp = _icons._get_ui_icon_pixmap('talent_checker', 14)
             if ivp:
-                self.iv_icon.setPixmap(ivp)
+                self.iv_icon.setIcon(QIcon(ivp))
             rank_raw = extract_value(raw, 'Rank', 0)
             rank_int = int(rank_raw) if isinstance(rank_raw, (int, float)) else 0
             star_count = max(0, rank_int - 1)

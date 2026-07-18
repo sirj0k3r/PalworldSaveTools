@@ -1968,6 +1968,7 @@ class MainWindow(QMainWindow):
             return
         is_pstbase = 'pstbase' in selected_filter if selected_filter else file_path.endswith('.pstbase')
         def task():
+            nonlocal file_path
             data = export_base_json(constants.loaded_level_json, bid)
             if not data:
                 return (False, t('base.export.not_found') if t else f'Could not find base data for ID: {bid}')

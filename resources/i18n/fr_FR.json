@@ -1869,5 +1869,7 @@
     "backup.no_backups": "Aucune sauvegarde trouvée.",
     "backup.invalid": "La sauvegarde sélectionnée ne contient pas les fichiers requis.",
     "lang.pt_BR": "Portugais",
-    "port.test": "test des ports"
+    "port.test": "test des ports",
+    "edit_pals.max_all_ivs": "Maximiser toutes les IV",
+    "edit_pals.max_all_souls": "Max toutes les âmes"
 }
