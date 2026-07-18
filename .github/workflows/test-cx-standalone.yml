@@ -1,0 +1,78 @@
+name: Test cx_Freeze Standalone Build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: test-cx-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-cx:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: Bootstrap environment
+        id: env
+        uses: ./.github/actions/setup-build-env
+
+      - name: Add 7-Zip to PATH
+        shell: pwsh
+        run: |
+          $paths = @(
+            "C:\Program Files\7-Zip"
+            "C:\Program Files (x86)\7-Zip"
+          )
+          foreach ($p in $paths) {
+            if (Test-Path "$p\7z.exe") {
+              echo "Found 7z at: $p\7z.exe"
+              echo "$p" >> $env:GITHUB_PATH
+              break
+            }
+          }
+
+      - name: Build cx_Freeze standalone
+        run: uv run python build/cx_freeze/build_cx.py
+
+      - name: Verify build output
+        shell: bash
+        run: |
+          echo "=== Root directory ==="
+          ls -la *.7z 2>/dev/null || echo "No .7z files found at root"
+          echo "=== PST_standalone/ ==="
+          if [ -d PST_standalone ]; then
+            ls -la PST_standalone/
+          else
+            echo "No PST_standalone directory found"
+          fi
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: cx-standalone-build-${{ steps.env.outputs.version }}
+          path: PST_standalone_v*.7z
+          if-no-files-found: warn
+
+      - name: Create draft testing release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: cx-test-${{ steps.env.outputs.version }}
+          name: "cx_Freeze Test Build v${{ steps.env.outputs.version }}"
+          body: |
+            ## cx_Freeze Standalone Test Build v${{ steps.env.outputs.version }}
+
+            **Platform:** Windows
+            **Build type:** cx_Freeze standalone (PST_standalone/)
+
+            This is a **test build** for verification purposes only.
+          draft: true
+          prerelease: true
+          files: PST_standalone_v*.7z
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

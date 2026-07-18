@@ -220,12 +220,16 @@ jobs:
             --repo "${{ github.repository }}" \
             artifacts/**/* \
             --clobber
-      - name: Generate multilang changelog
+      - name: Extract changelog entry
         if: ${{ github.event.inputs.append_only != 'true' }}
         run: |
-          uv venv
-          uv pip install deep-translator
-          uv run python scripts/scrs/translate_changelog.py
+          awk '/^#[0-9]/{if (found) exit; if ($0 == "#${{ steps.env.outputs.version }}") found=1; next} found' \
+            changelogs.md > /tmp/changelog_entry.md 2>/dev/null || true
+          if [ ! -s /tmp/changelog_entry.md ]; then
+            echo "No changelog entry for v${{ steps.env.outputs.version }} yet." > /tmp/changelog_entry.md
+          fi
+          echo "=== Changelog entry ==="
+          cat /tmp/changelog_entry.md
       - name: Render release notes from template
         if: ${{ github.event.inputs.append_only != 'true' }}
         env:
@@ -237,15 +241,11 @@ jobs:
           DISCORD_URL: https://discord.gg/sYcZwcT4cT
           NEXUS_URL: ${{ vars.NEXUS_MOD_URL || 'https://www.nexusmods.com/palworld/mods/3190' }}
         run: |
-          # --- Substitute ${VAR} placeholders ---
           envsubst < .github/templates/release_notes.md > /tmp/notes_partial.md
-
-          # --- Inject multilang changelog at the __ marker ---
           sed -i '/__CHANGELOG_ENTRY__/{
-            r CHANGELOG.multilang.md
+            r /tmp/changelog_entry.md
             d
           }' /tmp/notes_partial.md
-
           mv /tmp/notes_partial.md release_notes.md
           echo "=== Rendered release notes ==="
           cat release_notes.md
