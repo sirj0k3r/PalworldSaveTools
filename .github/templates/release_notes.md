@@ -29,7 +29,7 @@
 
 | Platform | File |
 |---|---|
-| 🪟 Windows | `${APP_NAME}-V${VERSION}-win.exe` |
+| 🪟 Windows | `PST_standalone_v${VERSION}.7z` |
 | 🐧 Linux   | `${APP_NAME}-V${VERSION}-linux.AppImage` |
 | 🍎 macOS   | `${APP_NAME}-V${VERSION}-macos.dmg` |
 
