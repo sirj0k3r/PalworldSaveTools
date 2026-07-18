@@ -23,7 +23,7 @@ jobs:
       matrix:
         include:
           - variant: windows
-            asset_glob: "PalworldSaveTools-V*-win.exe"
+            asset_glob: "PST_standalone_v*.7z"
             file_id: "7648655"
           - variant: linux
             asset_glob: "PalworldSaveTools-V*-linux.AppImage"
@@ -97,7 +97,7 @@ jobs:
           fi
           echo "Found: $asset"
           case "$asset" in
-            *.zip)
+            *.zip|*.7z)
               echo "upload_file=$asset" >> "$GITHUB_OUTPUT"
               ;;
             *)
