@@ -938,17 +938,18 @@ def _remove_invalid_pals_from_dps(valid_all, current_save_path):
     players_dir = os.path.join(current_save_path, 'Players')
     if not os.path.exists(players_dir):
         return 0
-    total = 0
-    for fname in os.listdir(players_dir):
-        if not fname.endswith('_dps.sav'):
-            continue
-        dps_path = os.path.join(players_dir, fname)
+    from concurrent.futures import ThreadPoolExecutor
+    dps_files = [os.path.join(players_dir, f) for f in os.listdir(players_dir) if f.endswith('_dps.sav')]
+    if not dps_files:
+        return 0
+    def _clean(fpath):
         try:
-            gvas = sav_to_gvasfile(dps_path)
+            gvas = sav_to_gvasfile(fpath)
             arr = gvas.properties.get('SaveParameterArray', {}).get('value', {}).get('values', [])
             if not arr:
-                continue
+                return 0
             changed = False
+            removed = 0
             new_arr = []
             for entry in arr:
                 if not isinstance(entry, dict):
@@ -968,15 +969,17 @@ def _remove_invalid_pals_from_dps(valid_all, current_save_path):
                     continue
                 if cid.lower() not in valid_all:
                     changed = True
-                    total += 1
+                    removed += 1
                 else:
                     new_arr.append(entry)
             if changed:
                 gvas.properties['SaveParameterArray']['value']['values'] = new_arr
-                gvasfile_to_sav(gvas, dps_path)
-        except Exception:
-            continue
-    return total
+                gvasfile_to_sav(gvas, fpath)
+            return removed
+        except:
+            return 0
+    with ThreadPoolExecutor(max_workers=min(os.cpu_count() or 4, 8)) as ex:
+        return sum(ex.map(_clean, dps_files))
 def fix_missions(parent=None):
     if not constants.current_save_path:
         return {'total': 0, 'fixed': 0, 'skipped': 0}
@@ -1369,17 +1372,18 @@ def remove_invalid_passives_from_save(parent=None):
     removed_count += _remove_invalid_passives_from_dps(valid_passives, players_dir)
     return removed_count
 def _remove_invalid_passives_from_dps(valid_passives, players_dir):
-    total = 0
-    for fname in os.listdir(players_dir):
-        if not fname.endswith('_dps.sav'):
-            continue
-        dps_path = os.path.join(players_dir, fname)
+    from concurrent.futures import ThreadPoolExecutor
+    dps_files = [os.path.join(players_dir, f) for f in os.listdir(players_dir) if f.endswith('_dps.sav')]
+    if not dps_files:
+        return 0
+    def _clean(fpath):
         try:
-            gvas = sav_to_gvasfile(dps_path)
+            gvas = sav_to_gvasfile(fpath)
             arr = gvas.properties.get('SaveParameterArray', {}).get('value', {}).get('values', [])
             if not arr:
-                continue
+                return 0
             changed = False
+            removed = 0
             for entry in arr:
                 if not isinstance(entry, dict):
                     continue
@@ -1398,17 +1402,19 @@ def _remove_invalid_passives_from_dps(valid_passives, players_dir):
                     continue
                 filtered = [p for p in passives if p.lower() in valid_passives]
                 if len(filtered) != len(passives):
-                    total += len(passives) - len(filtered)
+                    removed += len(passives) - len(filtered)
                     changed = True
                     if isinstance(ps_val, dict):
                         sp['PassiveSkillList']['value']['values'] = filtered
                     else:
                         sp['PassiveSkillList']['value'] = filtered
             if changed:
-                gvasfile_to_sav(gvas, dps_path)
-        except Exception:
-            continue
-    return total
+                gvasfile_to_sav(gvas, fpath)
+            return removed
+        except:
+            return 0
+    with ThreadPoolExecutor(max_workers=min(os.cpu_count() or 4, 8)) as ex:
+        return sum(ex.map(_clean, dps_files))
 def unlock_all_technologies_for_player(player_uid, parent=None):
     if not constants.current_save_path:
         return False

@@ -89,16 +89,17 @@ def delete_pal_from_all(pal_id):
     # DPS files
     import os
     from palworld_aio.utils import sav_to_gvasfile, gvasfile_to_sav
+    from concurrent.futures import ThreadPoolExecutor, as_completed
     players_dir = os.path.join(constants.current_save_path, 'Players')
     if os.path.exists(players_dir):
-        for fname in os.listdir(players_dir):
-            if not fname.endswith('_dps.sav'):
-                continue
-            dps_path = os.path.join(players_dir, fname)
+        dps_files = [os.path.join(players_dir, f) for f in os.listdir(players_dir) if f.endswith('_dps.sav')]
+        def _process_dps(dps_path):
+            nonlocal pals_removed
             try:
                 gvas = sav_to_gvasfile(dps_path)
                 arr = gvas.properties.get('SaveParameterArray', {}).get('value', {}).get('values', [])
                 changed = False
+                local_removed = 0
                 for entry in arr:
                     if not isinstance(entry, dict):
                         continue
@@ -116,11 +117,15 @@ def delete_pal_from_all(pal_id):
                         sp['CharacterID'] = {'id': None, 'type': 'NameProperty', 'value': 'None'}
                         sp['Level'] = {'id': None, 'type': 'ByteProperty', 'value': {'type': 'None', 'value': 1}}
                         changed = True
-                        pals_removed += 1
+                        local_removed += 1
                 if changed:
                     gvasfile_to_sav(gvas, dps_path)
+                return local_removed
             except:
-                continue
+                return 0
+        with ThreadPoolExecutor(max_workers=min(os.cpu_count() or 4, 8)) as ex:
+            for removed in ex.map(_process_dps, dps_files):
+                pals_removed += removed
     constants.invalidate_container_lookup()
     affected_count = len(affected_players) + len(affected_bases)
     return {'pals_removed': pals_removed, 'affected_count': affected_count}
@@ -193,16 +198,17 @@ def remove_skill_from_all_pals(active_skill_id=None, passive_skill_id=None, scop
     if should_process_dps:
         import os
         from palworld_aio.utils import sav_to_gvasfile, gvasfile_to_sav
+        from concurrent.futures import ThreadPoolExecutor, as_completed
         players_dir = os.path.join(constants.current_save_path, 'Players')
         if os.path.exists(players_dir):
-            for fname in os.listdir(players_dir):
-                if not fname.endswith('_dps.sav'):
-                    continue
-                dps_path = os.path.join(players_dir, fname)
+            dps_files = [os.path.join(players_dir, f) for f in os.listdir(players_dir) if f.endswith('_dps.sav')]
+            def _process_dps(dps_path):
                 try:
                     gvas = sav_to_gvasfile(dps_path)
                     arr = gvas.properties.get('SaveParameterArray', {}).get('value', {}).get('values', [])
                     changed = False
+                    local_skills = 0
+                    local_pals = 0
                     for entry in arr:
                         if not isinstance(entry, dict):
                             continue
@@ -240,11 +246,16 @@ def remove_skill_from_all_pals(active_skill_id=None, passive_skill_id=None, scop
                                     passive_list['value']['values'] = skill_values
                                     pal_skills_removed += orig - len(skill_values)
                         if pal_skills_removed > 0:
-                            skills_removed += pal_skills_removed
-                            pals_affected += 1
+                            local_skills += pal_skills_removed
+                            local_pals += 1
                             changed = True
                     if changed:
                         gvasfile_to_sav(gvas, dps_path)
+                    return (local_skills, local_pals)
                 except:
-                    continue
+                    return (0, 0)
+            with ThreadPoolExecutor(max_workers=min(os.cpu_count() or 4, 8)) as ex:
+                for sk, pa in ex.map(_process_dps, dps_files):
+                    skills_removed += sk
+                    pals_affected += pa
     return {'skills_removed': skills_removed, 'pals_affected': pals_affected}
