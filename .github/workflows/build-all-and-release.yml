@@ -223,8 +223,9 @@ jobs:
       - name: Generate multilang changelog
         if: ${{ github.event.inputs.append_only != 'true' }}
         run: |
-          uv pip install --system deep-translator
-          uv run --system python scripts/scrs/translate_changelog.py
+          uv venv
+          uv pip install deep-translator
+          uv run python scripts/scrs/translate_changelog.py
       - name: Render release notes from template
         if: ${{ github.event.inputs.append_only != 'true' }}
         env:

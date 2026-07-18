@@ -17,9 +17,11 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v6
       - name: Install dependencies
-        run: uv pip install --system deep-translator
+        run: |
+          uv venv
+          uv pip install deep-translator
       - name: Run changelog translation
-        run: uv run --system python scripts/scrs/translate_changelog.py
+        run: uv run python scripts/scrs/translate_changelog.py
       - name: Upload multilang changelog
         uses: actions/upload-artifact@v7
         with:
