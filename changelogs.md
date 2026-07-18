@@ -10,6 +10,18 @@
 - **Add All Key Items performance fix** — massive speedup on big saves. Each item was triggering a full scan of every container in the save file; now all items are added in memory and saved once. Same fix applied to Bulk Add Items and Equipment Loadouts.
 - **Stats tab now refreshes all tabs on change** — changing stats (level +/-, max all stats, stat point edits) now triggers a full UI refresh so all tabs show up-to-date data immediately. Max All Stats previously bypassed the refresh signal; now it uses the same path as manual edits.
 - **Character Transfer performance fixes** — Transfer All no longer calls save() per inventory item (same O(n) fix as Add All Key Items). Dynamic container GUID remapping changed from triple-nested scan to O(1) lookup. Save Changes now writes player files in parallel using all CPU cores, drastically reducing save time after bulk transfers.
+- **General performance sweep** — fixed inefficient scans across 10+ files:
+  - `modify_container_slots`: triple-nested loop → O(1) container lookup
+  - `get_base_worker_pals`, `remove_structure_from_guilds`, `_clear_pal_booth_slots`, map reassign: char_map linear search per slot → pre-built instance dict
+  - `load_game_data_map`: added caching (was re-reading JSON 27 times)
+  - `_load_boss_key_map`: added caching (was reading disk every call)
+  - `add_item_to_players`: moved container_lookup build outside per-player loop
+  - `scan_illegal_pals`, `fix_illegal_pals`: merged double char_map scans into single pass
+  - `get_player_info_from_save`: merged duplicate guild_map iterations
+  - `_apply_to_containers`: consolidated per-container char_map scans into one pass
+  - `_cleanup_excess_slots`: merged 3 char_map scans + fixed O(N²) container lookup
+  - `fix_host_save.py`: merged `_build_level_map` + `_build_pal_count_map`, cached player level scans, deduplicated player list builders
+  - Deduplicated `build_player_levels`, `count_owned_pals`, `_delete_pal_at_slot`
 - Bumped version to 2.1.5
 
 #2.1.4

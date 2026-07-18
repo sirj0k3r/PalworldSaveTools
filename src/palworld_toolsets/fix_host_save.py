@@ -84,31 +84,14 @@ def format_last_seen(last_online_time, current_tick):
             return f'{mins}m'
     except:
         return 'Unknown'
+_player_level_cache = {}
 def get_player_level_from_cspm(level_json, player_uid):
-    try:
-        player_uid_clean = str(player_uid).lower().replace('-', '')
-        char_map = level_json.get('properties', {}).get('worldSaveData', {}).get('value', {}).get('CharacterSaveParameterMap', {}).get('value', [])
-        uid_level_map = {}
-        for entry in char_map:
-            try:
-                sp = entry['value']['RawData']['value']['object']['SaveParameter']
-                if sp['struct_type'] != 'PalIndividualCharacterSaveParameter':
-                    continue
-                sp_val = sp['value']
-                if not sp_val.get('IsPlayer', {}).get('value', False):
-                    continue
-                key = entry.get('key', {})
-                uid_obj = key.get('PlayerUId', {})
-                uid = str(uid_obj.get('value', '') if isinstance(uid_obj, dict) else uid_obj)
-                if uid:
-                    uid_clean = uid.lower().replace('-', '')
-                    level = extract_value(sp_val, 'Level', 1)
-                    uid_level_map[uid_clean] = int(level) if level is not None else 1
-            except Exception:
-                continue
-        return uid_level_map.get(player_uid_clean, 1)
-    except Exception:
-        return 1
+    cache_key = id(level_json)
+    if cache_key not in _player_level_cache:
+        level_map, _ = _build_maps(level_json)
+        _player_level_cache[cache_key] = level_map
+    player_uid_clean = str(player_uid).lower().replace('-', '')
+    return _player_level_cache[cache_key].get(player_uid_clean, 1)
 def get_player_pals_count_from_cspm(level_json, player_uid):
     try:
         player_uid_clean = str(player_uid).lower().replace('-', '')
@@ -134,33 +117,12 @@ def get_player_pals_count_from_cspm(level_json, player_uid):
         return pal_count
     except Exception:
         return 0
-def _build_level_map(level_json):
-    wsd = level_json.get('properties', {}).get('worldSaveData', {}).get('value', {})
-    char_map = wsd.get('CharacterSaveParameterMap', {}).get('value', [])
-    result = {}
-    for entry in char_map:
-        try:
-            sp = entry['value']['RawData']['value']['object']['SaveParameter']
-            if sp['struct_type'] != 'PalIndividualCharacterSaveParameter':
-                continue
-            sp_val = sp['value']
-            if not sp_val.get('IsPlayer', {}).get('value', False):
-                continue
-            key = entry.get('key', {})
-            uid_obj = key.get('PlayerUId', {})
-            uid = str(uid_obj.get('value', '') if isinstance(uid_obj, dict) else uid_obj)
-            if uid:
-                uid_clean = uid.lower().replace('-', '')
-                level = extract_value(sp_val, 'Level', 1)
-                result[uid_clean] = int(level) if level is not None else 1
-        except Exception:
-            continue
-    return result
-def _build_pal_count_map(level_json):
+def _build_maps(level_json):
     wsd = level_json.get('properties', {}).get('worldSaveData', {}).get('value', {})
     char_map = wsd.get('CharacterSaveParameterMap', {}).get('value', [])
     ownership = ContainerOwnership.build(char_map, wsd.get('CharacterContainerSaveData', {}).get('value', []))
-    result = {}
+    level_map = {}
+    pal_count_map = {}
     for entry in char_map:
         try:
             sp = entry['value']['RawData']['value']['object']['SaveParameter']
@@ -168,16 +130,51 @@ def _build_pal_count_map(level_json):
                 continue
             sp_val = sp['value']
             if sp_val.get('IsPlayer', {}).get('value', False):
-                continue
-            inst_val = entry.get('key', {}).get('InstanceId', {}).get('value')
-            owner_uid_obj = sp_val.get('OwnerPlayerUId', {})
-            owner_uid = str(owner_uid_obj.get('value', '') if isinstance(owner_uid_obj, dict) else owner_uid_obj) if owner_uid_obj else ''
-            effective_owner = ownership.get_effective_owner(inst_val, owner_uid)
-            if effective_owner:
-                result[effective_owner] = result.get(effective_owner, 0) + 1
+                key = entry.get('key', {})
+                uid_obj = key.get('PlayerUId', {})
+                uid = str(uid_obj.get('value', '') if isinstance(uid_obj, dict) else uid_obj)
+                if uid:
+                    uid_clean = uid.lower().replace('-', '')
+                    level = extract_value(sp_val, 'Level', 1)
+                    level_map[uid_clean] = int(level) if level is not None else 1
+            else:
+                inst_val = entry.get('key', {}).get('InstanceId', {}).get('value')
+                owner_uid_obj = sp_val.get('OwnerPlayerUId', {})
+                owner_uid = str(owner_uid_obj.get('value', '') if isinstance(owner_uid_obj, dict) else owner_uid_obj) if owner_uid_obj else ''
+                effective_owner = ownership.get_effective_owner(inst_val, owner_uid)
+                if effective_owner:
+                    pal_count_map[effective_owner] = pal_count_map.get(effective_owner, 0) + 1
         except Exception:
             continue
-    return result
+    return level_map, pal_count_map
+def _build_player_list_from_level(level_json):
+    group_data_list = level_json['properties']['worldSaveData']['value']['GroupSaveDataMap']['value']
+    world_tick = 0
+    try:
+        world_tick = level_json['properties']['worldSaveData']['value']['GameTimeSaveData']['value']['RealDateTimeTicks']['value']
+    except:
+        pass
+    level_map, pal_count_map = _build_maps(level_json)
+    player_files = []
+    for group in group_data_list:
+        if group['value']['GroupType']['value']['value'] != 'EPalGroupType::Guild':
+            continue
+        key = group['key']
+        if isinstance(key, dict) and 'InstanceId' in key:
+            guild_id = key['InstanceId']['value']
+        else:
+            guild_id = str(key)
+        players = group['value']['RawData']['value'].get('players', [])
+        for player in players:
+            uid = str(player.get('player_uid', '')).replace('-', '')
+            name = player.get('player_info', {}).get('player_name', 'Unknown')
+            level = level_map.get(uid.lower(), 1)
+            pals_count = pal_count_map.get(uid.lower(), 0)
+            last_online_time = player.get('player_info', {}).get('last_online_real_time', 0)
+            last_seen = format_last_seen(last_online_time, world_tick)
+            sort_key = (world_tick - last_online_time) / 10000000.0 if last_online_time and last_online_time != 0 else float('inf')
+            player_files.append((uid, name, guild_id, level, pals_count, last_seen, sort_key))
+    return player_files, level_json
 def fix_save(save_path, new_guid, old_guid, guild_fix=True):
     def task():
         fmt = lambda g: '{}-{}-{}-{}-{}'.format(g[:8], g[8:12], g[12:16], g[16:20], g[20:]).lower()
@@ -396,32 +393,7 @@ def populate_player_lists(folder_path):
         show_warning(parent, t('Error'), t('fix_host_save.players_folder_not_found'))
         return []
     level_json = sav_to_json(os.path.join(folder_path, 'Level.sav'))
-    group_data_list = level_json['properties']['worldSaveData']['value']['GroupSaveDataMap']['value']
-    world_tick = 0
-    try:
-        world_tick = level_json['properties']['worldSaveData']['value']['GameTimeSaveData']['value']['RealDateTimeTicks']['value']
-    except:
-        pass
-    level_map = _build_level_map(level_json)
-    pal_count_map = _build_pal_count_map(level_json)
-    player_files = []
-    for group in group_data_list:
-        if group['value']['GroupType']['value']['value'] == 'EPalGroupType::Guild':
-            key = group['key']
-            if isinstance(key, dict) and 'InstanceId' in key:
-                guild_id = key['InstanceId']['value']
-            else:
-                guild_id = str(key)
-            players = group['value']['RawData']['value'].get('players', [])
-            for player in players:
-                uid = str(player.get('player_uid', '')).replace('-', '')
-                name = player.get('player_info', {}).get('player_name', 'Unknown')
-                level = level_map.get(uid.lower(), 1)
-                pals_count = pal_count_map.get(uid.lower(), 0)
-                last_online_time = player.get('player_info', {}).get('last_online_real_time', 0)
-                last_seen = format_last_seen(last_online_time, world_tick)
-                sort_key = (world_tick - last_online_time) / 10000000.0 if last_online_time and last_online_time != 0 else float('inf')
-                player_files.append((uid, name, guild_id, level, pals_count, last_seen, sort_key))
+    player_files, _ = _build_player_list_from_level(level_json)
     player_list_cache = player_files
     return player_files
 def populate_player_tree(tree, folder_path):
@@ -451,28 +423,7 @@ def filter_treeview(tree, query):
             tree.takeTopLevelItem(tree.indexOfTopLevelItem(item))
 def background_load_task(path):
     level_json = sav_to_json(path)
-    group_data_list = level_json['properties']['worldSaveData']['value']['GroupSaveDataMap']['value']
-    world_tick = 0
-    try:
-        world_tick = level_json['properties']['worldSaveData']['value']['GameTimeSaveData']['value']['RealDateTimeTicks']['value']
-    except:
-        pass
-    level_map = _build_level_map(level_json)
-    pal_count_map = _build_pal_count_map(level_json)
-    player_files = []
-    for group in group_data_list:
-        if group['value']['GroupType']['value']['value'] == 'EPalGroupType::Guild':
-            guild_id = group['key']['InstanceId']['value'] if isinstance(group['key'], dict) else str(group['key'])
-            players = group['value']['RawData']['value'].get('players', [])
-            for p in players:
-                uid = str(p.get('player_uid', '')).replace('-', '')
-                name = p.get('player_info', {}).get('player_name', 'Unknown')
-                level = level_map.get(uid.lower(), 1)
-                pals_count = pal_count_map.get(uid.lower(), 0)
-                last_online_time = p.get('player_info', {}).get('last_online_real_time', 0)
-                last_seen = format_last_seen(last_online_time, world_tick)
-                sort_key = (world_tick - last_online_time) / 10000000.0 if last_online_time and last_online_time != 0 else float('inf')
-                player_files.append((uid, name, guild_id, level, pals_count, last_seen, sort_key))
+    player_files, _ = _build_player_list_from_level(level_json)
     return (player_files, level_json)
 def choose_level_file(window, level_sav_entry, old_tree, new_tree):
     path, _ = QFileDialog.getOpenFileName(window, t('Select Level.sav file'), '', 'SAV Files(*.sav)')

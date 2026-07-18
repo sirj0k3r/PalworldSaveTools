@@ -76,26 +76,16 @@ def get_player_info_from_save(gvas_file, players_folder=None):
             group_type = value.get('GroupType', {}).get('value', {}).get('value', '')
             if group_type == 'EPalGroupType::Guild':
                 raw_data = value.get('RawData', {}).get('value', {})
+                guild_name = raw_data.get('guild_name', 'Unknown Guild')
                 players_list = raw_data.get('players', [])
                 for p in players_list:
                     player_uid = p.get('player_uid', 'N/A')
                     player_uid_str = str(player_uid).replace('-', '').lower() if player_uid else 'N/A'
                     if player_uid_str != 'n/a':
                         valid_player_uids.add(player_uid_str)
-    if isinstance(guild_map, list):
-        for entry in guild_map:
-            value = entry.get('value', {})
-            group_type = value.get('GroupType', {}).get('value', {}).get('value', '')
-            if group_type == 'EPalGroupType::Guild':
-                raw_data = value.get('RawData', {}).get('value', {})
-                guild_name = raw_data.get('guild_name', 'Unknown Guild')
-                players_list = raw_data.get('players', [])
-                for p in players_list:
-                    player_uid = p.get('player_uid', 'N/A')
-                    player_uid_str = str(player_uid).replace('-', '').lower() if player_uid else 'N/A'
-                    player_info = p.get('player_info', {})
-                    player_name = player_info.get('player_name', 'Unknown')
-                    players[player_uid_str] = {'name': player_name, 'guild': guild_name, 'uid': player_uid_str, 'party_id': None, 'palbox_id': None}
+                        player_info = p.get('player_info', {})
+                        player_name = player_info.get('player_name', 'Unknown')
+                        players[player_uid_str] = {'name': player_name, 'guild': guild_name, 'uid': player_uid_str, 'party_id': None, 'palbox_id': None}
     char_map = wsd.get('CharacterSaveParameterMap', {}).get('value', [])
     if isinstance(char_map, list):
         for entry in char_map:
@@ -538,65 +528,62 @@ class SlotNumUpdaterApp(QDialog):
             return
         self.set_loading_state(True, 'Updating containers...')
         def task():
+            reduction_cids = set()
             for container in containers:
                 old_slot_num = container['slot_num']
                 container['entry']['value']['SlotNum']['value'] = new_value
                 slots_data = container['entry']['value']['Slots']['value']
                 slots_values = slots_data.get('values', [])
                 if slots_values:
-                    filtered_slots = []
-                    for slot in slots_values:
-                        slot_idx = slot.get('SlotIndex', {}).get('value', 0)
-                        if slot_idx < new_value:
-                            filtered_slots.append(slot)
-                    slots_data['values'] = filtered_slots
-                if old_slot_num > new_value:
-                    logger.info(f'Starting cleanup: old={old_slot_num}, new={new_value}')
-                    container_id = container['container_id']
-                    logger.info(f'Container ID: {container_id}')
-                    char_map = self.gvas_file.properties['worldSaveData']['value']['CharacterSaveParameterMap']['value']
-                    removed_pals = []
-                    filtered_char_map = []
-                    for entry in char_map:
-                        try:
-                            raw = entry['value']['RawData']['value']['object']['SaveParameter']['value']
-                            slot_id = raw.get('SlotId', {})
-                            if slot_id:
-                                cont_ref = slot_id.get('value', {}).get('ContainerId', {}).get('value', {}).get('ID', {}).get('value')
-                                slot_idx = slot_id.get('value', {}).get('SlotIndex', {}).get('value')
-                                if cont_ref and str(cont_ref).lower() == container_id and (slot_idx is not None) and (slot_idx >= new_value):
-                                    removed_pals.append(str(entry['key']['InstanceId']['value']))
-                                    continue
-                            filtered_char_map.append(entry)
-                        except Exception:
-                            filtered_char_map.append(entry)
-                    self.gvas_file.properties['worldSaveData']['value']['CharacterSaveParameterMap']['value'] = filtered_char_map
-                    logger.info(f'Removed {len(removed_pals)} pals with slot index >= {new_value} from container {container_id}')
-                    group_map = self.gvas_file.properties['worldSaveData']['value'].get('GroupSaveDataMap', {}).get('value', [])
-                    removed_handles = 0
-                    for group_entry in group_map:
-                        try:
-                            value = group_entry.get('value', {})
-                            raw = value.get('RawData', {}).get('value', {})
-                            handle_ids = raw.get('individual_character_handle_ids', [])
-                            if handle_ids and isinstance(handle_ids, list):
-                                filtered_handles = []
-                                for handle in handle_ids:
-                                    handle_iid = handle.get('instance_id', '')
-                                    if handle_iid:
-                                        handle_iid_str = str(handle_iid).lower() if not isinstance(handle_iid, str) else handle_iid.lower()
-                                        if handle_iid_str not in [p.lower() for p in removed_pals]:
-                                            filtered_handles.append(handle)
-                                        else:
-                                            removed_handles += 1
-                                if len(filtered_handles) != len(handle_ids):
-                                    raw['individual_character_handle_ids'] = filtered_handles
-                        except Exception:
-                            pass
-                    if removed_handles > 0:
-                        logger.info(f'Removed {removed_handles} handle IDs from GroupSaveDataMap')
+                    slots_data['values'] = [s for s in slots_values if s.get('SlotIndex', {}).get('value', 0) < new_value]
                 container['slot_num'] = new_value
                 container['max_slots'] = new_value
+                if old_slot_num > new_value:
+                    reduction_cids.add(container['container_id'])
+            if reduction_cids:
+                logger.info(f'Cleaning up char/group maps for {len(reduction_cids)} reduced container(s)')
+                char_map = self.gvas_file.properties['worldSaveData']['value']['CharacterSaveParameterMap']['value']
+                removed_pals = []
+                filtered_char_map = []
+                for entry in char_map:
+                    try:
+                        raw = entry['value']['RawData']['value']['object']['SaveParameter']['value']
+                        slot_id = raw.get('SlotId', {})
+                        if slot_id:
+                            cont_ref = slot_id.get('value', {}).get('ContainerId', {}).get('value', {}).get('ID', {}).get('value')
+                            slot_idx = slot_id.get('value', {}).get('SlotIndex', {}).get('value')
+                            if cont_ref and str(cont_ref).lower() in reduction_cids and (slot_idx is not None) and (slot_idx >= new_value):
+                                removed_pals.append(str(entry['key']['InstanceId']['value']))
+                                continue
+                        filtered_char_map.append(entry)
+                    except Exception:
+                        filtered_char_map.append(entry)
+                self.gvas_file.properties['worldSaveData']['value']['CharacterSaveParameterMap']['value'] = filtered_char_map
+                logger.info(f'Removed {len(removed_pals)} pals with slot index >= {new_value} across {len(reduction_cids)} container(s)')
+                removed_set = set(removed_pals)
+                group_map = self.gvas_file.properties['worldSaveData']['value'].get('GroupSaveDataMap', {}).get('value', [])
+                removed_handles = 0
+                for group_entry in group_map:
+                    try:
+                        value = group_entry.get('value', {})
+                        raw = value.get('RawData', {}).get('value', {})
+                        handle_ids = raw.get('individual_character_handle_ids', [])
+                        if handle_ids and isinstance(handle_ids, list):
+                            filtered = []
+                            for handle in handle_ids:
+                                handle_iid = handle.get('instance_id', '')
+                                if handle_iid:
+                                    handle_iid_str = str(handle_iid).lower() if not isinstance(handle_iid, str) else handle_iid.lower()
+                                    if handle_iid_str in removed_set:
+                                        removed_handles += 1
+                                        continue
+                                filtered.append(handle)
+                            if len(filtered) != len(handle_ids):
+                                raw['individual_character_handle_ids'] = filtered
+                    except Exception:
+                        pass
+                if removed_handles > 0:
+                    logger.info(f'Removed {removed_handles} handle IDs from GroupSaveDataMap')
             return True
         def on_finished(result):
             self.has_changes = True
@@ -652,74 +639,44 @@ class SlotNumUpdaterApp(QDialog):
                 slots_data['values'] = new_slots
                 logger.info(f'Removed {len(removed_slots)} excess slots from container {container_id}')
             container['used_slots'] = min(container['used_slots'], new_slot_count)
+            container_slot_map = {}
+            container_map = self.gvas_file.properties['worldSaveData']['value']['CharacterContainerSaveData']['value']
+            if isinstance(container_map, list):
+                for cont_entry in container_map:
+                    try:
+                        cid = str(cont_entry['key']['ID']['value']).lower()
+                        container_slot_map[cid] = cont_entry['value']['SlotNum']['value']
+                    except Exception:
+                        continue
             char_map = self.gvas_file.properties['worldSaveData']['value']['CharacterSaveParameterMap']['value']
-            initial_char_count = len(char_map)
             removed_pals_count = 0
-            filtered_char_map = []
+            orphaned_pals_count = 0
+            invalid_slot_count = 0
+            final_char_map = []
             for entry in char_map:
                 try:
                     instance_id = entry['key']['InstanceId']['value']
                     if str(instance_id) in removed_instance_ids:
                         removed_pals_count += 1
-                    else:
-                        filtered_char_map.append(entry)
-                except Exception:
-                    filtered_char_map.append(entry)
-            self.gvas_file.properties['worldSaveData']['value']['CharacterSaveParameterMap']['value'] = filtered_char_map
-            container_map = self.gvas_file.properties['worldSaveData']['value']['CharacterContainerSaveData']['value']
-            valid_container_ids = set()
-            if isinstance(container_map, list):
-                for cont_entry in container_map:
-                    try:
-                        cont_id = cont_entry['key']['ID']['value']
-                        if cont_id:
-                            valid_container_ids.add(str(cont_id).lower())
-                    except Exception:
                         continue
-            orphaned_pals_count = 0
-            final_char_map = []
-            for entry in filtered_char_map:
-                try:
                     raw = entry['value']['RawData']['value']['object']['SaveParameter']['value']
                     slot_id = raw.get('SlotId', {})
                     if slot_id:
                         container_id_ref = slot_id.get('value', {}).get('ContainerId', {}).get('value', {}).get('ID', {}).get('value')
                         if container_id_ref:
-                            container_id_str = str(container_id_ref).lower()
-                            if container_id_str not in valid_container_ids:
+                            cid = str(container_id_ref).lower()
+                            max_slots = container_slot_map.get(cid)
+                            if max_slots is None:
                                 orphaned_pals_count += 1
+                                continue
+                            slot_index = slot_id.get('value', {}).get('SlotIndex', {}).get('value')
+                            if slot_index is not None and slot_index >= max_slots:
+                                invalid_slot_count += 1
                                 continue
                     final_char_map.append(entry)
                 except Exception:
                     final_char_map.append(entry)
             self.gvas_file.properties['worldSaveData']['value']['CharacterSaveParameterMap']['value'] = final_char_map
-            invalid_slot_count = 0
-            final_char_map_2 = []
-            for entry in final_char_map:
-                try:
-                    raw = entry['value']['RawData']['value']['object']['SaveParameter']['value']
-                    slot_id = raw.get('SlotId', {})
-                    if slot_id:
-                        container_id_ref = slot_id.get('value', {}).get('ContainerId', {}).get('value', {}).get('ID', {}).get('value')
-                        slot_index = slot_id.get('value', {}).get('SlotIndex', {}).get('value')
-                        if container_id_ref and slot_index is not None:
-                            container_id_str = str(container_id_ref).lower()
-                            container_max_slots = None
-                            for cont_entry in container_map:
-                                try:
-                                    cont_id = cont_entry['key']['ID']['value']
-                                    if str(cont_id).lower() == container_id_str:
-                                        container_max_slots = cont_entry['value']['SlotNum']['value']
-                                        break
-                                except Exception:
-                                    continue
-                            if container_max_slots is not None and slot_index >= container_max_slots:
-                                invalid_slot_count += 1
-                                continue
-                    final_char_map_2.append(entry)
-                except Exception:
-                    final_char_map_2.append(entry)
-            self.gvas_file.properties['worldSaveData']['value']['CharacterSaveParameterMap']['value'] = final_char_map_2
             group_map = self.gvas_file.properties['worldSaveData']['value']['GroupSaveDataMap']['value']
             removed_handles_count = 0
             for group in group_map:
