@@ -1,6 +1,7 @@
 #2.1.5
 - **Language switching fixed** — changing language now switches to the correct language on the first try, with all labels and tooltips updating immediately.
 - **Tooltips now update on language switch** — the Max All Souls and Max All IVs icons in the pal editor now show translated tooltips when changing the UI language on the fly.
+- **Language names in menu always show native names** — Portuguese, Chinese, Russian, and all other languages in the menu > Languages list now display in their native form (e.g. "Português") regardless of the current app language.
 - Bumped version to 2.1.5
 
 #2.1.4

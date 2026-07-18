@@ -79,6 +79,10 @@ def init_language(default_lang: str='zh_CN') -> None:
     _ensure_lang('en_US')
     _LANG = lang
 _DEF = object()
+def get_native_lang_name(code: str) -> str:
+    _ensure_lang('en_US')
+    _en = _RES.get('en_US', {})
+    return _en.get(f'lang.{code}', code)
 def t(key: str, default: str | object=_DEF, **fmt) -> str:
     src = _RES.get(_LANG, {})
     fallback = _RES.get('en_US', {})
