@@ -2,9 +2,13 @@ name: Test Changelog Translation
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Draft release version (e.g. 2.1.4)'
+        required: true
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   translate-changelog:
@@ -22,10 +26,14 @@ jobs:
           uv pip install deep-translator
       - name: Run changelog translation
         run: uv run python scripts/scrs/translate_changelog.py
-      - name: Upload multilang changelog
-        uses: actions/upload-artifact@v7
-        with:
-          name: multilang-changelog
-          path: CHANGELOG.multilang.md
-      - name: Print result
-        run: cat CHANGELOG.multilang.md
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          NOTES=$(cat CHANGELOG.multilang.md)
+          gh release create "v${VERSION}-preview" \
+            --repo "${{ github.repository }}" \
+            --title "v${VERSION} — Changelog Preview" \
+            --notes "$NOTES" \
+            --draft
