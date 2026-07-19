@@ -114,6 +114,11 @@ def run_with_loading(callback, func, *args, parent=None, **kwargs):
             if widget.isVisible() and widget.isWindow() and widget.windowTitle() and (not isinstance(widget, QDialog)):
                 parent = widget
                 break
+        if parent is None:
+            for widget in QApplication.allWidgets():
+                if widget.isVisible() and widget.isWindow() and widget.windowTitle() and (not isinstance(widget, QDialog)):
+                    parent = widget
+                    break
     overlay_widget = None
     if mode == 'header' and constants.header_loading_widget is not None:
         try:

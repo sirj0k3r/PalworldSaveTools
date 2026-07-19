@@ -489,6 +489,26 @@ class ToolsTab(QWidget):
         dialog.adjustSize()
         center_window(dialog)
         dialog.setWindowOpacity(0.0)
+        _main = self.parent_window
+        if _main and _main.isVisible():
+            QApplication.setQuitOnLastWindowClosed(False)
+            _main.hide()
+            def _show():
+                if _main:
+                    _main.show()
+                    _main.activateWindow()
+                    _main.raise_()
+                QApplication.setQuitOnLastWindowClosed(True)
+            if isinstance(dialog, QDialog):
+                dialog.finished.connect(lambda r: _show())
+            else:
+                _orig_close = dialog.closeEvent
+                def _restore(event, orig=_orig_close):
+                    if callable(orig):
+                        orig(event)
+                    if event.isAccepted():
+                        _show()
+                dialog.closeEvent = _restore
         dialog.show()
         self.fade_animation = QPropertyAnimation(dialog, b'windowOpacity')
         self.fade_animation.setDuration(400)
