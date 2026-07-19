@@ -1,6 +1,6 @@
 import sys, os, json, time, random, subprocess, threading, traceback
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QFrame, QLabel, QPushButton, QTextEdit, QGraphicsOpacityEffect, QMessageBox, QProgressBar, QDialog
-from PySide6.QtCore import Qt, QTimer, QPropertyAnimation
+from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QObject, QEvent
 from PySide6.QtGui import QPixmap, QCursor, QFont
 from i18n import t, init_language
 from resource_resolver import get_base_dir, get_resources_dir, resource_path
@@ -96,6 +96,15 @@ if '--spawn-loader-simple' in sys.argv:
     win.show()
     sys.exit(app.exec())
 
+class OverlayResizer(QObject):
+    def __init__(self, target):
+        super().__init__(target)
+        self.target = target
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.Resize and obj is self.target.parent():
+            self.target.setGeometry(obj.rect())
+        return False
+
 def run_with_loading(callback, func, *args, parent=None, **kwargs):
     on_error = kwargs.pop('on_error', None)
     mode = getattr(constants, 'loading_screen_mode', 'overlay')
@@ -105,7 +114,7 @@ def run_with_loading(callback, func, *args, parent=None, **kwargs):
             if widget.isVisible() and widget.isWindow() and widget.windowTitle() and (not isinstance(widget, QDialog)):
                 parent = widget
                 break
-    loader_proc = None
+    overlay_widget = None
     if mode == 'header' and constants.header_loading_widget is not None:
         try:
             constants.header_loading_widget.set_loading_state('loading')
@@ -116,36 +125,59 @@ def run_with_loading(callback, func, *args, parent=None, **kwargs):
             phrases = [t(f'loading.phrase.{i}') for i in range(1, 21)]
         except:
             phrases = ['LOADING...']
-        try:
-            exe = sys.executable
-            if getattr(sys, 'frozen', False):
-                cmd = [exe, '--spawn-loader-simple']
-                cwd = os.path.dirname(exe)
-                base_dir = cwd
-            else:
-                script_path = os.path.abspath(__file__)
-                cmd = [exe, script_path, '--spawn-loader-simple']
-                cwd = os.path.dirname(script_path)
-                base_dir = os.path.dirname(cwd)
-            env = os.environ.copy()
-            env['PYTHONUNBUFFERED'] = '1'
-            if 'VIRTUAL_ENV' in os.environ:
-                env['VIRTUAL_ENV'] = os.environ['VIRTUAL_ENV']
-                venv_scripts = os.path.join(os.environ['VIRTUAL_ENV'], 'Scripts' if os.name == 'nt' else 'bin')
-                if venv_scripts not in env['PATH']:
-                    env['PATH'] = venv_scripts + os.pathsep + env['PATH']
-            for subdir in ('resources', 'src'):
-                d = os.path.join(base_dir, subdir)
-                if os.path.isdir(d) and d not in env.get('PYTHONPATH', ''):
-                    if 'PYTHONPATH' in env:
-                        env['PYTHONPATH'] = d + os.pathsep + env['PYTHONPATH']
-                    else:
-                        env['PYTHONPATH'] = d
-            geom = parent.geometry()
-            cmd += [json.dumps(phrases), str(geom.x()), str(geom.y()), str(geom.width()), str(geom.height())]
-            loader_proc = subprocess.Popen(cmd, creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env, cwd=cwd)
-        except Exception:
-            pass
+        overlay_widget = QWidget(parent)
+        overlay_widget.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        overlay_widget.setGeometry(parent.rect())
+        overlay_widget.setStyleSheet('background: rgba(18,20,24,0.94);')
+        ol = QVBoxLayout(overlay_widget)
+        ol.setAlignment(Qt.AlignCenter)
+        icon = QLabel(overlay_widget)
+        icon.setAlignment(Qt.AlignCenter)
+        p = resource_path(get_base_dir(), 'Xenolord.webp')
+        if not os.path.exists(p):
+            p = resource_path(get_base_dir(), 'logo.png')
+        if os.path.exists(p):
+            icon.setPixmap(QPixmap(p).scaled(80, 80, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        ol.addWidget(icon)
+        bar = QProgressBar(overlay_widget)
+        bar.setRange(0, 0)
+        bar.setFixedHeight(4)
+        bar.setFixedWidth(300)
+        bar.setStyleSheet('QProgressBar { background: rgba(255,255,255,0.06); border: none; border-radius: 2px; } QProgressBar::chunk { background: qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #38bdf8,stop:1 #7c3aed); border-radius: 2px; }')
+        ol.addWidget(bar, alignment=Qt.AlignCenter)
+        phrase_lbl = QLabel(random.choice(phrases), overlay_widget)
+        phrase_lbl.setAlignment(Qt.AlignCenter)
+        phrase_lbl.setWordWrap(True)
+        phrase_lbl.setStyleSheet('color:#e2e8f0;font-size:14px;font-weight:600;border:none;background:transparent;')
+        ol.addWidget(phrase_lbl)
+        tm_lbl = QLabel('00:00', overlay_widget)
+        tm_lbl.setAlignment(Qt.AlignCenter)
+        tm_lbl.setStyleSheet('color:rgba(148,163,184,0.4);font-size:11px;border:none;background:transparent;')
+        ol.addWidget(tm_lbl)
+        overlay_widget.show()
+        overlay_widget.raise_()
+        start_ts = time.time()
+        def cycle_phrase():
+            try:
+                phrase_lbl.setText(random.choice(phrases))
+            except RuntimeError:
+                pass
+        pt = QTimer(overlay_widget)
+        pt.timeout.connect(cycle_phrase)
+        pt.setInterval(3000)
+        pt.start()
+        def tick():
+            try:
+                e = time.time() - start_ts
+                tm_lbl.setText(f'{int(e//60):02d}:{int(e%60):02d}')
+            except RuntimeError:
+                pass
+        tt = QTimer(overlay_widget)
+        tt.timeout.connect(tick)
+        tt.setInterval(250)
+        tt.start()
+        parent.installEventFilter(OverlayResizer(overlay_widget))
+    result = {'data': None, 'done': False}
     def task():
         try:
             result['data'] = func(*args, **kwargs)
@@ -162,10 +194,10 @@ def run_with_loading(callback, func, *args, parent=None, **kwargs):
                 constants.header_loading_widget.set_loading_state('idle')
             except RuntimeError:
                 pass
-        if loader_proc and loader_proc.poll() is None:
+        if overlay_widget:
             try:
-                loader_proc.kill()
-            except:
+                overlay_widget.deleteLater()
+            except RuntimeError:
                 pass
         res = result['data']
         if isinstance(res, str) and 'Traceback' in res:
