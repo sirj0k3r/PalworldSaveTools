@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QF
 from PySide6.QtCore import Qt, QPoint, Signal, QTimer, QEvent, QRect
 from PySide6.QtGui import QFont, QColor, QCursor, QEnterEvent, QGuiApplication, QIcon
 class nf:
-    icons = {'nf-md-file': '📁', 'nf-md-function': '⚙️', 'nf-md-map': '🗺️', 'nf-md-playlist_remove': '🚫', 'nf-md-translate': '🌐', 'nf-md-chevron_right': '▶️', 'nf-md-update': '⬇️'}
+    icons = {'nf-md-file': '📁', 'nf-md-function': '⚙️', 'nf-md-map': '🗺️', 'nf-md-playlist_remove': '🚫', 'nf-md-translate': '🌐', 'nf-md-cog': '⚙️', 'nf-md-chevron_right': '▶️', 'nf-md-update': '⬇️'}
 from i18n import t
 from palworld_aio import constants
 class ScrollableMenu(QWidget):
@@ -141,7 +141,14 @@ class MenuPopup(QWidget):
             if is_hovered:
                 over_button = category
         over_popup = self._is_point_in_widget(cursor_pos, self)
-        over_submenu = self._current_menu and self._is_point_in_widget(cursor_pos, self._current_menu)
+        over_submenu = False
+        if self._current_menu:
+            over_submenu = self._is_point_in_widget(cursor_pos, self._current_menu)
+            if not over_submenu:
+                for child in self._current_menu.findChildren(QMenu):
+                    if child.isVisible() and self._is_point_in_widget(cursor_pos, child):
+                        over_submenu = True
+                        break
         if over_button and over_button != self._current_category:
             self._show_submenu(over_button, self.menu_buttons[over_button])
         elif not over_button and (not over_popup) and (not over_submenu):
@@ -164,7 +171,7 @@ class MenuPopup(QWidget):
         inner_layout.setContentsMargins(8, 8, 8, 8)
         inner_layout.setSpacing(4)
         self.menu_buttons = {}
-        categories = [('file', 'nf-md-file', t('deletion.menu.file') if t else 'File'), ('functions', 'nf-md-function', t('deletion.menu.delete') if t else 'Functions'), ('maps', 'nf-md-map', t('deletion.menu.view') if t else 'Maps'), ('exclusions', 'nf-md-playlist_remove', t('deletion.menu.exclusions') if t else 'Exclusions'), ('languages', 'nf-md-translate', t('lang.label') if t else 'Languages')]
+        categories = [('file', 'nf-md-file', t('deletion.menu.file') if t else 'File'), ('functions', 'nf-md-function', t('deletion.menu.delete') if t else 'Functions'), ('maps', 'nf-md-map', t('deletion.menu.view') if t else 'Maps'), ('exclusions', 'nf-md-playlist_remove', t('deletion.menu.exclusions') if t else 'Exclusions'), ('languages', 'nf-md-translate', t('lang.label') if t else 'Languages'), ('configs', 'nf-md-cog', t('deletion.menu.configs') if t else 'Configs')]
         for key, icon_key, label in categories:
             btn = self._create_menu_button(key, icon_key, label)
             inner_layout.addWidget(btn)
@@ -188,37 +195,46 @@ class MenuPopup(QWidget):
         if not actions:
             return
         self._clear_all_highlights()
-        if category == 'functions':
-            menu = ScrollableMenu(self, self.is_dark)
-            for item in actions:
-                menu.add_item(item)
-            btn_pos = button.mapToGlobal(QPoint(button.width(), 0))
-            self._current_menu = menu
-            self._current_category = category
-            self._update_button_highlight(category, True)
-            menu.show()
-            menu.move(btn_pos)
-            menu.raise_()
-        else:
-            menu = QMenu(self)
-            menu.setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
-            menu.setAttribute(Qt.WA_TranslucentBackground)
-            for item in actions:
-                if len(item) >= 3 and item[2] == 'separator':
-                    menu.addSeparator()
-                text, callback = (item[0], item[1])
+        menu = QMenu(self)
+        menu.setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
+        menu.setAttribute(Qt.WA_TranslucentBackground)
+        qmenu_style = 'QMenu { background: rgba(18,20,24,0.95); border: 1px solid rgba(125,211,252,0.2); color: #A6B8C8; min-width: 220px; font: 10pt "Segoe UI"; } QMenu::item:selected { background: rgba(125,211,252,0.1); color: #7DD3FC; } QMenu::item { padding: 8px 12px; min-width: 180px; }'
+        menu.setStyleSheet(qmenu_style)
+        for item in actions:
+            if len(item) >= 3 and item[2] == 'separator':
+                menu.addSeparator()
+                continue
+            text, callback = (item[0], item[1])
+            if isinstance(callback, (list, tuple)):
+                sub = menu.addMenu(text)
+                sub.setStyleSheet(qmenu_style)
+                for sub_text, sub_cb in callback:
+                    a = sub.addAction(sub_text)
+                    a.triggered.connect(lambda checked=False, cb=sub_cb: self._on_menu_action(cb))
+            else:
                 action = menu.addAction(text)
                 if len(item) >= 3 and item[2] != 'separator':
                     action.setIcon(QIcon(item[2]))
                 action.triggered.connect(lambda checked, cb=callback: self._on_menu_action(cb))
-            btn_pos = button.mapToGlobal(QPoint(button.width(), 0))
-            self._current_menu = menu
-            self._current_category = category
-            self._update_button_highlight(category, True)
-            menu.aboutToHide.connect(self._on_menu_hidden)
-            menu.show()
-            menu.move(btn_pos)
-            menu.raise_()
+        btn_pos = button.mapToGlobal(QPoint(button.width(), 0))
+        self._current_menu = menu
+        self._current_submenu = None
+        self._current_category = category
+        self._update_button_highlight(category, True)
+        menu.aboutToHide.connect(self._on_menu_hidden)
+        menu.show()
+        menu.move(btn_pos)
+        menu.raise_()
+    def _show_submenu_abs(self, sub, parent_menu):
+        if sub.isVisible():
+            return
+        self._close_current_submenu()
+        self._current_submenu = sub
+        pos = parent_menu.mapToGlobal(QPoint(parent_menu.width(), 0))
+        sub.aboutToHide.connect(self._on_submenu_hidden)
+        sub.show()
+        sub.move(pos)
+        sub.raise_()
     def _clear_all_highlights(self):
         for category, btn in self.menu_buttons.items():
             btn.setProperty('active', False)
@@ -242,8 +258,8 @@ class MenuPopup(QWidget):
         self._clear_all_highlights()
         super().hideEvent(event)
     def refresh_labels(self):
-        labels = {'file': t('deletion.menu.file') if t else 'File', 'functions': t('deletion.menu.delete') if t else 'Functions', 'maps': t('deletion.menu.view') if t else 'Maps', 'exclusions': t('deletion.menu.exclusions') if t else 'Exclusions', 'languages': t('lang.label') if t else 'Languages'}
-        icon_map = {'file': 'nf-md-file', 'functions': 'nf-md-function', 'maps': 'nf-md-map', 'exclusions': 'nf-md-playlist_remove', 'languages': 'nf-md-translate'}
+        labels = {'file': t('deletion.menu.file') if t else 'File', 'functions': t('deletion.menu.delete') if t else 'Functions', 'maps': t('deletion.menu.view') if t else 'Maps', 'exclusions': t('deletion.menu.exclusions') if t else 'Exclusions', 'languages': t('lang.label') if t else 'Languages', 'configs': t('deletion.menu.configs') if t else 'Configs'}
+        icon_map = {'file': 'nf-md-file', 'functions': 'nf-md-function', 'maps': 'nf-md-map', 'exclusions': 'nf-md-playlist_remove', 'languages': 'nf-md-translate', 'configs': 'nf-md-cog'}
         for category, btn in self.menu_buttons.items():
             if category in labels:
                 try:

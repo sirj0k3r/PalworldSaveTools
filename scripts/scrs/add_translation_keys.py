@@ -13,40 +13,36 @@ except ImportError:
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 LANGUAGES = {'zh_CN': {'name': 'Simplified Chinese', 'code': 'zh-CN'}, 'de_DE': {'name': 'German', 'code': 'de'}, 'es_ES': {'name': 'Spanish', 'code': 'es'}, 'fr_FR': {'name': 'French', 'code': 'fr'}, 'ru_RU': {'name': 'Russian', 'code': 'ru'}, 'ja_JP': {'name': 'Japanese', 'code': 'ja'}, 'ko_KR': {'name': 'Korean', 'code': 'ko'}, 'pt_BR': {'name': 'Portuguese (Brazil)', 'code': 'pt'}}
 NEW_TRANSLATIONS = {
-    'lang.pt_BR': 'Português',
-    'game_version.tooltip': 'Palworld v{version}',
-    'common.ok': 'OK',
-    'common.cancel': 'Cancel',
-    'menu.file.load_backup': 'Load from Backup',
-    'backup.no_backups': 'No backups found.',
-    'backup.invalid': 'Selected backup is missing required files.',
-    'edit_pals.max_all_confirm_cheat': 'Max all stats (IVs: 255, souls: 255, rank: 5, level: 255) for all pals in party & all palbox pages?',
-    'base_inventory.max_all_confirm_cheat': 'Max all stats (IVs: 255, souls: 255, rank: 5, level: 255) for all working pals in this base?',
-    'func_manager.max_all_pals.confirm_cheat': 'This will max all stats (level 255, IVs 255, souls 255, rank 5) for ALL pals in the save. Continue?',
-    'edit_pals.max_all_ivs': 'Max all IVs',
-    'edit_pals.max_all_souls': 'Max all souls',
-    'deletion.col.role': 'Role',
-    'guild.role.guild_master': 'Guild Master',
-    'guild.role.submaster': 'Submaster',
-    'guild.role.member': 'Member',
-    'guild.role.guest': 'Guest',
-    'guild.menu.set_role': 'Set Role',
-    'guild.role_updated': 'Role updated',
-    'inventory.unlock_all_map': 'Unlock All Fast Travel',
-    'inventory.unlock_all_map_confirm.title': 'Unlock All Fast Travel',
-    'inventory.unlock_all_map_confirm.msg': 'Unlock all fast travel points for {count} player(s)?',
-    'inventory.unlock_all_map_bulk_success.msg': 'Unlocked fast travel for {count} player(s).',
+    'common.confirm': 'Confirm',
 }
 OLD_KEYS = [
-    'guild.role.none',
-    'guild.role.leader',
-    'guild.role.officer',
+    'loading.mode.overlay',
+    'loading.mode.hidden',
+    'loading.mode.header',
+    'deletion.menu.remove_invalid_items',
+    'deletion.menu.remove_invalid_structures',
+    'deletion.menu.remove_invalid_pals',
+    'deletion.menu.remove_invalid_passives',
+    'deletion.menu.repair_structures',
+    'deletion.menu.repair_items',
+    'deletion.menu.restore_all_pals',
+    'deletion.menu.trim_overfilled_inventories',
+    'guild.menu.rebuild_all_guilds',
+    'func_manager.restore_all_pals.title',
+    'func_manager.restore_all_pals.confirm',
+    'func_manager.restore_all_pals.success',
+    'func_manager.fix_unassigned_pals.title',
+    'func_manager.fix_unassigned_pals.confirm.title',
+    'func_manager.fix_unassigned_pals.confirm.msg',
+    'func_manager.fix_unassigned_pals.msg',
 ]
 def _clean_uv_locks():
     for p in [Path.cwd() / 'uv.lock', PROJECT_ROOT / 'uv.lock']:
         if p.exists():
             p.unlink()
 
+OLD_KEYS = [
+]
 def remove_old_keys_from_all():
     for lang_code in list(LANGUAGES.keys()) + ['en_US']:
         lang_file = PROJECT_ROOT / 'resources' / 'i18n' / f'{lang_code}.json'

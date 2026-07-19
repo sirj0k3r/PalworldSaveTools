@@ -2210,6 +2210,56 @@ def restore_all_pals(parent=None):
             continue
     count += _apply_to_dps_files(_restore_one_pal)
     return count
+
+def fix_all_pals_combined(parent=None):
+    if not constants.current_save_path or not constants.loaded_level_json:
+        return 0
+    from palworld_aio.utils import resolve_name
+    wsd = constants.loaded_level_json['properties']['worldSaveData']['value']
+    cmap = wsd.get('CharacterSaveParameterMap', {}).get('value', [])
+    ownership = ContainerOwnership.build(cmap, wsd.get('CharacterContainerSaveData', {}).get('value', []))
+    PALMAP = load_game_data_map('characters.json', 'pals')
+    NPCMAP = load_game_data_map('characters.json', 'npcs')
+    NAMEMAP = {**PALMAP, **NPCMAP}
+    player_names = {}
+    group_map = wsd.get('GroupSaveDataMap', {}).get('value', [])
+    for g in group_map:
+        try:
+            for p in g['value']['RawData']['value'].get('players', []):
+                uid = p.get('player_uid')
+                name = p.get('player_info', {}).get('player_name', 'Unknown')
+                if uid:
+                    player_names[str(uid).replace('-', '').lower()] = name
+        except Exception:
+            pass
+    count = 0
+    for item in cmap:
+        try:
+            raw = item.get('value', {}).get('RawData', {}).get('value', {})
+            if not raw:
+                continue
+            raw = raw.get('object', {}).get('SaveParameter', {}).get('value', {})
+            if not raw:
+                continue
+            if 'IsPlayer' in raw:
+                continue
+            owner = raw.get('OwnerPlayerUId', {}).get('value')
+            if not owner:
+                inst_val = item.get('key', {}).get('InstanceId', {}).get('value')
+                effective = ownership.get_effective_owner(inst_val, '')
+                if effective:
+                    uid_with_dashes = f'{effective[:8]}-{effective[8:12]}-{effective[12:16]}-{effective[16:20]}-{effective[20:]}'
+                    raw['OwnerPlayerUId'] = {'struct_type': 'Guid', 'struct_id': '00000000-0000-0000-0000-000000000000', 'id': None, 'value': UUID.from_str(uid_with_dashes), 'type': 'StructProperty'}
+                    pname = player_names.get(effective, 'Unknown')
+                    cid = raw.get('CharacterID', {}).get('value', '')
+                    pal_name = resolve_name(cid, NAMEMAP) or cid
+                    print(f'[FIX_ALL_PALS] Fixed pal {pal_name}: assigned to {pname} ({effective})')
+            if _restore_one_pal(raw):
+                count += 1
+        except Exception:
+            continue
+    count += _apply_to_dps_files(_restore_one_pal)
+    return count
 def _max_one_pal(raw):
     from palworld_aio.editor.pal_editor.data import get_pal_base_data, _ensure_friendship_thresholds
     from palworld_aio.editor.pal_editor.legacy_frame import PalFrame
@@ -2980,6 +3030,108 @@ def gather_update_dynamic_containers_with_reporting(parent=None):
             print('Failed to update dynamic containers')
     except Exception as e:
         print(f'Error gathering dynamic containers: {e}')
+STAT_MAP_JP = {'最大HP': 'hp', '最大SP': 'stamina', '攻撃力': 'attack', '作業速度': 'work_speed', '所持重量': 'weight'}
+HERO_MAX = 50
+
+def scan_illegal_players_by_stats():
+    if not constants.loaded_level_json:
+        return {}
+    wsd = constants.loaded_level_json['properties']['worldSaveData']['value']
+    char_map = wsd.get('CharacterSaveParameterMap', {}).get('value', [])
+    players_by_uid = {}
+    wsd = constants.loaded_level_json['properties']['worldSaveData']['value']
+    group_data_list = wsd.get('GroupSaveDataMap', {}).get('value', [])
+    for group in group_data_list:
+        if group['value']['GroupType']['value']['value'] != 'EPalGroupType::Guild':
+            continue
+        for p in group['value']['RawData']['value'].get('players', []):
+            uid_obj = p.get('player_uid')
+            uid = str(uid_obj).replace('-', '').lower() if uid_obj else ''
+            if uid:
+                players_by_uid[uid] = {
+                    'name': p.get('player_info', {}).get('player_name', 'Unknown'),
+                    'guild_name': group['value']['RawData']['value'].get('guild_name', 'Unknown'),
+                    'level': constants.player_levels.get(uid, 1),
+                }
+    result = {}
+    for entry in char_map:
+        try:
+            raw = entry.get('value', {}).get('RawData', {}).get('value', {})
+            sp = raw.get('object', {}).get('SaveParameter', {})
+            if sp.get('struct_type') != 'PalIndividualCharacterSaveParameter':
+                continue
+            sp_val = sp.get('value', {})
+            if not sp_val.get('IsPlayer', {}).get('value'):
+                continue
+            uid_obj = entry.get('key', {}).get('PlayerUId', {})
+            uid = str(uid_obj.get('value', '')).replace('-', '').lower() if isinstance(uid_obj, dict) else ''
+            if not uid:
+                continue
+            got_list = sp_val.get('GotStatusPointList')
+            illegal_stats = {}
+            if isinstance(got_list, dict):
+                got_val = got_list.get('value')
+                if isinstance(got_val, dict):
+                    for status_item in got_val.get('values', []):
+                        stat_name_jp = status_item.get('StatusName', {}).get('value', '') if isinstance(status_item.get('StatusName'), dict) else ''
+                        stat_point = status_item.get('StatusPoint', {}).get('value', 0) if isinstance(status_item.get('StatusPoint'), dict) else 0
+                        if stat_name_jp in STAT_MAP_JP and stat_point > HERO_MAX:
+                            illegal_stats[STAT_MAP_JP[stat_name_jp]] = stat_point
+            if illegal_stats:
+                pinfo = players_by_uid.get(uid, {})
+                result[uid] = {
+                    'player_name': pinfo.get('name', 'Unknown'),
+                    'guild_name': pinfo.get('guild_name', 'Unknown'),
+                    'level': pinfo.get('level', 1),
+                    'illegal_stats': illegal_stats,
+                    'stat_count': len(illegal_stats),
+                }
+        except:
+            continue
+    return result
+
+def fix_illegal_player_stats(parent=None, selected_uids=None):
+    if not constants.loaded_level_json:
+        return 0
+    wsd = constants.loaded_level_json['properties']['worldSaveData']['value']
+    char_map = wsd.get('CharacterSaveParameterMap', {}).get('value', [])
+    selected_set = {u.replace('-', '').lower() for u in (selected_uids or [])} if selected_uids else None
+    fixed = 0
+    for entry in char_map:
+        try:
+            raw = entry.get('value', {}).get('RawData', {}).get('value', {})
+            sp = raw.get('object', {}).get('SaveParameter', {})
+            if sp.get('struct_type') != 'PalIndividualCharacterSaveParameter':
+                continue
+            sp_val = sp.get('value', {})
+            if not sp_val.get('IsPlayer', {}).get('value'):
+                continue
+            uid_obj = entry.get('key', {}).get('PlayerUId', {})
+            uid = str(uid_obj.get('value', '')).replace('-', '').lower() if isinstance(uid_obj, dict) else ''
+            if not uid:
+                continue
+            if selected_set is not None and uid not in selected_set:
+                continue
+            got_list = sp_val.get('GotStatusPointList')
+            changed = False
+            if isinstance(got_list, dict):
+                got_val = got_list.get('value')
+                if isinstance(got_val, dict):
+                    for status_item in got_val.get('values', []):
+                        stat_name_jp = status_item.get('StatusName', {}).get('value', '') if isinstance(status_item.get('StatusName'), dict) else ''
+                        if stat_name_jp not in STAT_MAP_JP:
+                            continue
+                        sp_obj = status_item.get('StatusPoint')
+                        if isinstance(sp_obj, dict):
+                            if sp_obj.get('value', 0) > HERO_MAX:
+                                sp_obj['value'] = HERO_MAX
+                                changed = True
+            if changed:
+                fixed += 1
+        except:
+            continue
+    return fixed
+
 def edit_game_days(parent=None):
     if not constants.loaded_level_json:
         return None

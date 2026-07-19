@@ -24,11 +24,44 @@ class HeaderWidget(QWidget):
         self._pulse_timer = None
         self._update_available = False
         self._latest_version = None
+        self._loading_timer = None
+        self._loading_spinner_idx = 0
         self._load_nerd_font()
         self._setup_ui()
         self.update_logo()
     def __del__(self):
         self.stop_pulse_animation()
+        self._stop_loading()
+    def set_loading_state(self, state):
+        if state == 'loading':
+            self._loading_btn.setVisible(True)
+            self._start_loading_animation()
+        elif state == 'idle':
+            self._stop_loading_animation()
+            self._loading_btn.setVisible(False)
+    def _start_loading_animation(self):
+        self._stop_loading_animation()
+        self._loading_spinner_idx = 0
+        self._loading_timer = QTimer()
+        self._loading_timer.timeout.connect(self._tick_loading)
+        self._loading_timer.start(200)
+        self._tick_loading()
+    def _stop_loading_animation(self):
+        if self._loading_timer:
+            try:
+                self._loading_timer.stop()
+            except RuntimeError:
+                pass
+            self._loading_timer = None
+    _SPINNER = '\u25D0\u25D3\u25D1\u25D2'
+    def _tick_loading(self):
+        try:
+            self._loading_btn.setText(self._SPINNER[self._loading_spinner_idx % 4])
+            self._loading_spinner_idx += 1
+        except RuntimeError:
+            self._stop_loading_animation()
+    def _stop_loading(self):
+        self._stop_loading_animation()
     def _load_nerd_font(self):
         font_path = resource_path(constants.get_base_path(), 'HackNerdFont-Regular.ttf')
         if os.path.exists(font_path):
@@ -107,6 +140,13 @@ class HeaderWidget(QWidget):
         self.save_btn.clicked.connect(self.save_clicked.emit)
         layout.addWidget(self.save_btn)
         layout.addItem(QSpacerItem(20, 10, QSizePolicy.Expanding, QSizePolicy.Minimum))
+        self._loading_btn = NerdBtn(nf.icons['nf-md-circle_medium'])
+        self._loading_btn.setObjectName('hdrBtn')
+        self._loading_btn.setFixedSize(40, 36)
+        self._loading_btn.setStyleSheet(btn_style)
+        self._loading_btn.setFont(QFont(constants.FONT_FAMILY_NERD, 16))
+        self._loading_btn.setVisible(False)
+        layout.addWidget(self._loading_btn)
         self.discord_btn = NerdBtn(nf.icons['nf-fa-discord'])
         self.discord_btn.setObjectName('discordChip')
         self.discord_btn.setFixedSize(40, 36)

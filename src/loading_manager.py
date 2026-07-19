@@ -4,6 +4,7 @@ from PySide6.QtCore import Qt, QTimer, QPropertyAnimation
 from PySide6.QtGui import QPixmap, QCursor, QFont
 from i18n import t, init_language
 from resource_resolver import get_base_dir, get_resources_dir, resource_path
+from palworld_aio import constants
 _queued_next = None
 def get_path(filename):
     return os.path.normpath(resource_path(get_base_dir(), filename))
@@ -97,6 +98,7 @@ if '--spawn-loader-simple' in sys.argv:
 
 def run_with_loading(callback, func, *args, parent=None, **kwargs):
     on_error = kwargs.pop('on_error', None)
+    mode = getattr(constants, 'loading_screen_mode', 'overlay')
     result = {'data': None, 'done': False}
     if parent is None:
         for widget in QApplication.topLevelWidgets():
@@ -104,7 +106,12 @@ def run_with_loading(callback, func, *args, parent=None, **kwargs):
                 parent = widget
                 break
     loader_proc = None
-    if parent:
+    if mode == 'header' and constants.header_loading_widget is not None:
+        try:
+            constants.header_loading_widget.set_loading_state('loading')
+        except RuntimeError:
+            pass
+    elif mode == 'overlay' and parent:
         try:
             phrases = [t(f'loading.phrase.{i}') for i in range(1, 21)]
         except:
@@ -150,6 +157,11 @@ def run_with_loading(callback, func, *args, parent=None, **kwargs):
         if not result['done']:
             QTimer.singleShot(100, poll)
             return
+        if mode == 'header' and constants.header_loading_widget is not None:
+            try:
+                constants.header_loading_widget.set_loading_state('idle')
+            except RuntimeError:
+                pass
         if loader_proc and loader_proc.poll() is None:
             try:
                 loader_proc.kill()

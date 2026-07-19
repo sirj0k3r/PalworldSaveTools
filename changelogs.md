@@ -1,3 +1,11 @@
+#2.1.6
+- **Fix Illegal Players** — new menu function that scans all players for hero stats (HP, Stamina, Attack, Work Speed, Weight) exceeding the 50-point cap. Shows a per-player selection dialog with which stats are illegal, and caps them back to 50 on fix. Same UI pattern as Fix Illegal Pals.
+- **Loading screen config** — new Configs > Loading Screen Configs submenu with Show/Hide options. Hide mode shows a spinner in the header bar instead of the popup overlay. Setting persists across sessions.
+- **Menu restructured** — Functions menu now grouped into Delete / Fix / Reset / Misc subcategories. Removed redundant labels (Remove→Delete, Repair→Fix). Restore All Pals + Fix Unassigned Pals merged into single Fix All Pals. Fix All Guilds replaces Rebuild All Guilds. All submenus match the main menu styling.
+- **Bulk sync same species now copies work suitabilities** — syncing a pal to others of the same species also transfers work suitability ranks. Bulk sync all (cross-species) still preserves each pal's natural suitabilities.
+- **Added translations for missing keys** — common.confirm and various other keys now translated across all 8 languages.
+- Bumped version to 2.1.6
+
 #2.1.5
 - **Character Transfer no longer corrupts breeding eggs** — egg pal data (character_id, stats, passives) is now properly preserved. The inventory transfer no longer overwrites eggs with blank entries, and dynamic item merging appends source entries instead of rebuilding the entire list (which silently dropped entries with zero/empty IDs). Repair All Items also detects eggs by their `PalEgg_` prefix when game metadata is incomplete.
 - **Wiki tab sort improvements** — the pals category in the built-in wiki now defaults to sorting by Paldeck number. Unknown/unlisted pals sort to the bottom instead of showing at index 0. Sort toggle behavior changed: clicking an active sort button now reverses direction instead of clearing the sort, matching typical list behavior.

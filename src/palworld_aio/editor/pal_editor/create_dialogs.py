@@ -437,6 +437,11 @@ class BulkSyncPalDialog(FramelessDialog):
                     target_raw[key] = copy.deepcopy(current_raw[key])
                 else:
                     target_raw.pop(key, None)
+            ws = current_raw.get('GotWorkSuitabilityAddRankList')
+            if ws is not None:
+                target_raw['GotWorkSuitabilityAddRankList'] = copy.deepcopy(ws)
+            else:
+                target_raw.pop('GotWorkSuitabilityAddRankList', None)
             if 'EquipWaza' in target_raw:
                 ew = target_raw['EquipWaza']
                 ew_list = ew.get('value', {}).get('values', []) if isinstance(ew, dict) else ew if isinstance(ew, list) else []

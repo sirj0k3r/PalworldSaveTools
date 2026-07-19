@@ -69,6 +69,8 @@ dirty = False
 xgp_container_path: str | None = None
 xgp_save_id: str | None = None
 xgp_container_index = None
+loading_screen_mode = 'overlay'
+header_loading_widget = None
 xgp_loaded: bool = False
 def get_container_lookup():
     global container_lookup
