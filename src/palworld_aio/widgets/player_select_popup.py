@@ -49,7 +49,7 @@ def show_player_select_popup(anchor_btn, player_list, current_uid=None):
     def on_select():
         sel = lst.currentItem()
         if sel:
-            if sel.text().startswith('--'):
+            if sel is clear_item:
                 result['value'] = '__clear__'
             elif sel.data(Qt.UserRole):
                 result['value'] = sel.data(Qt.UserRole)

@@ -205,7 +205,7 @@ class SkillPicker(QWidget):
         sel = self._list.currentItem()
         if not sel or not (sel.flags() & Qt.ItemIsSelectable):
             self._result = None
-        elif sel.text().startswith('-- '):
+        elif sel is getattr(self, '_clear_item', None):
             self._result = ''
         else:
             chosen_name = sel.data(Qt.UserRole) or sel.text()
@@ -215,8 +215,8 @@ class SkillPicker(QWidget):
         self._result = None
         self._search.clear()
         self._list.clear()
-        clear_item = QListWidgetItem(t('common.clear') if t else '-- clear --')
-        self._list.addItem(clear_item)
+        self._clear_item = QListWidgetItem(t('common.clear') if t else '-- clear --')
+        self._list.addItem(self._clear_item)
         names = sorted(skill_map.values())
         if is_active:
             self._list.setItemDelegate(_ActiveSkillDelegate(self._list))
