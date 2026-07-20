@@ -228,11 +228,6 @@ class MainWindow(QMainWindow):
         self._setup_menus()
         self._setup_connections()
         QTimer.singleShot(0, self._check_update)
-        try:
-            from common import unlock_self_folder
-            unlock_self_folder()
-        except Exception:
-            pass
         self.status_stream = StatusBarStream(self.status_bar, self)
         self.status_stream.detach_state_changed.connect(self._on_detach_state_changed)
         sys.stdout = self.status_stream

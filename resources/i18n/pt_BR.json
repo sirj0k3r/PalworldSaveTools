@@ -2230,5 +2230,12 @@
     "inventory.bulk_delete_title": "Excluir itens",
     "inventory.bulk_delete_confirm": "Excluir {n} itens selecionados?",
     "base_inventory.bulk_remove_title": "Remover itens",
-    "base_inventory.bulk_remove_confirm": "Remover {n} itens selecionados?"
+    "base_inventory.bulk_remove_confirm": "Remover {n} itens selecionados?",
+    "modify.confirm.title": "Confirmar lançamento",
+    "modify.confirm.question": "Iniciar ferramenta externa?",
+    "modify.confirm.source": "Fonte: {src}",
+    "modify.confirm.path": "Caminho: {path}",
+    "modify.confirm.sha256": "SHA256: {sha}",
+    "modify.confirm.warning": "Isso iniciará um executável de terceiros baixado do GitHub. Prossiga apenas se você confiar na fonte.",
+    "modify.confirm.cli_prompt": "Lançar? [S/N]:"
 }

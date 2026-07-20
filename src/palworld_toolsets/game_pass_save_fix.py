@@ -534,34 +534,16 @@ class GamePassSaveFixWidget(QWidget):
     @staticmethod
     def is_valid_save_id(folder_name):
         return len(folder_name) == 32 and folder_name.isalnum()
-    def stop_gaming_services(self):
-        try:
-            subprocess.run(['cmd', '/c', 'net stop GamingServices /y'], check=False, capture_output=True)
-            subprocess.run(['cmd', '/c', 'net stop GamingServicesNet /y'], check=False, capture_output=True)
-            subprocess.run(['taskkill', '/f', '/im', 'GamingServices.exe'], check=False, capture_output=True)
-            subprocess.run(['taskkill', '/f', '/im', 'GamingServicesNet.exe'], check=False, capture_output=True)
-        except Exception as e:
-            print(f'Service stop failed: {e}')
-    def start_gaming_services(self):
-        try:
-            subprocess.run(['cmd', '/c', 'net start GamingServices'], check=False, capture_output=True)
-            subprocess.run(['cmd', '/c', 'net start GamingServicesNet'], check=False, capture_output=True)
-        except Exception as e:
-            print(f'Service start failed: {e}')
     def transfer_steam_to_gamepass(self, source_folder):
         try:
-            self.stop_gaming_services()
-            time.sleep(1)
             from palworld_xgp_import import main as xgp_main
             old_argv = sys.argv
             try:
                 sys.argv = ['main.py', source_folder]
                 xgp_main.main()
-                time.sleep(2)
                 self.message_signal.emit('info', t('Success'), t('xgp.msg.steam_import_success'))
             finally:
                 sys.argv = old_argv
-                self.start_gaming_services()
         except Exception as e:
             self.message_signal.emit('critical', t('xgp.err.import_failed.title'), str(e))
     def update_combobox(self, saveList):

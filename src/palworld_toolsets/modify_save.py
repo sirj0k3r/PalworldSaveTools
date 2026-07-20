@@ -6,6 +6,9 @@ from palworld_aio.ui.chrome.styles import ThemeManager
 from palworld_aio import constants
 from resource_resolver import resource_path, get_base_dir, get_resources_dir
 import ssl
+import hashlib
+
+_PENDING_SOURCE: str | None = None
 def _get_user_ca_path():
     if sys.platform == 'win32':
         base = os.environ.get('APPDATA', os.path.expanduser('~'))
@@ -20,7 +23,7 @@ def _update_ca_bundle():
     try:
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         print(f'[SSL] Downloading CA bundle from {url}')
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        req = urllib.request.Request(url, headers={'User-Agent': f'{APP_NAME}/{APP_VERSION}'})
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
@@ -76,7 +79,7 @@ def download_from_github(repo_owner, repo_name, version, download_path, progress
     try:
         file_name = file_url.split('/')[-1]
         file_path = os.path.join(download_path, file_name)
-        req = urllib.request.Request(file_url, headers={'User-Agent': 'Mozilla/5.0'})
+        req = urllib.request.Request(file_url, headers={'User-Agent': f'{APP_NAME}/{APP_VERSION}'})
         context = _get_ssl_context()
         with urllib.request.urlopen(req, context=context, timeout=60) as response, open(file_path, 'wb') as f:
             total = int(response.getheader('Content-Length', '0') or 0)
@@ -172,8 +175,49 @@ def find_any_exe(folder):
                 return os.path.join(root, f)
     return None
 def open_exe_with_cwd(exe_path):
+    global _PENDING_SOURCE
+    if _PENDING_SOURCE:
+        if not _confirm_launch(exe_path, _PENDING_SOURCE):
+            _PENDING_SOURCE = None
+            return
+        _PENDING_SOURCE = None
     subprocess.Popen([exe_path], cwd=os.path.dirname(exe_path))
+def _sha256_file(path: str) -> str:
+    h = hashlib.sha256()
+    with open(path, 'rb') as f:
+        while True:
+            block = f.read(65536)
+            if not block:
+                break
+            h.update(block)
+    return h.hexdigest()
+def _confirm_launch(exe_path: str, source_desc: str) -> bool:
+    try:
+        sha = _sha256_file(exe_path)
+    except Exception:
+        sha = 'unknown'
+    msg = (
+        f"{t('modify.confirm.question')}\n\n"
+        f"{t('modify.confirm.source', src=source_desc)}\n"
+        f"{t('modify.confirm.path', path=exe_path)}\n"
+        f"{t('modify.confirm.sha256', sha=sha)}\n\n"
+        f"{t('modify.confirm.warning')}"
+    )
+    app = QApplication.instance()
+    if app and QApplication.activeModalWidget() is not None:
+        reply = QMessageBox.question(
+            QApplication.activeModalWidget(), t('modify.confirm.title'), msg,
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        return reply == QMessageBox.Yes
+    try:
+        print(msg)
+        reply = input(t('modify.confirm.cli_prompt')).strip().lower()
+        return reply == 'y'
+    except (EOFError, KeyboardInterrupt):
+        return False
 def _launch_save_pal():
+    global _PENDING_SOURCE
+    _PENDING_SOURCE = 'oMaN-Rod/palworld-save-pal'
     if os.name != 'nt':
         print('Palworld Save Pal is only available on Windows.')
         return
@@ -209,7 +253,7 @@ def _download_to(path_dir, file_url, progress_callback=None):
         os.makedirs(path_dir, exist_ok=True)
         file_name = file_url.split('/')[-1]
         file_path = os.path.join(path_dir, file_name)
-        req = urllib.request.Request(file_url, headers={'User-Agent': 'Mozilla/5.0'})
+        req = urllib.request.Request(file_url, headers={'User-Agent': f'{APP_NAME}/{APP_VERSION}'})
         context = _get_ssl_context()
         with urllib.request.urlopen(req, context=context, timeout=60) as response, open(file_path, 'wb') as f:
             total = int(response.getheader('Content-Length', '0') or 0)
@@ -237,6 +281,8 @@ def _download_to(path_dir, file_url, progress_callback=None):
         print(f'Error downloading file: {e}')
         return None
 def _launch_pal_editor():
+    global _PENDING_SOURCE
+    _PENDING_SOURCE = 'KrisCris/Palworld-Pal-Editor'
     if os.name != 'nt':
         print('Palworld Pal Editor is only available on Windows.')
         return
@@ -334,6 +380,8 @@ def _build_selector_window():
     savepal_btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
     paleditor_btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
     def on_savepal():
+        global _PENDING_SOURCE
+        _PENDING_SOURCE = 'oMaN-Rod/palworld-save-pal'
         if os.name != 'nt':
             QMessageBox.information(win, 'Platform Error', 'Palworld Save Pal is only available on Windows.')
             return
@@ -373,6 +421,8 @@ def _build_selector_window():
         win.setFixedSize(520, 250)
         win.accept()
     def on_paleditor():
+        global _PENDING_SOURCE
+        _PENDING_SOURCE = 'KrisCris/Palworld-Pal-Editor'
         if os.name != 'nt':
             QMessageBox.information(win, 'Platform Error', 'Palworld Pal Editor is only available on Windows.')
             return

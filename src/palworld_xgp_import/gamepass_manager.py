@@ -565,14 +565,13 @@ def save_xgp_changes(
     new_save_id: str | None = None,
     new_world_name: str | None = None,
 ) -> str:
-    """Read save files from current_save_path, stop GamingServices, write
-    containers as a new world entry, leave services stopped.
+    """Read save files from current_save_path, write containers as a new world entry.
 
     Returns the new save_id (uuid4 hex upper).
 
     Any tool can call this — the Source of Truth for XGP container writes."""
 
-    import subprocess, time as _time, uuid as _uuid
+    import time as _time, uuid as _uuid
 
     if new_save_id is None:
         new_save_id = _uuid.uuid4().hex.upper()
@@ -613,17 +612,6 @@ def save_xgp_changes(
                     players_data[uid] = f.read()
 
     index = read_container_index(container_path)
-
-    for svc in ('GamingServices', 'GamingServicesNet'):
-        r = subprocess.run(['cmd', '/c', f'net stop {svc} /y'],
-                           check=False, capture_output=True, timeout=10)
-        if r.returncode != 0:
-            print(f'[save_xgp_changes] net stop {svc} rc={r.returncode}')
-        r2 = subprocess.run(['taskkill', '/f', '/im', f'{svc}.exe'],
-                            check=False, capture_output=True, timeout=5)
-        if r2.returncode != 0 and r2.returncode != 128:
-            print(f'[save_xgp_changes] taskkill {svc}.exe rc={r2.returncode}')
-    _time.sleep(3)
 
     write_gvas_to_container(
         container_path, index, new_save_id,

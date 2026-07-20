@@ -16,7 +16,7 @@ Entry: `run_aio()` (main.py:106). Module-level bootstrap (4-75) resolves binary 
 ## MainWindow (ui/main_window.py:220)
 `QMainWindow`, **frameless** (Qt.FramelessWindowHint), min 1448×800. Custom title-drag (mousePressEvent:747).
 
-`__init__` order (221-252): set is_dark_mode/_is_refreshing/user_settings/lang_map → load_exclusions → _load_user_settings (CONFIG_DIR/user.cfg) → _setup_ui → _load_theme (ThemeManager.apply_global) → sidebar.set_active('tools') [DEFAULT TAB] → _setup_menus → _setup_connections → QTimer async update check → unlock_self_folder (Win) → StatusBarStream redirects stdout/stderr → setup_logging.
+`__init__` order (221-252): set is_dark_mode/_is_refreshing/user_settings/lang_map → load_exclusions → _load_user_settings (CONFIG_DIR/user.cfg) → _setup_ui → _load_theme (ThemeManager.apply_global) → sidebar.set_active('tools') [DEFAULT TAB] → _setup_menus → _setup_connections → QTimer async update check → StatusBarStream redirects stdout/stderr → setup_logging.
 
 **UI composition** (_setup_ui:253-314): HeaderWidget (top) + QHBoxLayout body = SidebarWidget (left, 48px) + QSplitter[ QStackedWidget (center, 9 pages) | ResultsWidget (right dashboard, collapsible) ]. QStatusBar hidden (status sink only).
 

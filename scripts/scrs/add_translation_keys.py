@@ -40,6 +40,13 @@ NEW_TRANSLATIONS = {
     'inventory.bulk_delete_confirm': 'Delete {n} selected items?',
     'base_inventory.bulk_remove_title': 'Remove Items',
     'base_inventory.bulk_remove_confirm': 'Remove {n} selected items?',
+    'modify.confirm.title': 'Confirm Launch',
+    'modify.confirm.question': 'Launch external tool?',
+    'modify.confirm.source': 'Source: {src}',
+    'modify.confirm.path': 'Path: {path}',
+    'modify.confirm.sha256': 'SHA256: {sha}',
+    'modify.confirm.warning': 'This will launch a third-party executable downloaded from GitHub. Only proceed if you trust the source.',
+    'modify.confirm.cli_prompt': 'Launch? [y/N]: ',
 }
 OLD_KEYS = []
 def _clean_uv_locks():

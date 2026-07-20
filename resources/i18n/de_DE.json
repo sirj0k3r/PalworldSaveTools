@@ -1968,5 +1968,12 @@
     "inventory.bulk_delete_title": "Elemente löschen",
     "inventory.bulk_delete_confirm": "{n} ausgewählte Elemente löschen?",
     "base_inventory.bulk_remove_title": "Elemente entfernen",
-    "base_inventory.bulk_remove_confirm": "{n} ausgewählte Elemente entfernen?"
+    "base_inventory.bulk_remove_confirm": "{n} ausgewählte Elemente entfernen?",
+    "modify.confirm.title": "Bestätigen Sie den Start",
+    "modify.confirm.question": "Externes Tool starten?",
+    "modify.confirm.source": "Quelle: {src}",
+    "modify.confirm.path": "Pfad: {path}",
+    "modify.confirm.sha256": "SHA256: {sha}",
+    "modify.confirm.warning": "Dadurch wird eine von GitHub heruntergeladene ausführbare Datei eines Drittanbieters gestartet. Fahren Sie nur fort, wenn Sie der Quelle vertrauen.",
+    "modify.confirm.cli_prompt": "Start? [j/N]:"
 }

@@ -1943,5 +1943,12 @@
     "inventory.bulk_delete_title": "항목 삭제",
     "inventory.bulk_delete_confirm": "{n} 선택한 항목을 삭제하시겠습니까?",
     "base_inventory.bulk_remove_title": "항목 제거",
-    "base_inventory.bulk_remove_confirm": "{n} 선택한 항목을 삭제하시겠습니까?"
+    "base_inventory.bulk_remove_confirm": "{n} 선택한 항목을 삭제하시겠습니까?",
+    "modify.confirm.title": "출시 확인",
+    "modify.confirm.question": "외부 도구를 실행하시겠습니까?",
+    "modify.confirm.source": "출처: {src}",
+    "modify.confirm.path": "경로: {path}",
+    "modify.confirm.sha256": "SHA256: {sha}",
+    "modify.confirm.warning": "그러면 GitHub에서 다운로드한 타사 실행 파일이 시작됩니다. 출처를 신뢰하는 경우에만 진행하세요.",
+    "modify.confirm.cli_prompt": "시작하다? [예/아니요]:"
 }

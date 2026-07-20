@@ -1944,5 +1944,12 @@
     "inventory.bulk_delete_title": "アイテムの削除",
     "inventory.bulk_delete_confirm": "{n} 選択したアイテムを削除しますか?",
     "base_inventory.bulk_remove_title": "アイテムの削除",
-    "base_inventory.bulk_remove_confirm": "{n} 選択したアイテムを削除しますか?"
+    "base_inventory.bulk_remove_confirm": "{n} 選択したアイテムを削除しますか?",
+    "modify.confirm.title": "起動の確認",
+    "modify.confirm.question": "外部ツールを起動しますか？",
+    "modify.confirm.source": "出典: {src}",
+    "modify.confirm.path": "パス: {path}",
+    "modify.confirm.sha256": "SHA256: {sha}",
+    "modify.confirm.warning": "これにより、GitHub からダウンロードされたサードパーティの実行可能ファイルが起動します。情報源を信頼できる場合にのみ続行してください。",
+    "modify.confirm.cli_prompt": "打ち上げ？ [y/N]:"
 }

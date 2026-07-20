@@ -97,21 +97,4 @@ def open_file_with_default_app(file_path):
     except Exception as e:
         print(f'Error opening file {file_path}: {e}')
         return False
-def unlock_self_folder():
-    if is_frozen():
-        folder = os.path.dirname(os.path.abspath(sys.executable))
-    else:
-        script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
-        src_dir = os.path.dirname(script_dir)
-        folder = os.path.dirname(src_dir)
-    folder_escaped = folder.replace('\\', '\\\\').replace("'", "''")
-    parent_pid = os.getpid()
-    ps_command = f"""$ErrorActionPreference='SilentlyContinue'; $target='{folder_escaped}'; $pPid={parent_pid}; $currentPid=$PID; function Global-Nuke {{   try {{     $procs=Get-Process | Where-Object {{ $_.Path -like "$target*" -and $_.Id -ne $PID }};     $handleProcs=@();     try {{       $allProcs=Get-Process;       foreach($p in $allProcs){{         if($p.Id -ne $PID){{           try {{             $handles=Get-WmiObject Win32_ProcessHandle -Filter "ProcessId=$($p.Id)" 2>$null;             foreach($h in $handles){{               if($h.Handle -and $h.Handle.Name -like "$target*"){{                 $handleProcs +=$p;                 break;               }}             }}           }} catch {{ }}         }}       }}     }} catch {{ }}     $allProcsToKill=$procs + $handleProcs | Select-Object -Unique;     foreach($p in $allProcsToKill){{       try {{         Stop-Process -Id $p.Id -Force -ErrorAction Stop;       }} catch {{         try {{ taskkill /F /T /PID $p.Id /NoWindow 2>$null; }} catch {{ }}       }}     }}   }} catch {{ }} }}; $monitorCount=0; while($true){{   Start-Sleep -Milliseconds 500;   $monitorCount++;   try {{     $parent=Get-Process -Id $pPid -ErrorAction Stop;   }} catch {{     Global-Nuke;     break;   }} }}; Stop-Process -Id $currentPid -Force"""
-    si = subprocess.STARTUPINFO()
-    si.dwFlags = subprocess.STARTF_USESHOWWINDOW
-    si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-    si.wShowWindow = subprocess.SW_HIDE
-    try:
-        subprocess.Popen(['powershell', '-WindowStyle', 'Hidden', '-ExecutionPolicy', 'Bypass', '-Command', ps_command], startupinfo=si, creationflags=subprocess.CREATE_NO_WINDOW, cwd=os.path.dirname(folder))
-    except Exception:
-        pass
+

@@ -1946,5 +1946,12 @@
     "inventory.bulk_delete_title": "删除项目",
     "inventory.bulk_delete_confirm": "删除 {n} 所选项目？",
     "base_inventory.bulk_remove_title": "删除项目",
-    "base_inventory.bulk_remove_confirm": "删除 {n} 所选项目？"
+    "base_inventory.bulk_remove_confirm": "删除 {n} 所选项目？",
+    "modify.confirm.title": "确认启动",
+    "modify.confirm.question": "启动外部工具？",
+    "modify.confirm.source": "来源：{src}",
+    "modify.confirm.path": "路径：{path}",
+    "modify.confirm.sha256": "SHA256：{sha}",
+    "modify.confirm.warning": "这将启动从 GitHub 下载的第三方可执行文件。仅当您信任来源时才继续。",
+    "modify.confirm.cli_prompt": "发射？ [是/否]："
 }
