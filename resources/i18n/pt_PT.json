@@ -2158,6 +2158,7 @@
   "backup.no_backups": "Não foram encontradas cópias de segurança.",
   "backup.invalid": "A cópia de segurança seleccionada não tem os ficheiros necessários.",
   "lang.pt_BR": "Português (Brasil)",
+  "lang.pt_PT": "Português (Portugal)",
   "edit_pals.max_all_ivs": "Maximizar todos os IVs",
   "edit_pals.max_all_souls": "Maximizar todas as almas",
   "deletion.col.role": "Cargo",
