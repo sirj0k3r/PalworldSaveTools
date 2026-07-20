@@ -237,8 +237,6 @@ class ToolsTab(QWidget):
         self.parent_window = parent
         self.tool_buttons = []
         self._section_titles = []
-        self._drag_hover_active = False
-        self.setAcceptDrops(True)
         self._setup_ui()
     def _setup_ui(self):
         main_layout = QVBoxLayout(self)
@@ -250,8 +248,6 @@ class ToolsTab(QWidget):
         footer_row.addWidget(self._create_section('tools.section.converting', CONVERTING_TOOL_KEYS, self._run_converting_tool), stretch=1)
         footer_row.addWidget(self._create_section('tools.section.management', MANAGEMENT_TOOL_KEYS, self._run_management_tool), stretch=1)
         main_layout.addLayout(footer_row)
-        self._drop_overlay = DropOverlay(self)
-        self._drop_overlay.setVisible(False)
         self._setup_save_manager_connection()
     def _create_header_bar(self):
         return QWidget()
@@ -530,50 +526,6 @@ class ToolsTab(QWidget):
         self.fade_animation.setEndValue(1.0)
         self.fade_animation.setEasingCurve(QEasingCurve.OutCubic)
         self.fade_animation.start()
-    def dragEnterEvent(self, event):
-        if event.mimeData().hasUrls():
-            urls = event.mimeData().urls()
-            if urls:
-                file_path = urls[0].toLocalFile()
-                if file_path.lower().endswith('.sav'):
-                    self._drag_hover_active = True
-                    self._drop_overlay.setVisible(True)
-                    self._drop_overlay.raise_()
-                    event.acceptProposedAction()
-                    return
-        super().dragEnterEvent(event)
-    def dragMoveEvent(self, event):
-        if event.mimeData().hasUrls():
-            urls = event.mimeData().urls()
-            if urls:
-                file_path = urls[0].toLocalFile()
-                if file_path.lower().endswith('.sav'):
-                    event.acceptProposedAction()
-                    return
-        super().dragMoveEvent(event)
-    def dragLeaveEvent(self, event):
-        self._drag_hover_active = False
-        self._drop_overlay.setVisible(False)
-        super().dragLeaveEvent(event)
-    def dropEvent(self, event):
-        self._drag_hover_active = False
-        self._drop_overlay.setVisible(False)
-        if event.mimeData().hasUrls():
-            urls = event.mimeData().urls()
-            if urls:
-                file_path = urls[0].toLocalFile()
-                if file_path.lower().endswith('.sav'):
-                    self._load_save_from_path(file_path)
-                    event.acceptProposedAction()
-                    return
-        super().dropEvent(event)
-    def _load_save_from_path(self, path):
-        from palworld_aio.managers.save_manager import save_manager
-        save_manager.load_save(path=path, parent=self)
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        if hasattr(self, '_drop_overlay'):
-            self._drop_overlay.setGeometry(self.rect())
     def _refresh_save_btns(self):
         import nerdfont as nf
         if hasattr(self, '_load_steam_btn') and self._load_steam_btn:

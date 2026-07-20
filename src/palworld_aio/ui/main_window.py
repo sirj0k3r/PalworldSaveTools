@@ -14,7 +14,7 @@ from i18n import t, set_language, load_resources, get_native_lang_name
 from common import get_versions, get_current_version, get_display_version, is_standalone
 from import_libs import run_with_loading
 from loading_manager import show_question
-from .tabs.tools_tab import center_on_parent
+from .tabs.tools_tab import center_on_parent, DropOverlay
 GITHUB_LATEST_ZIP = 'https://github.com/deafdudecomputers/PalworldSaveTools/releases/latest'
 from palworld_aio import constants
 from palworld_aio.ui.chrome.styles import ThemeManager, MENU_STYLE, DIALOG_STYLE as DARK_THEME_STYLE
@@ -336,6 +336,10 @@ class MainWindow(QMainWindow):
         self.status_bar.setFixedHeight(0)
         self.status_bar.hide()
         self.setStatusBar(self.status_bar)
+        self.setAcceptDrops(True)
+        self._drop_overlay = DropOverlay(self)
+        self._drop_overlay.setVisible(False)
+        self._drop_overlay.setGeometry(self.rect())
     _TAB_SETUP = {
         0: '_setup_tools_tab',
         1: '_setup_base_inventory_tab',
@@ -1170,6 +1174,44 @@ class MainWindow(QMainWindow):
         menu = ScrollableContextMenu(self)
         menu.add_action(self._create_action(t('deletion.ctx.remove_exclusion'), lambda v=val: self._remove_exclusion(excl_type, v)))
         menu.exec(panel.tree.viewport().mapToGlobal(pos))
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if hasattr(self, '_drop_overlay'):
+            self._drop_overlay.setGeometry(self.rect())
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            urls = event.mimeData().urls()
+            if urls:
+                file_path = urls[0].toLocalFile()
+                if file_path.lower().endswith('.sav'):
+                    self._drop_overlay.setVisible(True)
+                    self._drop_overlay.raise_()
+                    event.acceptProposedAction()
+                    return
+        super().dragEnterEvent(event)
+    def dragMoveEvent(self, event):
+        if event.mimeData().hasUrls():
+            urls = event.mimeData().urls()
+            if urls:
+                file_path = urls[0].toLocalFile()
+                if file_path.lower().endswith('.sav'):
+                    event.acceptProposedAction()
+                    return
+        super().dragMoveEvent(event)
+    def dragLeaveEvent(self, event):
+        self._drop_overlay.setVisible(False)
+        super().dragLeaveEvent(event)
+    def dropEvent(self, event):
+        self._drop_overlay.setVisible(False)
+        if event.mimeData().hasUrls():
+            urls = event.mimeData().urls()
+            if urls:
+                file_path = urls[0].toLocalFile()
+                if file_path.lower().endswith('.sav'):
+                    save_manager.load_save(path=file_path, parent=self)
+                    event.acceptProposedAction()
+                    return
+        super().dropEvent(event)
     def _load_save(self):
         save_manager.load_save(parent=self)
     def _load_xgp_save(self):
