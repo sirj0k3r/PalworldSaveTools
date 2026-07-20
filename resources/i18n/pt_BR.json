@@ -2228,5 +2228,7 @@
     "inventory.multi_clear_btn": "Limpar quantidade",
     "inventory.multi_deselect_btn": "Desmarcar",
     "inventory.bulk_delete_title": "Excluir itens",
-    "inventory.bulk_delete_confirm": "Excluir {n} itens selecionados?"
+    "inventory.bulk_delete_confirm": "Excluir {n} itens selecionados?",
+    "base_inventory.bulk_remove_title": "Remover itens",
+    "base_inventory.bulk_remove_confirm": "Remover {n} itens selecionados?"
 }

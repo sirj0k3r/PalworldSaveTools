@@ -1940,5 +1940,7 @@
     "inventory.multi_clear_btn": "Очистить количество",
     "inventory.multi_deselect_btn": "Отменить выбор",
     "inventory.bulk_delete_title": "Удалить элементы",
-    "inventory.bulk_delete_confirm": "Удалить {n} выбранные элементы?"
+    "inventory.bulk_delete_confirm": "Удалить {n} выбранные элементы?",
+    "base_inventory.bulk_remove_title": "Удалить элементы",
+    "base_inventory.bulk_remove_confirm": "Удалить {n} выбранные элементы?"
 }

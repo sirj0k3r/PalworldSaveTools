@@ -2228,5 +2228,7 @@
     "inventory.multi_clear_btn": "Clear Qty",
     "inventory.multi_deselect_btn": "Deselect",
     "inventory.bulk_delete_title": "Delete Items",
-    "inventory.bulk_delete_confirm": "Delete {n} selected items?"
+    "inventory.bulk_delete_confirm": "Delete {n} selected items?",
+    "base_inventory.bulk_remove_title": "Remove Items",
+    "base_inventory.bulk_remove_confirm": "Remove {n} selected items?"
 }

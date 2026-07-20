@@ -2962,6 +2962,8 @@ class BaseInventoryTab(QWidget):
         self.inventory_grid.empty_slot_context_menu.connect(self._show_empty_slot_context_menu)
         self.inventory_grid.item_double_clicked.connect(self._remove_item_from_slot)
         self.inventory_grid.empty_slot_double_clicked.connect(lambda ct, idx: self._add_item_to_slot(idx))
+        self.inventory_grid.multi_delete_requested.connect(self._on_bulk_remove_items)
+        self.inventory_grid.multi_clear_qty_requested.connect(self._on_bulk_clear_qty)
         self.inventory_grid.item_added.connect(self._trigger_auto_save)
         self.inventory_grid.item_removed.connect(self._trigger_auto_save)
         self.inventory_grid.item_count_changed.connect(self._trigger_auto_save)
@@ -3900,6 +3902,28 @@ class BaseInventoryTab(QWidget):
             self._update_container_stats()
         else:
             self._show_warning(t('base_inventory.failed_to_remove_item') if t else 'Failed to remove item')
+    def _on_bulk_remove_items(self, items):
+        if not self.manager or not self.manager.inventory_container or not items:
+            return
+        if not show_question(self, t('base_inventory.bulk_remove_title', default='Remove Items'), t('base_inventory.bulk_remove_confirm', n=len(items), default=f'Remove {len(items)} selected items?')):
+            return
+        for slot_data in items:
+            slot_index = slot_data.get('slot_index', 0)
+            self.manager.remove_item(slot_index, 999999)
+        inventory_container = self.manager.select_container(self.manager.current_container['id'])
+        if inventory_container:
+            self.inventory_grid.load_items(inventory_container.get_items(), max_slots=inventory_container.get_max_slots())
+        self._update_container_stats()
+    def _on_bulk_clear_qty(self, items):
+        if not self.manager or not self.manager.inventory_container or not items:
+            return
+        for slot_data in items:
+            slot_index = slot_data.get('slot_index', 0)
+            self.manager.set_item_count(slot_index, 0)
+        inventory_container = self.manager.select_container(self.manager.current_container['id'])
+        if inventory_container:
+            self.inventory_grid.load_items(inventory_container.get_items(), max_slots=inventory_container.get_max_slots())
+        self._update_container_stats()
     def _add_item_to_slot(self, slot_index):
         if not self.manager.inventory_container:
             self._show_warning(t('base_inventory.select_container_first') if t else 'Please select a container first')

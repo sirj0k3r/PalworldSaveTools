@@ -38,6 +38,8 @@ NEW_TRANSLATIONS = {
     'inventory.multi_deselect_btn': 'Deselect',
     'inventory.bulk_delete_title': 'Delete Items',
     'inventory.bulk_delete_confirm': 'Delete {n} selected items?',
+    'base_inventory.bulk_remove_title': 'Remove Items',
+    'base_inventory.bulk_remove_confirm': 'Remove {n} selected items?',
 }
 OLD_KEYS = []
 def _clean_uv_locks():

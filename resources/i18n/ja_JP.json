@@ -1942,5 +1942,7 @@
     "inventory.multi_clear_btn": "クリア数量",
     "inventory.multi_deselect_btn": "選択を解除します",
     "inventory.bulk_delete_title": "アイテムの削除",
-    "inventory.bulk_delete_confirm": "{n} 選択したアイテムを削除しますか?"
+    "inventory.bulk_delete_confirm": "{n} 選択したアイテムを削除しますか?",
+    "base_inventory.bulk_remove_title": "アイテムの削除",
+    "base_inventory.bulk_remove_confirm": "{n} 選択したアイテムを削除しますか?"
 }

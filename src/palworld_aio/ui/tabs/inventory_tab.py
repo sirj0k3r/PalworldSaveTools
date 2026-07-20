@@ -2058,7 +2058,7 @@ class PlayerInventoryTab(QWidget):
     def _on_bulk_delete_items(self, items):
         if not self.inventory or not items:
             return
-        reply = QMessageBox.question(self, t('inventory.bulk_delete_title', default='Delete Items'), t('inventory.bulk_delete_confirm', n=len(items), default=f'Delete {len(items)} selected items?'), QMessageBox.Yes | QMessageBox.No)
+        reply = self._themed_message_box(QMessageBox.Question, t('inventory.bulk_delete_title', default='Delete Items'), t('inventory.bulk_delete_confirm', n=len(items), default=f'Delete {len(items)} selected items?'), QMessageBox.Yes | QMessageBox.No)
         if reply != QMessageBox.Yes:
             return
         for slot_data in items:
@@ -2093,7 +2093,7 @@ class PlayerInventoryTab(QWidget):
             elif is_bounty and item_id:
                 self.inventory.remove_bounty_item(item_id)
             else:
-                self.inventory.set_item_quantity(container_type, slot_index, 0)
+                self.inventory.update_quantity(container_type, slot_index, 0)
         self.selected_item = None
         self._refresh_display()
     def _show_item_context_menu(self, slot_data, pos):

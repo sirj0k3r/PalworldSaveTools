@@ -1944,5 +1944,7 @@
     "inventory.multi_clear_btn": "清除数量",
     "inventory.multi_deselect_btn": "取消选择",
     "inventory.bulk_delete_title": "删除项目",
-    "inventory.bulk_delete_confirm": "删除 {n} 所选项目？"
+    "inventory.bulk_delete_confirm": "删除 {n} 所选项目？",
+    "base_inventory.bulk_remove_title": "删除项目",
+    "base_inventory.bulk_remove_confirm": "删除 {n} 所选项目？"
 }

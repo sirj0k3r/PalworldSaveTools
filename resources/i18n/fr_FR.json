@@ -1924,5 +1924,7 @@
     "inventory.multi_clear_btn": "Quantité claire",
     "inventory.multi_deselect_btn": "Désélectionner",
     "inventory.bulk_delete_title": "Supprimer des éléments",
-    "inventory.bulk_delete_confirm": "Supprimer {n} éléments sélectionnés ?"
+    "inventory.bulk_delete_confirm": "Supprimer {n} éléments sélectionnés ?",
+    "base_inventory.bulk_remove_title": "Supprimer des éléments",
+    "base_inventory.bulk_remove_confirm": "Supprimer {n} éléments sélectionnés ?"
 }

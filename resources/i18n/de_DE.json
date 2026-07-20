@@ -1966,5 +1966,7 @@
     "inventory.multi_clear_btn": "Menge löschen",
     "inventory.multi_deselect_btn": "Abwählen",
     "inventory.bulk_delete_title": "Elemente löschen",
-    "inventory.bulk_delete_confirm": "{n} ausgewählte Elemente löschen?"
+    "inventory.bulk_delete_confirm": "{n} ausgewählte Elemente löschen?",
+    "base_inventory.bulk_remove_title": "Elemente entfernen",
+    "base_inventory.bulk_remove_confirm": "{n} ausgewählte Elemente entfernen?"
 }
