@@ -11,7 +11,7 @@
 [![Discord](https://img.shields.io/badge/Discord-Join_for_support-blue)](https://discord.gg/sYcZwcT4cT)
 [![NexusMods](https://img.shields.io/badge/NexusMods-Download-orange)](https://www.nexusmods.com/palworld/mods/3190)
 
-[English](../../README.md) | [简体中文](README.zh_CN.md) | [Deutsch](README.de_DE.md) | [Español](README.es_ES.md) | [Français](README.fr_FR.md) | [Русский](README.ru_RU.md) | [日本語](README.ja_JP.md) | [한국어](README.ko_KR.md) | [Português](README.pt_BR.md)
+[English](../../README.md) | [简体中文](README.zh_CN.md) | [Deutsch](README.de_DE.md) | [Español](README.es_ES.md) | [Français](README.fr_FR.md) | [Русский](README.ru_RU.md) | [日本語](README.ja_JP.md) | [한국어](README.ko_KR.md) | [Português (Brasil)](README.pt_BR.md) | [Português (Portugal)](README.pt_PT.md)
 
 ---
 
@@ -91,7 +91,7 @@ Ya sea que necesite administrar un servidor dedicado, migrar entre servidores co
 
 ### Gestión de jugadores
 
-- Ver y buscar a todos los jugadores por nombre, nivel, recuento de pal, UID, gremio y hora de la última vez que fueron vistos.
+- Ver y buscar a todos los jugadores por nombre, nivel, recuento pal, UID, gremio y hora de la última vez que fueron vistos.
 - Editar nombres de jugadores, niveles, estadísticas y puntos de tecnología.
 - **Pestaña Estadísticas**: estadísticas del héroe (salud, resistencia, ataque, defensa, velocidad de trabajo, peso) con valores correctos calculados en el juego; Habilidades de reliquia con palancas y giradores.
 - **Máximo de todas las estadísticas**: limita instantáneamente todas las estadísticas al máximo (50 puntos).
@@ -100,7 +100,7 @@ Ya sea que necesite administrar un servidor dedicado, migrar entre servidores co
 
 ### Pal Editor
 
-Una interfaz de edición profunda para cualquier Pal propiedad de cualquier reproductor. Pals están organizados por **Grupo** (equipo activo) y **Palbox** (almacenamiento).
+Una interfaz de edición profunda para cualquier Pal propiedad de cualquier jugador. Pals están organizados por **Grupo** (equipo activo) y **Palbox** (almacenamiento).
 
 - **Estadísticas y IVs**: HP, ataque, defensa (IV 0–100), nivel (1–80), rango de confianza (0–10).
 - **Almas**: HP, ataque, defensa, velocidad de artesanía (0–20).
@@ -112,7 +112,7 @@ Una interfaz de edición profunda para cualquier Pal propiedad de cualquier repr
 - **Modo de trampa**: alternar para expandir todo en mayúsculas: nivel, IVs, almas, rango del condensador a 255; Desbloquea habilidades activas/pasivas ilimitadas y se permiten duplicados.
 - **Exportar/Importar**: haga clic con el botón derecho en cualquier pal para exportarlo como `.pstpal` (comprimido) o `.json`. Importe a espacios vacíos entre los trabajadores del grupo, palbox, DPS o base. Funciona entre partidas guardadas y jugadores.
 - **Max All Pals**: maximiza todas las estadísticas (IVs, almas, rango, nivel) para todos los pals del grupo, todas las páginas de palbox o todos los trabajadores de la base; respeta los límites del modo trampa.
-- **Reparar Pals** ilegal: detecta y limita a pals con estadísticas, habilidades o rasgos ilegales por jugador.
+- **Reparar Pals** ilegal: detecta y limita pals con estadísticas, habilidades o rasgos ilegales por jugador.
 - **Clonar/Eliminar masivamente**: cuadro de diálogo de selección de especies con controles de cantidad y alternancia de fuentes (Party/Palbox/DPS) para operaciones por lotes.
 - Agregue un nuevo Pals o elimine rápidamente con doble clic.
 
@@ -213,7 +213,7 @@ Accesibles a través de **Menú → Funciones**, estas operaciones de nivel de s
 
 ### Compilaciones independientes (recomendadas)
 
-Los archivos binarios prediseñados están disponibles para las tres plataformas principales desde [GitHub Releases](https://github.com/deafdudecomputers/PalworldSaveTools/releases/latest):
+Los binarios prediseñados están disponibles para las tres plataformas principales desde [GitHub Releases](https://github.com/deafdudecomputers/PalworldSaveTools/releases/latest):
 
 | Plataforma | Descargar | Requisitos |
 |----------|----------|--------------|
@@ -274,7 +274,7 @@ El iniciador crea un `.venv`, instala dependencias a través de `uv sync` e inic
 - Navegue hasta su carpeta de guardado de Palworld y seleccione `Level.sav`.
 
 2. **Explora tus datos**
-   - Usa las pestañas (**Mapa**, **Herramientas**, **Jugadores**, **Gremios**, **Bases**, **Inventario de jugadores**, **Inventario de base**, **Pal Editor**, **Exclusiones**) para explorar tu partida guardada.
+   - Usa las pestañas: **Mapa**, **Herramientas**, **Jugadores**, **Gremios**, **Bases**, **Inventario de jugadores**, **Inventario de base**, **Pal Editor**, **Exclusiones**, para explorar tu partida guardada.
    - La barra de estadísticas muestra recuentos en vivo; Los iconos de navegación rápida saltan a cada sección.
 
 3. **Hacer cambios**
@@ -341,18 +341,117 @@ PST puede desbloquear el mapa completo (todos los puntos de viaje rápido) para 
 ### Intercambio de host (cambio de host)
 
 <details>
-<summary>Haga clic para ampliar</summary>
+<summary>Haga clic para ampliar la guía de intercambio de host</summary>
 
-**Antecedentes:** El anfitrión siempre usa la ranura `0001.sav`: el mismo UID para quien sea el anfitrión. Cada cliente obtiene un guardado regular único (por ejemplo, `123xxx.sav`).
+**Antecedentes:**
 
-**Requisito previo:** Tanto el anfitrión antiguo como el nuevo deben tener un guardado regular generado al unirse y crear un personaje.
+- El anfitrión utiliza `0001.sav`.
+- Cada cliente utiliza un UID único y regular, como `1234.sav`, `9876.sav`, etc.
+- El jugador A es el antiguo anfitrión con progreso en `0001.sav`.
+- El jugador B es un cliente existente que se convertirá en el nuevo anfitrión.
 
-**Pasos:**
+**Estado inicial:**
+```
+0001.sav = Player A, old host
+1234.sav = Player B, future host
+```
 
-1. Utilice **Reparar guardado de host** para intercambiar el `0001.sav` del host anterior → su guardado habitual (por ejemplo, `123xxx.sav`). Esto mueve su progreso fuera del espacio de host.
-2. Utilice **Reparar guardado de host** para cambiar el guardado normal del nuevo host (por ejemplo, `987xxx.sav`) → `0001.sav`. Esto mueve su progreso al puesto de anfitrión.
+**Requisitos previos:**
+- El jugador B debe haberse unido previamente al mundo del jugador A y haber creado un personaje.
+- La partida guardada habitual del jugador B debe existir en la carpeta `Players`.
+- Tanto el jugador A como el jugador B deben tener al menos el nivel 2.
+- Haga una copia de seguridad de toda la carpeta de guardado del mundo antes de realizar cambios.
+- Apague el servidor o cierre Palworld antes de modificar el guardado.
 
-**Resultado:** El nuevo anfitrión ahora ocupa `0001.sav` con su propio personaje y Pals; el antiguo anfitrión se convierte en cliente con su progreso original intacto.
+---
+
+### 1. Cambie al jugador B a la ranura del anfitrión
+
+Abra **Fix Host Save** y seleccione:
+```
+Source Player: Player A, 0001.sav
+Target Player: Player B, 1234.sav
+```
+Ejecute la migración.
+
+Resultado:
+```
+0001.sav = Player B's original progress
+1234.sav = Player A's original progress
+```
+El jugador B ahora ocupa el puesto de anfitrión. El progreso del anfitrión original del jugador A se conserva en el antiguo UID normal del jugador B.
+
+---
+
+### 2. Comienza el mundo con el jugador B como nuevo anfitrión
+
+Inicie Palworld con el jugador B como anfitrión del mundo. Confirma que el jugador B tiene el personaje, nivel, inventario, pals, gremio, bases y propiedad correctos.
+
+Guardar estado:
+```
+0001.sav = Player B, new host
+1234.sav = Player A's original progress
+```
+
+---
+
+### 3. Haga que el jugador A se una al mundo del jugador B
+
+El jugador A se une al mundo ahora alojado por el jugador B. Palworld puede asignarle al jugador A un nuevo UID regular porque ya no es el anfitrión.
+
+Ejemplo:
+```
+3456.sav = Player A's new client UID
+```
+
+Palworld puede pedirle al jugador A que cree un nuevo personaje (esperado). El progreso original del jugador A todavía está en `1234.sav`.
+
+Después de que el jugador A cree el personaje temporal:
+```
+0001.sav = Player B's correct progress
+1234.sav = Player A's original progress
+3456.sav = Player A's new temporary character
+```
+
+---
+
+### 4. Nivelar el personaje temporal del jugador A
+
+1. Haz que el jugador A alcance al menos el **Nivel 2** con el personaje temporal.
+2. Haga que el jugador A abandone el servidor.
+3. Apague el servidor por completo.
+4. Vuelva a hacer una copia de seguridad de la carpeta para guardar el mundo.
+
+Se requiere el nivel 2 porque **Fix Host Save** requiere que ambos personajes seleccionados tengan al menos el nivel 2.
+
+---
+
+### 5. Restaurar el progreso original del jugador A
+
+Abra **Fix Host Save** nuevamente y seleccione:
+```
+Source Player: Player A's original progress, 1234.sav
+Target Player: Player A's new client UID, 3456.sav
+```
+Ejecute la migración. Porque este es otro intercambio bidireccional:
+
+```
+0001.sav = Player B's correct host progress
+3456.sav = Player A's restored original progress
+1234.sav = Player A's temporary character
+```
+El nuevo UID del cliente del jugador A ahora apunta al personaje y al progreso originales del jugador A.
+
+---
+
+### Resultado final:
+```
+0001.sav = Player B, new host with original progress
+3456.sav = Player A, client with restored original progress
+1234.sav = Temporary leftover character
+```
+- El jugador B presenta usando el personaje original del jugador B.
+- El jugador A se une usando el personaje original restaurado del jugador A.
 
 </details>
 
@@ -428,6 +527,7 @@ El formato del archivo guardado está desactualizado. Cargue el guardado en el j
 2. Espere unos minutos hasta que se liberen los identificadores de archivos.
 3. Ejecute el convertidor GamePass → Steam.
 4. Inicie Palworld en GamePass para verificar.
+
 ### El binario de Linux/macOS no se inicia
 
 - **Linux:** `chmod +x PalworldSaveTools-*-linux` para marcarlo como ejecutable.
@@ -622,7 +722,6 @@ Este proyecto no existiría sin las personas que lo respaldan.
 <img src="https://readme-typing-svg.demolab.com?lines=D%C3%B3nde+se+debe+el+cr%C3%A9dito;gracias+a+todos;Nos+paramos+sobre+los+hombros&center=true&width=390&height=28&font=monospace&size=22&color=7DD3FC&vCenter=true" alt="" />
 
 </div>
-
 Un enorme agradecimiento a:
 
 - **Palworld** desarrollado por Pocketpair, Inc. — para el juego que nos unió a todos.

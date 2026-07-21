@@ -11,7 +11,7 @@
 [![Discord](https://img.shields.io/badge/Discord-Join_for_support-blue)](https://discord.gg/sYcZwcT4cT)
 [![NexusMods](https://img.shields.io/badge/NexusMods-Download-orange)](https://www.nexusmods.com/palworld/mods/3190)
 
-[English](../../README.md) | [简体中文](README.zh_CN.md) | [Deutsch](README.de_DE.md) | [Español](README.es_ES.md) | [Français](README.fr_FR.md) | [Русский](README.ru_RU.md) | [日本語](README.ja_JP.md) | [한국어](README.ko_KR.md) | [Português](README.pt_BR.md)
+[English](../../README.md) | [简体中文](README.zh_CN.md) | [Deutsch](README.de_DE.md) | [Español](README.es_ES.md) | [Français](README.fr_FR.md) | [Русский](README.ru_RU.md) | [日本語](README.ja_JP.md) | [한국어](README.ko_KR.md) | [Português (Brasil)](README.pt_BR.md) | [Português (Portugal)](README.pt_PT.md)
 
 ---
 
@@ -37,7 +37,7 @@ Palworld Save Tools(PST)는 Palworld 저장 파일을 검사하고 편집하기 
 - **교차 플랫폼** — **Windows**, **Linux** 및 **macOS**용으로 사전 구축된 바이너리입니다.
 - **빠른 기본 구문 분석** — [`palsav`](src/palsav) 엔진으로 구동되는 사용 가능한 가장 빠른 저장 파일 리더 중 하나입니다.
 - **시각적 지도** — 기지/플레이어 마커, 제외 구역 및 좌표 보정이 포함된 대화형 세계 지도입니다.
-- **심층적인 Pal 편집** — 통계, IVs, 영혼, 기술, passives, 작업 적합성, 순위 및 외모 플래그를 완벽하게 제어할 수 있습니다.
+- **심층적인 Pal 편집** — 통계, IVs, 영혼, 스킬, passives, 작업 적합성, 순위 및 외모 플래그를 완벽하게 제어할 수 있습니다.
 - **서버급 도구** — 관리자를 위해 구축된 대량 삭제, 정리, 변환 및 문자 전송.
 - **자동 백업** — 모든 저장 작업은 쓰기 전에 백업을 생성합니다.
 - **9개 언어** — 현지화된 UI, 인앱 가이드 및 문서.
@@ -88,7 +88,7 @@ Palworld Save Tools(PST)는 Palworld 저장 파일을 검사하고 편집하기 
 
 ### 플레이어 관리
 
-- 이름, 레벨, pal 수, UID, 길드, 마지막 접속 시간을 기준으로 모든 플레이어를 보고 검색할 수 있습니다.
+- 이름, 레벨, pal 수, UID, 길드 및 마지막 접속 시간을 기준으로 모든 플레이어를 보고 검색합니다.
 - 플레이어 이름, 레벨, 통계, 기술 포인트를 편집합니다.
 - **통계 탭** — 게임 내에서 계산된 값이 포함된 영웅 통계(건강, 체력, 공격, 방어, 작업 속도, 체중) 토글과 스피너가 있는 유물 능력.
 - **모든 통계 최대치** — 모든 통계를 즉시 최대(50포인트)로 제한합니다.
@@ -97,7 +97,7 @@ Palworld Save Tools(PST)는 Palworld 저장 파일을 검사하고 편집하기 
 
 ### Pal Editor
 
-모든 플레이어가 소유한 Pal에 대한 심층 편집 인터페이스입니다. Pals은 **파티**(활성 분대)와 **Palbox**(저장소)로 구성됩니다.
+모든 플레이어가 소유한 Pal에 대한 심층 편집 인터페이스입니다. Pals는 **파티**(활성 분대)와 **Palbox**(저장소)로 구성됩니다.
 
 - **통계 및 IVs** — HP, 공격, 방어(IV 0–100), 레벨(1–80), 신뢰 순위(0–10).
 - **소울** — HP, 공격, 방어, 제작 속도(0–20).
@@ -107,10 +107,10 @@ Palworld Save Tools(PST)는 Palworld 저장 파일을 검사하고 편집하기 
 - **외모 플래그** — 보스/알파, 럭키/샤이니, 프레데터, 각성 및 수입/DNA를 전환합니다.
 - **순위 및 잠금** — 순위 및 즐겨찾기 잠금 수준(0~3)을 설정합니다.
 - **치트 모드** — 레벨, IVs, 영혼, 응축기 등급을 255로 확장하려면 토글하세요. 중복이 허용되는 무제한 액티브/패시브 스킬을 잠금 해제하세요.
-- **내보내기/가져오기** — `.pstpal`(압축) 또는 `.json`로 내보내려면 pal을 마우스 오른쪽 버튼으로 클릭하세요. 파티, 팔박스, DPS 또는 기본 작업자의 빈 슬롯으로 가져옵니다. 저장 및 플레이어 전반에 걸쳐 작동합니다.
+- **내보내기/가져오기** — pal을 마우스 오른쪽 버튼으로 클릭하여 `.pstpal`(압축) 또는 `.json`로 내보냅니다. 파티, 팔박스, DPS 또는 기본 작업자의 빈 슬롯으로 가져옵니다. 저장 및 플레이어 전반에 걸쳐 작동합니다.
 - **최대 전체 Pals** — 파티의 모든 pals, 모든 팔박스 페이지 또는 모든 기본 작업자에 대한 모든 통계(IVs, 영혼, 순위, 레벨)를 최대화합니다. — 치트 모드 한도를 준수합니다.
 - **불법 Pals 수정** — 불법적인 통계, 기술 또는 플레이어별 특성이 있는 pals을 감지하고 제한합니다.
-- **대량 복제/삭제** — 일괄 작업을 위한 수량 제어 및 소스 토글(파티/팔박스/DPS)이 있는 종 선택 대화 상자입니다.
+- **대량 복제/삭제** — 일괄 작업을 위한 수량 제어 및 소스 토글(파티/팔박스/DPS)이 있는 종 선택기 대화 상자입니다.
 - 새로운 Pals을 추가하거나 두 번 클릭하여 빠르게 삭제하세요.
 
 ### 길드 관리
@@ -151,7 +151,7 @@ Palworld Save Tools(PST)는 Palworld 저장 파일을 검사하고 편집하기 
 - 무기, 액세서리, 음식, 방어구, 방패, 글라이더, 모듈 슬롯을 위한 장비 패널입니다.
 - 한 번의 클릭으로 모든 지도와 빠른 이동 지점을 잠금 해제할 수 있습니다.
 
-**기본 인벤토리** — 항목을 탐색 및 관리하고 모든 기지에서 Pals 작업:
+**기본 인벤토리** — 항목을 찾아보고 관리하며 모든 기지에서 Pals 작업을 수행합니다.
 - 컨테이너의 항목 보기/편집 투명한 용기; 컨테이너 슬롯을 수정합니다.
 - 길드 간 아이템 작업(모든 길드에서 아이템 찾기/제거)
 - 길드 간 구조 삭제.
@@ -173,7 +173,7 @@ Palworld Save Tools(PST)는 Palworld 저장 파일을 검사하고 편집하기 
 | 도구 | 설명 |
 |------|-------------|
 | **저장 내용 변환** | SAV와 JSON 형식 간 변환 |
-| **GamePass → Steam** 변환 | Xbox/GamePass을 변환하면 Steam 형식으로 저장 |
+| **GamePass → Steam** 변환 | Xbox/GamePass을 변환하여 Steam 형식으로 저장 |
 | **SteamID 변환** | Steam ID를 Palworld UID로 변환 |
 | **지도 복원** | 모든 월드/서버에 완전히 잠금 해제된 지도 진행 상황 적용 |
 | **슬롯 인젝터** | 플레이어당 팔박스 슬롯 늘리기 |
@@ -186,7 +186,7 @@ Palworld Save Tools(PST)는 Palworld 저장 파일을 검사하고 편집하기 
 **메뉴 → 기능**을 통해 액세스할 수 있는 이러한 서버급 작업에는 다음이 포함됩니다.
 
 - **삭제** — 빈 길드, 비활성 기지/플레이어, 중복 플레이어, 참조되지 않은 데이터를 삭제합니다.
-- **정리** — 유효하지 않은/수정된 항목, 유효하지 않은 pals 및 passives, 유효하지 않은 구조를 제거합니다. 불법적인 pals 수정(법적 최대값으로 제한); 대공 포탑을 재설정합니다. private chests 잠금 해제; 모든 구조물을 수리하십시오.
+- **정리** — 유효하지 않은/수정된 항목, 유효하지 않은 pals 및 passives, 유효하지 않은 구조를 제거합니다. 불법적인 pals을 수정합니다(법적 최대값으로 제한). 대공 포탑을 재설정합니다. private chests 잠금 해제; 모든 구조물을 수리하십시오.
 - **재설정** — 미션, 던전, 석유 굴착 장치, 침입자, 보급품 투하를 재설정합니다.
 - **타임스탬프** — 부정적인 타임스탬프를 수정합니다. 플레이어 시간을 재설정합니다.
 - **PalDefender** — `killnearestbase` 명령을 생성합니다.
@@ -220,7 +220,7 @@ Palworld Save Tools(PST)는 Palworld 저장 파일을 검사하고 편집하기 
 
 [Nexus Mods](https://www.nexusmods.com/palworld/mods/3190)에서도 사용 가능합니다.
 
-1. 플랫폼에 적합한 빌드를 다운로드합니다.
+1. 귀하의 플랫폼에 적합한 빌드를 다운로드하십시오.
 2. 실행 파일을 추출하고(보관된 경우) 실행합니다.
 3. 그게 다입니다. Python이나 종속성이 필요하지 않습니다.
 
@@ -228,7 +228,7 @@ Palworld Save Tools(PST)는 Palworld 저장 파일을 검사하고 편집하기 
 
 > **Linux:** 파일을 실행 가능으로 표시해야 할 수도 있습니다: `chmod +x PalworldSaveTools-*-linux`
 
-> **macOS:** Gatekeeper가 앱을 차단하는 경우 마우스 오른쪽 버튼을 클릭하고 → **처음 열기**를 클릭하거나 `xattr -d com.apple.quarantine /path/to/app`을 실행하세요.
+> **macOS:** Gatekeeper가 앱을 차단하는 경우 마우스 오른쪽 버튼을 클릭하고 → 처음에 **열기**를 클릭하거나 `xattr -d com.apple.quarantine /path/to/app`를 실행하세요.
 
 ### 소스에서(모든 플랫폼)
 
@@ -338,18 +338,117 @@ PST는 저장을 위해 전체 지도(모든 빠른 이동 지점)를 잠금 해
 ### 호스트 스왑(호스트 변경)
 
 <details>
-<summary>확대하려면 클릭하세요</summary>
+<summary>호스트 스왑 가이드를 펼치려면 클릭하세요</summary>
 
-**배경:** 호스트는 항상 호스트 누구에게나 동일한 UID인 `0001.sav` 슬롯을 사용합니다. 각 클라이언트는 고유한 일반 저장을 얻습니다(예: `123xxx.sav`).
+**배경:**
 
-**전제 조건:** 이전 호스트와 새 호스트 모두 캐릭터 가입 및 생성을 통해 생성된 일반 저장이 있어야 합니다.
+- 호스트는 `0001.sav`을 사용합니다.
+- 각 클라이언트는 `1234.sav`, `9876.sav` 등과 같은 고유한 일반 UID 저장을 사용합니다.
+- 플레이어 A는 `0001.sav`에서 진행 중인 이전 호스트입니다.
+- 플레이어 B는 새로운 호스트가 될 기존 클라이언트입니다.
 
-**단계:**
+**시작 상태:**
+```
+0001.sav = Player A, old host
+1234.sav = Player B, future host
+```
 
-1. **Fix Host Save**를 사용하여 이전 호스트의 `0001.sav` → 일반 저장(예: `123xxx.sav`)을 교체합니다. 그러면 진행 상황이 호스트 슬롯 밖으로 이동됩니다.
-2. **Fix Host Save**를 사용하여 새 호스트의 일반 저장(예: `987xxx.sav`) → `0001.sav`을 교체합니다. 그러면 진행 상황이 호스트 슬롯으로 이동됩니다.
+**전제조건:**
+- B 플레이어는 이전에 A 플레이어의 월드에 합류하여 캐릭터를 생성한 적이 있어야 합니다.
+- 플레이어 B의 일반 플레이어 저장 파일은 `Players` 폴더에 있어야 합니다.
+- A선수와 B선수 모두 레벨 2 이상이어야 합니다.
+- 변경하기 전에 월드 저장 폴더 전체를 백업하세요.
+- 저장 내용을 수정하기 전에 서버를 종료하거나 Palworld를 닫으세요.
 
-**결과:** 이제 새 호스트는 자신의 캐릭터와 Pals로 `0001.sav`을 차지합니다. 이전 호스트는 원래 진행 상황을 그대로 유지하면서 클라이언트가 됩니다.
+---
+
+### 1. 플레이어 B를 호스트 슬롯으로 교체합니다.
+
+**Fix Host Save**를 열고 다음을 선택합니다.
+```
+Source Player: Player A, 0001.sav
+Target Player: Player B, 1234.sav
+```
+마이그레이션을 실행합니다.
+
+결과:
+```
+0001.sav = Player B's original progress
+1234.sav = Player A's original progress
+```
+이제 플레이어 B가 호스트 슬롯을 차지합니다. 플레이어 A의 원래 호스트 진행 상황은 플레이어 B의 이전 일반 UID에 보존됩니다.
+
+---
+
+### 2. 플레이어 B를 새 호스트로 하여 세계를 시작하세요
+
+세계를 호스팅하는 플레이어 B로 Palworld를 시작하십시오. 플레이어 B의 캐릭터, 레벨, 인벤토리, pals, 길드, 기지 및 소유권이 올바른지 확인하세요.
+
+상태 저장:
+```
+0001.sav = Player B, new host
+1234.sav = Player A's original progress
+```
+
+---
+
+### 3. 플레이어 A가 플레이어 B의 세계에 합류하도록 합니다.
+
+플레이어 A는 이제 플레이어 B가 호스팅하는 세계에 합류합니다. Palworld는 플레이어 A가 더 이상 호스트가 아니기 때문에 새로운 일반 UID를 할당할 수 있습니다.
+
+예:
+```
+3456.sav = Player A's new client UID
+```
+
+Palworld는 플레이어 A에게 새로운 캐릭터 생성을 요청할 수 있습니다(예상). 플레이어 A의 원래 진행 상황은 여전히 ​​`1234.sav`입니다.
+
+플레이어 A가 임시 캐릭터를 생성한 후:
+```
+0001.sav = Player B's correct progress
+1234.sav = Player A's original progress
+3456.sav = Player A's new temporary character
+```
+
+---
+
+### 4. 레벨 플레이어 A의 임시 캐릭터
+
+1. 플레이어 A가 임시 캐릭터로 최소 **레벨 2**에 도달하도록 하세요.
+2. 플레이어 A가 서버를 떠나도록 합니다.
+3. 서버를 완전히 종료합니다.
+4. 월드 세이브 폴더를 다시 백업하세요.
+
+**Fix Host Save**에서는 선택한 두 문자가 모두 레벨 2 이상이어야 하므로 레벨 2가 필요합니다.
+
+---
+
+### 5. 플레이어 A의 원래 진행 상황을 복원합니다.
+
+**Fix Host Save**를 다시 열고 다음을 선택합니다.
+```
+Source Player: Player A's original progress, 1234.sav
+Target Player: Player A's new client UID, 3456.sav
+```
+마이그레이션을 실행합니다. 이는 또 다른 양방향 교환이기 때문입니다.
+
+```
+0001.sav = Player B's correct host progress
+3456.sav = Player A's restored original progress
+1234.sav = Player A's temporary character
+```
+플레이어 A의 새 클라이언트 UID는 이제 플레이어 A의 원래 캐릭터와 진행 상황을 가리킵니다.
+
+---
+
+### 최종 결과:
+```
+0001.sav = Player B, new host with original progress
+3456.sav = Player A, client with restored original progress
+1234.sav = Temporary leftover character
+```
+- 플레이어 B는 플레이어 B의 오리지널 캐릭터를 사용하여 호스트합니다.
+- 플레이어 A는 복원된 오리지널 캐릭터를 사용해 참가합니다.
 
 </details>
 
@@ -425,6 +524,7 @@ PST는 저장을 위해 전체 지도(모든 빠른 이동 지점)를 잠금 해
 2. 파일 핸들이 해제될 때까지 몇 분 정도 기다립니다.
 3. GamePass → Steam 변환기를 실행합니다.
 4. GamePass에서 Palworld를 실행하여 확인하세요.
+
 ### Linux/macOS 바이너리가 실행되지 않습니다.
 
 - **Linux:** `chmod +x PalworldSaveTools-*-linux` 실행 가능으로 표시합니다.
@@ -504,7 +604,7 @@ uv run python build/build_interactively.py
 기여를 환영합니다! 언제든지 Pull Request를 제출해 주세요.
 
 1. 저장소를 포크하십시오.
-2. 기능 분기(`git checkout -b feature/AmazingFeature`)를 생성합니다.
+2. 기능 분기(`git checkout -b feature/AmazingFeature`)를 만듭니다.
 3. 변경 사항을 커밋합니다(`git commit -m 'Add some AmazingFeature'`).
 4. 분기(`git push origin feature/AmazingFeature`)로 푸시합니다.
 5. 끌어오기 요청을 엽니다.
@@ -619,10 +719,9 @@ uv run python build/build_interactively.py
 <img src="https://readme-typing-svg.demolab.com?lines=%EC%8B%A0%EC%9A%A9%EC%9D%B4+%ED%95%84%EC%9A%94%ED%95%9C+%EA%B3%B3;%EB%AA%A8%EB%91%90+%EA%B0%90%EC%82%AC%ED%95%A9%EB%8B%88%EB%8B%A4;%EC%9A%B0%EB%A6%AC%EB%8A%94+%EC%96%B4%EA%B9%A8+%EC%9C%84%EC%97%90+%EC%84%9C+%EC%9E%88%EB%8B%A4&center=true&width=390&height=28&font=monospace&size=22&color=7DD3FC&vCenter=true" alt="" />
 
 </div>
-
 다음 분들께 큰 감사를 드립니다:
 
-- **Palworld**는 Pocketpair, Inc.에서 개발했습니다. — 우리 모두를 하나로 모으는 게임을 위해.
+- **Palworld**는 Pocketpair, Inc.에서 개발했습니다. — 우리 모두를 하나로 묶는 게임을 위해.
 - **버그 보고자** — 제출된 모든 문제, 발견된 모든 극단적인 사례, Discord에 붙여넣은 모든 로그. 각 보고서를 통해 이 도구를 더욱 강력하게 만들 수 있습니다.
 - **Palworld 모딩 커뮤니티** — 지식, 리버스 엔지니어링 형식을 공유하고 생태계를 발전시키는 동료 모더, 도구 개발자 및 땜장이입니다. 이 프로젝트는 그러한 공동 노력의 어깨 위에 서 있습니다.
 - **모든 기여자와 커뮤니티 회원** — PR을 제출했든, Discord의 질문에 답변했든, 아니면 단순히 친구에게 PST에 대해 이야기했든 — 감사합니다.

@@ -11,7 +11,7 @@
 [![Discord](https://img.shields.io/badge/Discord-Join_for_support-blue)](https://discord.gg/sYcZwcT4cT)
 [![NexusMods](https://img.shields.io/badge/NexusMods-Download-orange)](https://www.nexusmods.com/palworld/mods/3190)
 
-[English](../../README.md) | [简体中文](README.zh_CN.md) | [Deutsch](README.de_DE.md) | [Español](README.es_ES.md) | [Français](README.fr_FR.md) | [Русский](README.ru_RU.md) | [日本語](README.ja_JP.md) | [한국어](README.ko_KR.md) | [Português](README.pt_BR.md)
+[English](../../README.md) | [简体中文](README.zh_CN.md) | [Deutsch](README.de_DE.md) | [Español](README.es_ES.md) | [Français](README.fr_FR.md) | [Русский](README.ru_RU.md) | [日本語](README.ja_JP.md) | [한국어](README.ko_KR.md) | [Português (Brasil)](README.pt_BR.md) | [Português (Portugal)](README.pt_PT.md)
 
 ---
 
@@ -97,7 +97,7 @@ Que vous ayez besoin de gérer un serveur dédié, de migrer entre des serveurs 
 
 ### Pal Editor
 
-Une interface d'édition approfondie pour n'importe quel Pal appartenant à n'importe quel joueur. Pals sont organisés par **Party** (équipe active) et **Palbox** (stockage).
+Une interface d'édition approfondie pour n'importe quel Pal appartenant à n'importe quel joueur. Les Pals sont organisés par **Party** (équipe active) et **Palbox** (stockage).
 
 - **Statistiques et IVs** — HP, attaque, défense (IV 0-100), niveau (1-80), rang de confiance (0-10).
 - **Âmes** — HP, Attaque, Défense, Vitesse d'artisanat (0–20).
@@ -106,8 +106,8 @@ Une interface d'édition approfondie pour n'importe quel Pal appartenant à n'im
 - **Aptitude au travail** — Définissez les niveaux individuels d'aptitude au travail (0 à 10).
 - **Drapeaux d'apparence** — Basculez entre Boss/Alpha, Chanceux/Brillant, Prédateur, Éveillé et Importé/ADN.
 - **Rank & Lock** — Définissez le classement et le niveau de verrouillage des favoris (0 à 3).
-- **Cheat Mode** — Basculez pour étendre toutes les majuscules : niveau, IVs, âmes, rang du condenseur à 255 ; débloquez des compétences actives/passives illimitées avec des doublons autorisés.
-- **Exporter/Importer** — Cliquez avec le bouton droit sur n'importe quel pal pour exporter au format `.pstpal` (compressé) ou `.json`. Importez dans des emplacements vides parmi les travailleurs du groupe, de la palbox, du DPS ou de la base. Fonctionne sur les sauvegardes et les joueurs.
+- **Cheat Mode** — Activez cette option pour étendre toutes les majuscules : niveau, IVs, âmes, rang du condenseur à 255 ; débloquez des compétences actives/passives illimitées avec des doublons autorisés.
+- **Exporter/Importer** — Cliquez avec le bouton droit sur n'importe quel pal pour l'exporter au format `.pstpal` (compressé) ou `.json`. Importez dans des emplacements vides parmi les travailleurs du groupe, de la palbox, du DPS ou de la base. Fonctionne sur les sauvegardes et les joueurs.
 - **Max All Pals** — Maximisez toutes les statistiques (IVs, âmes, rang, niveau) pour tous les pals du groupe, toutes les pages palbox ou tous les travailleurs de la base — respecte les limites du mode de triche.
 - **Correction du Pals** illégal — Détectez et limitez le pals avec des statistiques, des compétences ou des traits illégaux par joueur.
 - **Bulk Clone/Delete** — Boîte de dialogue de sélection d'espèces avec contrôles de quantité et basculement de source (Party/Palbox/DPS) pour les opérations par lots.
@@ -186,7 +186,7 @@ Accessible depuis l'onglet **Outils** sous forme de cartes cliquables :
 Accessibles via **Menu → Fonctions**, ces opérations de niveau serveur incluent :
 
 - **Suppression** — Supprimez les guildes vides, les bases/joueurs inactifs, les joueurs en double, les données non référencées.
-- **Nettoyage** — Supprimez les éléments invalides/modifiés, les pals et passives invalides, les structures invalides ; correction du pals illégal (plafond au maximum légal) ; réinitialiser les tourelles anti-aériennes ; débloquer private chests ; réparer toutes les structures.
+- **Nettoyage** — Supprimez les éléments invalides/modifiés, pals et passives invalides, les structures invalides ; correction du pals illégal (plafond au maximum légal) ; réinitialiser les tourelles anti-aériennes ; débloquer private chests ; réparer toutes les structures.
 - **Réinitialisations** — Réinitialisez les missions, les donjons, la plate-forme pétrolière, l'envahisseur, les baisses de ravitaillement.
 - **Horodatage** — Correction des horodatages négatifs ; réinitialiser les temps des joueurs.
 - **PalDefender** — Génère des commandes `killnearestbase`.
@@ -338,18 +338,117 @@ PST peut déverrouiller la carte complète (tous les points de déplacement rapi
 ### Échange d'hôte (changement d'hôte)
 
 <details>
-<summary>Cliquez pour agrandir</summary>
+<summary>Cliquez pour développer le guide d'échange d'hôte</summary>
 
-**Contexte :** L'hôte utilise toujours l'emplacement `0001.sav` – le même UID pour celui qui héberge. Chaque client obtient une sauvegarde régulière unique (par exemple, `123xxx.sav`).
+**Contexte :**
 
-**Prérequis :** L'ancien et le nouvel hôte doivent avoir une sauvegarde régulière générée en rejoignant et en créant un personnage.
+- L'hôte utilise `0001.sav`.
+- Chaque client utilise une sauvegarde UID régulière unique, telle que `1234.sav`, `9876.sav`, etc.
+- Le joueur A est l'ancien hôte avec une progression en `0001.sav`.
+- Le joueur B est un client existant qui deviendra le nouvel hôte.
 
-**Étapes :**
+**État de départ :**
+```
+0001.sav = Player A, old host
+1234.sav = Player B, future host
+```
 
-1. Utilisez **Fix Host Save** pour échanger le `0001.sav` de l'ancien hôte → sa sauvegarde habituelle (par exemple, `123xxx.sav`). Cela déplace leur progression hors de l'emplacement hôte.
-2. Utilisez **Fix Host Save** pour échanger la sauvegarde régulière du nouvel hôte (par exemple, `987xxx.sav`) → `0001.sav`. Cela déplace leur progression vers l’emplacement hôte.
+**Prérequis :**
+- Le joueur B doit avoir préalablement rejoint le monde du joueur A et créé un personnage.
+- La sauvegarde habituelle du joueur B doit exister dans le dossier `Players`.
+- Le joueur A et le joueur B doivent tous deux être au moins de niveau 2.
+- Sauvegardez l'intégralité du dossier de sauvegarde du monde avant d'apporter des modifications.
+- Arrêtez le serveur ou fermez Palworld avant de modifier la sauvegarde.
 
-**Résultat :** Le nouvel hôte occupe désormais `0001.sav` avec son propre personnage et Pals ; l'ancien hôte devient client avec sa progression d'origine intacte.
+---
+
+### 1. Échangez le joueur B dans l'emplacement hôte
+
+Ouvrez **Fix Host Save** et sélectionnez :
+```
+Source Player: Player A, 0001.sav
+Target Player: Player B, 1234.sav
+```
+Exécutez la migration.
+
+Résultat :
+```
+0001.sav = Player B's original progress
+1234.sav = Player A's original progress
+```
+Le joueur B occupe désormais l'emplacement d'hôte. La progression de l'hôte d'origine du joueur A est conservée dans l'ancien UID régulier du joueur B.
+
+---
+
+### 2. Démarrez le monde avec le joueur B comme nouvel hôte
+
+Démarrez Palworld avec le joueur B hébergeant le monde. Confirmez que le joueur B possède le personnage, le niveau, l'inventaire, le pals, la guilde, les bases et la propriété corrects.
+
+État de sauvegarde :
+```
+0001.sav = Player B, new host
+1234.sav = Player A's original progress
+```
+
+---
+
+### 3. Demandez au joueur A de rejoindre le monde du joueur B
+
+Le joueur A rejoint le monde désormais hébergé par le joueur B. Palworld peut attribuer au joueur A un nouvel UID régulier car il n'est plus l'hôte.
+
+Exemple :
+```
+3456.sav = Player A's new client UID
+```
+
+Palworld peut demander au joueur A de créer un nouveau personnage (attendu). La progression initiale du joueur A est toujours à `1234.sav`.
+
+Une fois que le joueur A a créé le personnage temporaire :
+```
+0001.sav = Player B's correct progress
+1234.sav = Player A's original progress
+3456.sav = Player A's new temporary character
+```
+
+---
+
+### 4. Personnage temporaire du joueur A de niveau
+
+1. Demandez au joueur A d'atteindre au moins le **niveau 2** avec le personnage temporaire.
+2. Demandez au joueur A de quitter le serveur.
+3. Arrêtez complètement le serveur.
+4. Sauvegardez à nouveau le dossier de sauvegarde du monde.
+
+Le niveau 2 est requis car **Fix Host Save** nécessite que les deux personnages sélectionnés soient au moins de niveau 2.
+
+---
+
+### 5. Restaurer la progression originale du joueur A
+
+Ouvrez à nouveau **Fix Host Save** et sélectionnez :
+```
+Source Player: Player A's original progress, 1234.sav
+Target Player: Player A's new client UID, 3456.sav
+```
+Exécutez la migration. Parce qu'il s'agit d'un autre échange bidirectionnel :
+
+```
+0001.sav = Player B's correct host progress
+3456.sav = Player A's restored original progress
+1234.sav = Player A's temporary character
+```
+Le nouvel UID client du joueur A pointe désormais vers le personnage et la progression d'origine du joueur A.
+
+---
+
+### Résultat final :
+```
+0001.sav = Player B, new host with original progress
+3456.sav = Player A, client with restored original progress
+1234.sav = Temporary leftover character
+```
+- Le joueur B héberge en utilisant le personnage original du joueur B.
+- Le joueur A rejoint le groupe en utilisant le personnage original restauré du joueur A.
 
 </details>
 
@@ -425,6 +524,7 @@ Le format du fichier de sauvegarde est obsolète. Chargez la sauvegarde dans le 
 2. Attendez quelques minutes que les descripteurs de fichiers soient libérés.
 3. Exécutez le convertisseur GamePass → Steam.
 4. Lancez Palworld sur GamePass pour vérifier.
+
 ### Le binaire Linux / macOS ne se lance pas
 
 - **Linux :** `chmod +x PalworldSaveTools-*-linux` pour le marquer comme exécutable.
@@ -599,7 +699,7 @@ Ce projet n'existerait pas sans les personnes qui le soutiennent.
 
 **[dkoz](https://github.com/dkoz)** — L'homme derrière les pièces d'identité. Fournit des identifiants de données de jeu, un aperçu structurel des codes d'identification et une connaissance approfondie de la manière dont les données de Palworld sont reliées entre elles, ce qui garantit la précision de l'outil à chaque mise à jour du jeu.
 
-**[oMaN-Rod](https://github.com/oMaN-Rod)** — Fourni l'analyseur de sauvegarde d'origine à partir duquel ce projet est issu. Sans son travail fondamental sur le piratage du format de sauvegarde Palworld, rien de tout cela n’existerait. Le fork a rationalisé et simplifié son analyseur pour en faire ce qu'est PST aujourd'hui.
+**[oMaN-Rod](https://github.com/oMaN-Rod)** — Fourni l'analyseur de sauvegarde d'origine à partir duquel ce projet est dérivé. Sans son travail fondamental sur le piratage du format de sauvegarde Palworld, rien de tout cela n’existerait. Le fork a rationalisé et simplifié son analyseur pour en faire ce qu'est PST aujourd'hui.
 
 **[Okaetsu](https://github.com/Okaetsu)** — Informations sur le modding qui ont rendu possible l'importation/exportation de base. Sa compréhension de la façon dont Palworld structure les données de base du côté du modding a comblé le fossé entre le modding et l'édition de sauvegarde, faisant de cette fonctionnalité une réalité.
 
@@ -619,7 +719,6 @@ Ce projet n'existerait pas sans les personnes qui le soutiennent.
 <img src="https://readme-typing-svg.demolab.com?lines=O%C3%B9+le+cr%C3%A9dit+est+d%C3%BB;Merci+%C3%A0+tous;Nous+nous+tenons+sur+les+%C3%A9paules&center=true&width=390&height=28&font=monospace&size=22&color=7DD3FC&vCenter=true" alt="" />
 
 </div>
-
 Un immense merci à :
 
 - **Palworld** développé par Pocketpair, Inc. — pour le jeu qui nous a tous réunis.

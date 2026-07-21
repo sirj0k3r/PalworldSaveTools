@@ -4,7 +4,7 @@
 
 # PalworldSaveTools
 
-**Um kit de ferramentas completo para editar arquivos de salvamento do Palworld**
+**A comprehensive save file editing toolkit for Palworld**
 
 [![Downloads](https://img.shields.io/github/downloads/deafdudecomputers/PalworldSaveTools/total)](https://github.com/deafdudecomputers/PalworldTools/releases/latest)
 [![License](https://img.shields.io/github/license/deafdudecomputers/PalworldSaveTools)](LICENSE)
@@ -15,7 +15,7 @@
 
 ---
 
-### **Baixe a versao autonoma do [GitHub Releases](https://github.com/deafdudecomputers/PalworldSaveTools/releases/latest)** 
+### **Download the standalone version from [GitHub Releases](https://github.com/deafdudecomputers/PalworldSaveTools/releases/latest)** 
 
 ---
 
@@ -52,7 +52,7 @@ Se você precisa gerenciar um servidor dedicado, migrar entre servidores coopera
 
 
 
-## Indice
+## Table of Contents
 
 - [Visão geral](#visão-geral)
 - [Recursos](#recursos)

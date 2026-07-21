@@ -11,7 +11,7 @@
 [![Discord](https://img.shields.io/badge/Discord-Join_for_support-blue)](https://discord.gg/sYcZwcT4cT)
 [![NexusMods](https://img.shields.io/badge/NexusMods-Download-orange)](https://www.nexusmods.com/palworld/mods/3190)
 
-[English](../../README.md) | [简体中文](README.zh_CN.md) | [Deutsch](README.de_DE.md) | [Español](README.es_ES.md) | [Français](README.fr_FR.md) | [Русский](README.ru_RU.md) | [日本語](README.ja_JP.md) | [한국어](README.ko_KR.md) | [Português](README.pt_BR.md)
+[English](../../README.md) | [简体中文](README.zh_CN.md) | [Deutsch](README.de_DE.md) | [Español](README.es_ES.md) | [Français](README.fr_FR.md) | [Русский](README.ru_RU.md) | [日本語](README.ja_JP.md) | [한국어](README.ko_KR.md) | [Português (Brasil)](README.pt_BR.md) | [Português (Portugal)](README.pt_PT.md)
 
 ---
 
@@ -37,7 +37,7 @@ Palworld Save Tools (PST) 是一款快速、一体化的桌面应用程序，用
 - **跨平台** — 适用于 **Windows**、**Linux** 和 **macOS** 的预构建二进制文件。
 - **快速本机解析** — 最快的保存文件阅读器之一，由 [`palsav`](src/palsav) 引擎提供支持。
 - **视觉地图** - 带有基地/玩家标记、禁区和坐标校准的交互式世界地图。
-- **深度 Pal 编辑** — 完全控制统计数据、IVs、灵魂、技能、passives、工作适合性、等级和外观标志。
+- **深度 Pal 编辑** — 完全控制统计数据、IVs、灵魂、技能、passives、工作适宜性、等级和外观标志。
 - **服务器级工具** — 为管理员构建的批量删除、清理、转换和字符传输。
 - **自动备份** — 每个保存操作都会在写入之前创建备份。
 - **9 种语言** — 本地化 UI、应用内指南和文档。
@@ -90,7 +90,7 @@ Palworld Save Tools (PST) 是一款快速、一体化的桌面应用程序，用
 
 - 按姓名、等级、pal 计数、UID、公会和最后上线时间查看和搜索所有玩家。
 - 编辑玩家姓名、等级、统计数据和技术点。
-- **统计选项卡** — 英雄统计数据（生命值、耐力、攻击力、防御力、工作速度、体重）以及正确的游戏内计算值；具有切换器和旋转器的遗物能力。
+- **统计选项卡** — 英雄统计数据（生命值、耐力、攻击、防御、工作速度、体重）以及正确的游戏内计算值；具有切换器和旋转器的遗物能力。
 - **所有统计数据最大化** — 立即将所有统计数据上限限制为最大（50 点）。
 - **跨多个玩家的批量操作**：物品管理、pal 管理和技术解锁。
 - 按时间阈值删除不活跃玩家；删除重复项。
@@ -105,10 +105,10 @@ Palworld Save Tools (PST) 是一款快速、一体化的桌面应用程序，用
 - **被动特征** — 具有完整游戏数据的被动选择器。
 - **工作适宜性** — 设置个人工作适宜性级别 (0–10)。
 - **外观标志** — 切换 Boss/Alpha、Lucky/Shiny、Predator、Awakened 和 Imported/DNA。
-- **排名和锁定** — 设置排名和最喜欢的锁定级别 (0–3)。
+- **排名和锁定** — 设置排名和最喜爱的锁定级别 (0–3)。
 - **作弊模式** — 切换以展开所有大写：等级、IVs、灵魂、冷凝等级至 255；解锁无限的主动/被动技能，并允许重复。
 - **导出/导入** — 右键单击​​任何 pal 以导出为 `.pstpal`（压缩）或 `.json`。导入到队伍、palbox、DPS 或基础工人的空槽中。适用于保存和玩家。
-- **最大化所有 Pals** — 最大化队伍中所有 pals、所有 palbox 页面或所有基地工人的所有统计数据（IVs、灵魂、排名、等级）— 尊重作弊模式上限。
+- **全部 Pals** 最大化 — 队伍中所有 pals、所有 palbox 页面或所有基地工人的所有统计数据（IVs、灵魂、等级、等级）最大化 — 尊重作弊模式上限。
 - **修复非法 Pals** — 检测并限制 pals 的每个玩家的非法统计数据、技能或特征。
 - **批量克隆/删除** — 物种选择器对话框，带有用于批量操作的数量控制和源切换（Party/Palbox/DPS）。
 - 添加新的 Pals 或双击快速删除。
@@ -218,7 +218,7 @@ Palworld Save Tools (PST) 是一款快速、一体化的桌面应用程序，用
 | **Linux** | `PalworldSaveTools-*-linux` |任何现代发行版 |
 | **macOS** | `PalworldSaveTools-*-macos.dmg` | macOS 12+（蒙特利或更高版本）|
 
-也可在 [Nexus Mods](https://www.nexusmods.com/palworld/mods/3190) 上使用。
+也可在 [Nexus Mods](https://www.nexusmods.com/palworld/mods/3190) 上找到。
 
 1. 下载适合您平台的版本。
 2. 解压（如果已存档）并运行可执行文件。
@@ -338,18 +338,117 @@ PST 可以解锁完整地图（所有快速旅行点）以供您保存：
 ### 主机交换（更改主机）
 
 <details>
-<summary>点击展开</summary>
+<summary>点击展开主机交换指南</summary>
 
-**背景：** 主机始终使用 `0001.sav` 插槽 - 无论主机是谁，都使用相同的 UID。每个客户端都会获得唯一的定期保存（例如 `123xxx.sav`）。
+**背景：**
 
-**前提：** 新旧宿主都必须有加入和创建角色所生成的常规存档。
+- 主机使用 `0001.sav`。
+- 每个客户端使用唯一的常规UID保存，例如`1234.sav`、`9876.sav`等。
+- 玩家A是老主机，进度在`0001.sav`。
+- 玩家 B 是现有客户，将成为新主机。
 
-**步骤：**
+**起始状态：**
+```
+0001.sav = Player A, old host
+1234.sav = Player B, future host
+```
 
-1. 使用 **Fix Host Save** 将旧主机的 `0001.sav` → 其常规保存（例如 `123xxx.sav`）交换。这会将他们的进度移出主机槽。
-2. 使用 **Fix Host Save** 交换新主机的常规保存（例如 `987xxx.sav`） → `0001.sav`。这会将他们的进度移至主机槽中。
+**先决条件：**
+- 玩家B之前必须加入玩家A的世界并创建角色。
+- 玩家 B 的常规玩家保存必须存在于 `Players` 文件夹中。
+- 玩家 A 和玩家 B 必须至少达到 2 级。
+- 在进行更改之前备份整个世界保存文件夹。
+- 修改保存之前关闭服务器或关闭Palworld。
 
-**结果：** 新宿主现在以自己的角色占据`0001.sav`和Pals；旧主机成为客户端，原始进度完好无损。
+---
+
+### 1. 将玩家 B 交换到主机插槽中
+
+打开 **修复主机保存** 并选择：
+```
+Source Player: Player A, 0001.sav
+Target Player: Player B, 1234.sav
+```
+运行迁移。
+
+结果：
+```
+0001.sav = Player B's original progress
+1234.sav = Player A's original progress
+```
+玩家 B 现在占据主机位置。玩家 A 的原始主机进度保留在玩家 B 的前常规 UID 中。
+
+---
+
+### 2. 以玩家 B 作为新主机开始世界
+
+开始 Palworld，玩家 B 主持世界。确认玩家 B 具有正确的角色、等级、库存、pals、公会、基地和所有权。
+
+保存状态：
+```
+0001.sav = Player B, new host
+1234.sav = Player A's original progress
+```
+
+---
+
+### 3.让玩家A加入玩家B的世界
+
+玩家 A 加入现在由玩家 B 主持的世界。Palworld 可能会为玩家 A 分配一个新的常规 UID，因为他们不再是主机。
+
+示例：
+```
+3456.sav = Player A's new client UID
+```
+
+Palworld 可能会要求玩家 A 创建一个新角色（预期）。玩家 A 的原始进度仍为 `1234.sav`。
+
+玩家A创建临时角色后：
+```
+0001.sav = Player B's correct progress
+1234.sav = Player A's original progress
+3456.sav = Player A's new temporary character
+```
+
+---
+
+### 4. 等级玩家A的临时角色
+
+1. 让玩家 A 的临时角色至少达到 **2 级**。
+2. 让玩家A离开服务器。
+3. 完全关闭服务器。
+4. 再次备份world-save文件夹。
+
+需要 2 级，因为 **修复主机保存** 要求两个选定的角色至少为 2 级。
+
+---
+
+### 5.恢复玩家A的原始进度
+
+再次打开 **修复主机保存** 并选择：
+```
+Source Player: Player A's original progress, 1234.sav
+Target Player: Player A's new client UID, 3456.sav
+```
+运行迁移。因为这是另一个双向交换：
+
+```
+0001.sav = Player B's correct host progress
+3456.sav = Player A's restored original progress
+1234.sav = Player A's temporary character
+```
+玩家 A 的新客户端 UID 现在指向玩家 A 的原始角色和进度。
+
+---
+
+### 最终结果：
+```
+0001.sav = Player B, new host with original progress
+3456.sav = Player A, client with restored original progress
+1234.sav = Temporary leftover character
+```
+- 玩家B使用玩家B的原始角色主持。
+- 玩家A使用玩家A恢复的原始角色加入。
 
 </details>
 
@@ -425,6 +524,7 @@ PST 可以解锁完整地图（所有快速旅行点）以供您保存：
 2. 等待几分钟，让文件句柄释放。
 3. 运行GamePass → Steam 转换器。
 4. 在GamePass上启动Palworld进行验证。
+
 ### Linux / macOS 二进制文件无法启动
 
 - **Linux:** `chmod +x PalworldSaveTools-*-linux` 将其标记为可执行。
@@ -619,7 +719,6 @@ uv run python build/build_interactively.py
 <img src="https://readme-typing-svg.demolab.com?lines=%E4%BF%A1%E7%94%A8%E5%88%B0%E6%9C%9F%E7%9A%84%E5%9C%B0%E6%96%B9;%E8%B0%A2%E8%B0%A2%E5%A4%A7%E5%AE%B6;%E6%88%91%E4%BB%AC%E7%AB%99%E5%9C%A8%E8%82%A9%E8%86%80%E4%B8%8A&center=true&width=390&height=28&font=monospace&size=22&color=7DD3FC&vCenter=true" alt="" />
 
 </div>
-
 非常感谢：
 
 - **Palworld** 由 Pocketpair, Inc. 开发 - 这款游戏将我们所有人聚集在一起。

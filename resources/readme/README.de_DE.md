@@ -11,7 +11,7 @@
 [![Discord](https://img.shields.io/badge/Discord-Join_for_support-blue)](https://discord.gg/sYcZwcT4cT)
 [![NexusMods](https://img.shields.io/badge/NexusMods-Download-orange)](https://www.nexusmods.com/palworld/mods/3190)
 
-[English](../../README.md) | [简体中文](README.zh_CN.md) | [Deutsch](README.de_DE.md) | [Español](README.es_ES.md) | [Français](README.fr_FR.md) | [Русский](README.ru_RU.md) | [日本語](README.ja_JP.md) | [한국어](README.ko_KR.md) | [Português](README.pt_BR.md)
+[English](../../README.md) | [简体中文](README.zh_CN.md) | [Deutsch](README.de_DE.md) | [Español](README.es_ES.md) | [Français](README.fr_FR.md) | [Русский](README.ru_RU.md) | [日本語](README.ja_JP.md) | [한국어](README.ko_KR.md) | [Português (Brasil)](README.pt_BR.md) | [Português (Portugal)](README.pt_PT.md)
 
 ---
 
@@ -30,14 +30,14 @@
 
 Palworld Save Tools (PST) ist eine schnelle All-in-One-Desktopanwendung zum Überprüfen und Bearbeiten von Palworld-Sicherungsdateien. Es wurde mit Python und PySide6 erstellt und liest und schreibt das komprimierte Speicherformat des Spiels direkt – keine Spielmodifikationen erforderlich.
 
-Ganz gleich, ob Sie einen dedizierten Server verwalten, zwischen Koop- und dedizierten Servern migrieren, aufgegebene Daten bereinigen oder einzelne Pals optimieren müssen, PST bietet für alles eine einzige einheitliche Schnittstelle.
+Ganz gleich, ob Sie einen dedizierten Server verwalten, zwischen Co-op- und dedizierten Servern migrieren, aufgegebene Daten bereinigen oder einzelne Pals optimieren müssen, PST bietet für alles eine einzige einheitliche Schnittstelle.
 
 ### Highlights
 
 - **Plattformübergreifend** – Vorgefertigte Binärdateien für **Windows**, **Linux** und **macOS**.
-- **Schnelles natives Parsen** – Einer der schnellsten verfügbaren Lesegeräte für gespeicherte Dateien, angetrieben von der [`palsav`](src/palsav)-Engine.
+- **Schnelles natives Parsen** – Einer der schnellsten verfügbaren Lesegeräte für gespeicherte Dateien, angetrieben durch die [`palsav`](src/palsav)-Engine.
 - **Visuelle Karte** – Interaktive Weltkarte mit Basis-/Spielermarkierungen, Sperrzonen und Koordinatenkalibrierung.
-- **Umfassende Pal-Bearbeitung** – Volle Kontrolle über Statistiken, IVs, Seelen, Fertigkeiten, passives, Arbeitseignungen, Rang und Aussehensmarkierungen.
+- **Umfassende Pal-Bearbeitung** – Volle Kontrolle über Statistiken, IVs, Seelen, Fähigkeiten, passives, Arbeitseignungen, Rang und Aussehensflaggen.
 - **Tools auf Serverniveau** – Massenlöschung, Bereinigung, Konvertierung und Zeichenübertragung für Administratoren.
 - **Automatische Backups** – Bei jedem Speichervorgang wird vor dem Schreiben ein Backup erstellt.
 - **9 Sprachen** – Lokalisierte Benutzeroberfläche, In-App-Anleitungen und Dokumentation.
@@ -88,7 +88,7 @@ Ganz gleich, ob Sie einen dedizierten Server verwalten, zwischen Koop- und dediz
 
 ### Spielerverwaltung
 
-- Alle Spieler nach Name, Level, pal-Anzahl, UID, Gilde und zuletzt gesehener Zeit anzeigen und durchsuchen.
+- Alle Spieler nach Name, Level, pal Anzahl, UID, Gilde und zuletzt gesehener Zeit anzeigen und durchsuchen.
 - Bearbeiten Sie Spielernamen, Level, Statistiken und Technologiepunkte.
 - **Registerkarte „Statistik“** – Heldenstatistiken (Gesundheit, Ausdauer, Angriff, Verteidigung, Arbeitsgeschwindigkeit, Gewicht) mit korrekten, im Spiel berechneten Werten; Reliktfähigkeiten mit Schaltern und Spinnern.
 - **Alle Statistiken maximieren** – Begrenzen Sie alle Statistiken sofort auf das Maximum (50 Punkte).
@@ -97,17 +97,17 @@ Ganz gleich, ob Sie einen dedizierten Server verwalten, zwischen Koop- und dediz
 
 ### Pal Editor
 
-Eine umfassende Bearbeitungsoberfläche für jedes Pal eines beliebigen Spielers. Pals werden von **Party** (aktive Truppe) und **Palbox** (Lagerung) organisiert.
+Eine umfassende Bearbeitungsoberfläche für jedes Pal, das einem beliebigen Spieler gehört. Pals werden von **Party** (aktive Truppe) und **Palbox** (Lagerung) organisiert.
 
 - **Statistiken & IVs** – HP, Angriff, Verteidigung (IV 0–100), Level (1–80), Vertrauensrang (0–10).
 - **Seelen** – HP, Angriff, Verteidigung, Handwerksgeschwindigkeit (0–20).
 - **Fertigkeiten** – Aktive Fertigkeitsauswahl; lerne alle Bewegungen; Fähigkeiten zur Massensynchronisierung in Pals.
 - **Passive Eigenschaften** – Passiver Picker mit vollständigen Spieldaten.
 - **Arbeitseignung** – Legen Sie individuelle Arbeitseignungsstufen fest (0–10).
-- **Aussehensflaggen** – Umschalten zwischen Boss/Alpha, Lucky/Shiny, Predator, Awakened und Imported/DNA.
+- **Aussehensflaggen** – Boss/Alpha, Lucky/Shiny, Predator, Awakened und Imported/DNA umschalten.
 - **Rang & Sperre** – Rang und bevorzugte Sperrstufe festlegen (0–3).
 - **Cheat-Modus** – Umschalten, um alle Obergrenzen zu erweitern: Level, IVs, Seelen, Kondensatorrang auf 255; Schalten Sie unbegrenzte Aktiv-/Passivfähigkeiten frei, wobei Duplikate zulässig sind.
-- **Export/Import** – Klicken Sie mit der rechten Maustaste auf einen beliebigen pal, um ihn als `.pstpal` (komprimiert) oder `.json` zu exportieren. Importieren Sie in leere Slots über Gruppen-, Palbox-, DPS- oder Basisarbeiter hinweg. Funktioniert für alle Spielstände und Spieler.
+- **Exportieren/Importieren** – Klicken Sie mit der rechten Maustaste auf ein beliebiges pal, um es als `.pstpal` (komprimiert) oder `.json` zu exportieren. Importieren Sie in leere Slots über Gruppen-, Palbox-, DPS- oder Basisarbeiter hinweg. Funktioniert für alle Spielstände und Spieler.
 - **Max. Alle Pals** – Max. aller Statistiken (IVs, Seelen, Rang, Level) für alle pals in der Gruppe, alle Palbox-Seiten oder alle Basisarbeiter – berücksichtigt die Obergrenzen des Cheat-Modus.
 - **Illegales Pals beheben** – pals mit illegalen Statistiken, Fertigkeiten oder Eigenschaften pro Spieler erkennen und begrenzen.
 - **Massenklonen/Löschen** – Artenauswahldialog mit Mengensteuerung und Quellenumschaltung (Party/Palbox/DPS) für Stapelvorgänge.
@@ -124,7 +124,7 @@ Zweiteilige Ansicht: Gildenliste oben, Mitgliederliste unten.
 ### Basislager-Werkzeuge
 
 - Alle Basislager mit Gildenzugehörigkeit anzeigen.
-- **Basis-Blaupausen nach `.json` exportieren**; **Importieren** (einzelne oder mehrere Dateien) in jede Gilde.
+- Basis-Blaupausen **Exportieren** nach `.json`; **Importieren** (einzelne oder mehrere Dateien) in jede Gilde.
 - **Klonen** Basen für andere Gilden mit versetzter Positionierung.
 - **Koordinaten ändern** – Klicken Sie mit der rechten Maustaste auf eine Basismarkierung auf der Karte, wählen Sie „Koordinaten ändern“ und klicken Sie dann auf eine beliebige Stelle, um die Basis zu teleportieren.
 - **Base Nudge** – Verschieben Sie eine Basis um exakte X/Y/Z-Versatze, um Bodenbeschneidungen oder -schweben zu beheben.
@@ -185,7 +185,7 @@ Schutzlisten, die Spieler, Gilden und Stützpunkte vor Aufräumarbeiten schütze
 
 Diese Server-Vorgänge sind über **Menü → Funktionen** zugänglich und umfassen:
 
-- **Löschen** – Leere Gilden, inaktive Basen/Spieler, doppelte Spieler, nicht referenzierte Daten löschen.
+- **Löschen** – Leere Gilden, inaktive Basen/Spieler, doppelte Spieler und nicht referenzierte Daten löschen.
 - **Bereinigung** – Entfernen Sie ungültige/modifizierte Elemente, ungültige pals und passives, ungültige Strukturen; illegales pals beheben (Grenze auf zulässiges Maximum); Luftabwehrtürme zurücksetzen; entsperren private chests; alle Strukturen reparieren.
 - **Zurücksetzen** – Missionen, Dungeons, Bohrinsel, Eindringling, Versorgungslieferungen zurücksetzen.
 - **Zeitstempel** – Negative Zeitstempel korrigieren; Spielerzeiten zurücksetzen.
@@ -218,7 +218,7 @@ Vorgefertigte Binärdateien sind für alle drei Hauptplattformen ab [GitHub Rele
 | **Linux** | `PalworldSaveTools-*-linux` | Jede moderne Distribution |
 | **macOS** | `PalworldSaveTools-*-macos.dmg` | macOS 12+ (Monterey oder höher) |
 
-Auch erhältlich für [Nexus Mods](https://www.nexusmods.com/palworld/mods/3190).
+Auch verfügbar unter [Nexus Mods](https://www.nexusmods.com/palworld/mods/3190).
 
 1. Laden Sie den passenden Build für Ihre Plattform herunter.
 2. Extrahieren Sie die ausführbare Datei (falls archiviert) und führen Sie sie aus.
@@ -338,18 +338,117 @@ PST kann die vollständige Karte (alle Schnellreisepunkte) für Ihren Speicherst
 ### Host Swap (Host wechseln)
 
 <details>
-<summary>Zum Erweitern klicken</summary>
+<summary>Klicken Sie hier, um den Host-Swap-Leitfaden zu erweitern</summary>
 
-**Hintergrund:** Der Host verwendet immer den `0001.sav`-Slot – die gleiche UID für jeden Host. Jeder Client erhält eine eindeutige reguläre Speicherung (z. B. `123xxx.sav`).
+**Hintergrund:**
 
-**Voraussetzung:** Sowohl der alte als auch der neue Host müssen über einen regulären Speicherstand verfügen, der durch den Beitritt und die Erstellung eines Charakters generiert wird.
+– Der Host verwendet `0001.sav`.
+- Jeder Client verwendet einen eindeutigen regulären UID-Speicher, z. B. `1234.sav`, `9876.sav` usw.
+- Spieler A ist der alte Host mit Fortschritten in `0001.sav`.
+- Spieler B ist ein bestehender Kunde, der zum neuen Host wird.
 
-**Schritte:**
+**Ausgangszustand:**
+```
+0001.sav = Player A, old host
+1234.sav = Player B, future host
+```
 
-1. Verwenden Sie **Fix Host Save**, um den `0001.sav` des alten Hosts → seinen regulären Speicher (z. B. `123xxx.sav`) auszutauschen. Dadurch wird ihr Fortschritt aus dem Host-Slot verschoben.
-2. Verwenden Sie **Fix Host Save**, um den regulären Speicher des neuen Hosts (z. B. `987xxx.sav`) → `0001.sav` auszutauschen. Dadurch wird ihr Fortschritt in den Host-Slot verschoben.
+**Voraussetzungen:**
+- Spieler B muss zuvor der Welt von Spieler A beigetreten sein und einen Charakter erstellt haben.
+- Der reguläre Spielerspeicher von Spieler B muss im Ordner `Players` vorhanden sein.
+- Spieler A und Spieler B müssen beide mindestens Level 2 sein.
+- Sichern Sie den gesamten World-Save-Ordner, bevor Sie Änderungen vornehmen.
+- Fahren Sie den Server herunter oder schließen Sie Palworld, bevor Sie den Speicher ändern.
 
-**Ergebnis:** Der neue Host belegt nun `0001.sav` mit seinem eigenen Charakter und Pals; Der alte Host wird zum Client, wobei sein ursprünglicher Fortschritt erhalten bleibt.
+---
+
+### 1. Tauschen Sie Spieler B in den Host-Slot aus
+
+Öffnen Sie **Fix Host Save** und wählen Sie:
+```
+Source Player: Player A, 0001.sav
+Target Player: Player B, 1234.sav
+```
+Führen Sie die Migration aus.
+
+Ergebnis:
+```
+0001.sav = Player B's original progress
+1234.sav = Player A's original progress
+```
+Spieler B belegt nun den Host-Slot. Der ursprüngliche Host-Fortschritt von Spieler A bleibt in der früheren regulären UID von Spieler B erhalten.
+
+---
+
+### 2. Starten Sie die Welt mit Spieler B als neuem Gastgeber
+
+Starten Sie Palworld mit Spieler B, der die Welt hostet. Bestätigen Sie, dass Spieler B den richtigen Charakter, das richtige Level, das richtige Inventar, pals, die richtige Gilde, die richtigen Basen und den richtigen Besitz hat.
+
+Status speichern:
+```
+0001.sav = Player B, new host
+1234.sav = Player A's original progress
+```
+
+---
+
+### 3. Lassen Sie Spieler A der Welt von Spieler B beitreten
+
+Spieler A tritt der Welt bei, die jetzt von Spieler B gehostet wird. Palworld kann Spieler A eine neue reguläre UID zuweisen, da er nicht mehr der Host ist.
+
+Beispiel:
+```
+3456.sav = Player A's new client UID
+```
+
+Palworld kann Spieler A bitten, einen neuen Charakter zu erstellen (erwartet). Der ursprüngliche Fortschritt von Spieler A liegt immer noch bei `1234.sav`.
+
+Nachdem Spieler A den temporären Charakter erstellt hat:
+```
+0001.sav = Player B's correct progress
+1234.sav = Player A's original progress
+3456.sav = Player A's new temporary character
+```
+
+---
+
+### 4. Den temporären Charakter von Spieler A aufleveln
+
+1. Lassen Sie Spieler A mit dem temporären Charakter mindestens **Level 2** erreichen.
+2. Lassen Sie Spieler A den Server verlassen.
+3. Fahren Sie den Server vollständig herunter.
+4. Sichern Sie den World-Save-Ordner erneut.
+
+Level 2 ist erforderlich, da **Fix Host Save** erfordert, dass beide ausgewählten Charaktere mindestens Level 2 haben.
+
+---
+
+### 5. Stellen Sie den ursprünglichen Fortschritt von Spieler A wieder her
+
+Öffnen Sie **Fix Host Save** erneut und wählen Sie:
+```
+Source Player: Player A's original progress, 1234.sav
+Target Player: Player A's new client UID, 3456.sav
+```
+Führen Sie die Migration aus. Denn dies ist ein weiterer wechselseitiger Tausch:
+
+```
+0001.sav = Player B's correct host progress
+3456.sav = Player A's restored original progress
+1234.sav = Player A's temporary character
+```
+Die neue Client-UID von Spieler A verweist jetzt auf den ursprünglichen Charakter und Fortschritt von Spieler A.
+
+---
+
+### Endergebnis:
+```
+0001.sav = Player B, new host with original progress
+3456.sav = Player A, client with restored original progress
+1234.sav = Temporary leftover character
+```
+- Spieler B moderiert den Originalcharakter von Spieler B.
+- Spieler A tritt mit dem wiederhergestellten Originalcharakter von Spieler A bei.
 
 </details>
 
@@ -425,6 +524,7 @@ Das Speicherdateiformat ist veraltet. Laden Sie den Speicherstand im Spiel (Solo
 2. Warten Sie einige Minuten, bis die Dateihandles freigegeben werden.
 3. Führen Sie den Konverter GamePass → Steam aus.
 4. Starten Sie Palworld zur Überprüfung auf GamePass.
+
 ### Linux/MacOS-Binärdatei wird nicht gestartet
 
 - **Linux:** `chmod +x PalworldSaveTools-*-linux`, um es als ausführbar zu markieren.
@@ -619,7 +719,6 @@ Ohne die Menschen dahinter gäbe es dieses Projekt nicht.
 <img src="https://readme-typing-svg.demolab.com?lines=Wo+Kredit+f%C3%A4llig+ist;Vielen+Dank+euch+allen;Wir+stehen+auf+Schultern&center=true&width=390&height=28&font=monospace&size=22&color=7DD3FC&vCenter=true" alt="" />
 
 </div>
-
 Ein großes Dankeschön an:
 
 - **Palworld**, entwickelt von Pocketpair, Inc. – für das Spiel, das uns alle zusammengebracht hat.
