@@ -1566,6 +1566,8 @@ class PalEditorWidget(QWidget, BulkOperationMixin):
         self.set_player(player_uid, player_name)
         self.apply_player_ui()
     def _get_container_ids(self):
+        if not constants.current_save_path:
+            return
         self.party_container = None
         self.palbox_container = None
         self.player_sav_path = None

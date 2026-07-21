@@ -209,7 +209,7 @@ def run_with_loading(callback, func, *args, parent=None, **kwargs):
             if on_error:
                 on_error(res)
             else:
-                ErrorDialog(res, parent=parent).exec()
+                ErrorDialog(res, parent=parent)
         elif callback:
             QTimer.singleShot(0, lambda: (callback(res), _dequeue_next()))
             return
@@ -222,48 +222,46 @@ def _dequeue_next():
     callback, func, args, kwargs, parent = _queued_next
     _queued_next = None
     run_with_loading(callback, func, *args, parent=parent, **kwargs)
-class ErrorDialog(QDialog):
+class ErrorDialog(QWidget):
     def __init__(self, error_text, parent=None):
-        super().__init__(parent)
         self.error_text = error_text
-        self.parent_window = parent
-        self._target_pos = None
-        self.setModal(True)
-        self.setWindowFlags(Qt.Window | Qt.FramelessWindowHint | Qt.Dialog | Qt.WindowStaysOnTopHint)
-        self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setMinimumSize(850, 500)
-        self.adjustSize()
-        self.center_on_cursor_screen()
-        self.is_dark = self._load_theme_pref()
+        self._overlay_mode = parent is not None and parent.isVisible() and parent.isWindow()
+        if self._overlay_mode:
+            super().__init__(parent)
+            self.setWindowFlags(Qt.Widget)
+            self.setAttribute(Qt.WA_StyledBackground, True)
+            self.setGeometry(parent.rect())
+            parent.installEventFilter(OverlayResizer(self))
+            self._container = None
+        else:
+            super().__init__(parent, Qt.Window | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+            self.setAttribute(Qt.WA_TranslucentBackground)
+            self.setMinimumSize(850, 500)
+            self.move_to_center()
+        self.is_dark = True
         self._load_theme()
         self.setup_error_ui()
-    def showEvent(self, event):
-        super().showEvent(event)
-        if not event.spontaneous():
-            if self._target_pos:
-                self.move(*self._target_pos)
-            self.activateWindow()
+        self.show()
+        if self._overlay_mode:
             self.raise_()
-    def center_on_cursor_screen(self):
+        else:
+            self.activateWindow()
+    def move_to_center(self):
         win_width, win_height = (850, 500)
-        if self.parent_window:
-            geom = self.parent_window.geometry()
-            center_x = geom.x() + geom.width() // 2 - win_width // 2
-            center_y = geom.y() + geom.height() // 2 - win_height // 2
-            self._target_pos = (center_x, center_y)
-            self.setGeometry(center_x, center_y, win_width, win_height)
+        parent = self.parentWidget()
+        if parent and parent.isVisible() and parent.isWindow():
+            geom = parent.geometry()
+            cx = geom.x() + geom.width() // 2 - win_width // 2
+            cy = geom.y() + geom.height() // 2 - win_height // 2
         else:
             cursor_pos = QCursor.pos()
             screen = QApplication.screenAt(cursor_pos)
             if screen is None:
                 screen = QApplication.primaryScreen()
-            screen_geometry = screen.availableGeometry()
-            center_x = screen_geometry.x() + (screen_geometry.width() - win_width) // 2
-            center_y = screen_geometry.y() + (screen_geometry.height() - win_height) // 2
-            self._target_pos = (center_x, center_y)
-            self.setGeometry(center_x, center_y, win_width, win_height)
-    def _load_theme_pref(self):
-        return True
+            sg = screen.availableGeometry()
+            cx = sg.x() + (sg.width() - win_width) // 2
+            cy = sg.y() + (sg.height() - win_height) // 2
+        self.setGeometry(cx, cy, win_width, win_height)
     def _load_theme(self):
         try:
             from palworld_aio.ui.chrome.styles import ThemeManager
@@ -272,8 +270,6 @@ class ErrorDialog(QDialog):
             self.setStyleSheet('QWidget{background:rgba(12,14,18,0.98);color:#e2e8f0}QLabel{color:#7DD3FC}')
     def setup_error_ui(self):
         from palworld_aio import constants
-        self.container = QFrame()
-        self.container.setObjectName('mainContainer')
         glass_bg = 'rgba(18,20,24,0.95)'
         glass_border = 'rgba(255,59,48,0.3)'
         txt_color = '#dfeefc'
@@ -281,55 +277,107 @@ class ErrorDialog(QDialog):
         btn_bg = 'rgba(125,211,252,0.08)'
         btn_border = 'rgba(125,211,252,0.15)'
         btn_hover_bg = 'rgba(125,211,252,0.15)'
-        self.container.setStyleSheet(f'#mainContainer {{ background: {glass_bg}; border-radius: 10px; border: 2px solid {glass_border}; }}')
-        layout = QVBoxLayout(self)
-        layout.addWidget(self.container)
-        self.inner = QVBoxLayout(self.container)
-        self.inner.setContentsMargins(30, 10, 30, 30)
-        head = QHBoxLayout()
-        img_p = get_path('lamball_error.webp')
-        def mk_ico():
-            l = QLabel()
-            l.setStyleSheet('border:none;background:transparent;')
-            if os.path.exists(img_p):
-                pix = QPixmap(img_p)
-                l.setPixmap(pix.scaled(70, 70, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-            return l
         try:
             trans = {'title': t('error.overlay.title'), 'close': t('error.overlay.close'), 'copy': t('error.overlay.copy')}
         except:
             trans = {'title': 'AN ERROR OCCURRED', 'close': 'CLOSE', 'copy': 'COPY'}
-        t_lbl = QLabel(trans['title'])
-        t_lbl.setStyleSheet(f"color:{accent_color};font-weight:900;font-size:24px;border:none;background:transparent;font-family:'Segoe UI';")
-        head.addStretch()
-        head.addWidget(mk_ico())
-        head.addSpacing(15)
-        head.addWidget(t_lbl)
-        head.addSpacing(15)
-        head.addWidget(mk_ico())
-        head.addStretch()
-        self.inner.addLayout(head)
-        txt_edit = QTextEdit()
-        txt_edit.setReadOnly(True)
-        txt_edit.setPlainText(self.error_text)
-        txt_edit.setStyleSheet(f"background: {glass_bg}; color: {txt_color}; font-family: 'Consolas'; font-size: 13px; padding: 15px; border: 1px solid {glass_border}; border-radius: 6px;")
-        self.inner.addWidget(txt_edit)
-        btns = QHBoxLayout()
-        btn_style = f"QPushButton {{ background: {btn_bg}; color: {accent_color}; border: 1px solid {btn_border}; border-radius: 8px; padding: 10px 16px; font-weight: bold; min-width: 120px; font-size: 13px; font-family: '{constants.FONT_FAMILY}'; }} QPushButton:hover {{ background: {btn_hover_bg}; border-color: {glass_border}; }}"
-        c_btn = QPushButton(trans['copy'])
-        c_btn.setStyleSheet(btn_style)
-        c_btn.clicked.connect(lambda: self.copy_to_clipboard(self.error_text, c_btn))
-        cl_btn = QPushButton(trans['close'])
-        cl_btn.setStyleSheet(btn_style)
-        cl_btn.clicked.connect(self.close_app)
-        btns.addStretch()
-        btns.addWidget(c_btn)
-        btns.addSpacing(20)
-        btns.addWidget(cl_btn)
-        btns.addStretch()
-        self.inner.addLayout(btns)
+        root = QVBoxLayout(self)
+        root.setContentsMargins(0, 0, 0, 0)
+        if self._overlay_mode:
+            self.setStyleSheet(f'background:{glass_bg};')
+            root.setAlignment(Qt.AlignCenter)
+            inner = QFrame()
+            inner.setObjectName('ec')
+            inner.setStyleSheet(f'#ec{{background:{glass_bg};border-radius:10px;border:2px solid {glass_border};max-width:700px;}}')
+            il = QVBoxLayout(inner)
+            il.setContentsMargins(30, 10, 30, 30)
+            head = QHBoxLayout()
+            img_p = get_path('lamball_error.webp')
+            def mk_ico():
+                l = QLabel()
+                l.setStyleSheet('border:none;background:transparent;')
+                if os.path.exists(img_p):
+                    l.setPixmap(QPixmap(img_p).scaled(70, 70, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+                return l
+            t_lbl = QLabel(trans['title'])
+            t_lbl.setStyleSheet(f"color:{accent_color};font-weight:900;font-size:24px;border:none;background:transparent;font-family:'Segoe UI';")
+            head.addStretch()
+            head.addWidget(mk_ico())
+            head.addSpacing(15)
+            head.addWidget(t_lbl)
+            head.addSpacing(15)
+            head.addWidget(mk_ico())
+            head.addStretch()
+            il.addLayout(head)
+            txt_edit = QTextEdit()
+            txt_edit.setReadOnly(True)
+            txt_edit.setPlainText(self.error_text)
+            txt_edit.setStyleSheet(f"background:{glass_bg};color:{txt_color};font-family:'Consolas';font-size:13px;padding:15px;border:1px solid {glass_border};border-radius:6px;")
+            il.addWidget(txt_edit)
+            btns = QHBoxLayout()
+            btn_style = f"QPushButton{{background:{btn_bg};color:{accent_color};border:1px solid {btn_border};border-radius:8px;padding:10px 16px;font-weight:bold;min-width:120px;font-size:13px;font-family:'{constants.FONT_FAMILY}';}}QPushButton:hover{{background:{btn_hover_bg};border-color:{glass_border};}}"
+            c_btn = QPushButton(trans['copy'])
+            c_btn.setStyleSheet(btn_style)
+            c_btn.clicked.connect(lambda: self.copy_to_clipboard(self.error_text, c_btn))
+            cl_btn = QPushButton(trans['close'])
+            cl_btn.setStyleSheet(btn_style)
+            cl_btn.clicked.connect(self.close_app)
+            btns.addStretch()
+            btns.addWidget(c_btn)
+            btns.addSpacing(20)
+            btns.addWidget(cl_btn)
+            btns.addStretch()
+            il.addLayout(btns)
+            root.addWidget(inner)
+        else:
+            self.container = QFrame()
+            self.container.setObjectName('mainContainer')
+            self.container.setStyleSheet(f'#mainContainer{{background:{glass_bg};border-radius:10px;border:2px solid {glass_border};}}')
+            layout = QVBoxLayout(self)
+            layout.addWidget(self.container)
+            self.inner = QVBoxLayout(self.container)
+            self.inner.setContentsMargins(30, 10, 30, 30)
+            head = QHBoxLayout()
+            img_p = get_path('lamball_error.webp')
+            def mk_ico():
+                l = QLabel()
+                l.setStyleSheet('border:none;background:transparent;')
+                if os.path.exists(img_p):
+                    pix = QPixmap(img_p)
+                    l.setPixmap(pix.scaled(70, 70, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+                return l
+            t_lbl = QLabel(trans['title'])
+            t_lbl.setStyleSheet(f"color:{accent_color};font-weight:900;font-size:24px;border:none;background:transparent;font-family:'Segoe UI';")
+            head.addStretch()
+            head.addWidget(mk_ico())
+            head.addSpacing(15)
+            head.addWidget(t_lbl)
+            head.addSpacing(15)
+            head.addWidget(mk_ico())
+            head.addStretch()
+            self.inner.addLayout(head)
+            txt_edit = QTextEdit()
+            txt_edit.setReadOnly(True)
+            txt_edit.setPlainText(self.error_text)
+            txt_edit.setStyleSheet(f"background:{glass_bg};color:{txt_color};font-family:'Consolas';font-size:13px;padding:15px;border:1px solid {glass_border};border-radius:6px;")
+            self.inner.addWidget(txt_edit)
+            btns = QHBoxLayout()
+            btn_style = f"QPushButton{{background:{btn_bg};color:{accent_color};border:1px solid {btn_border};border-radius:8px;padding:10px 16px;font-weight:bold;min-width:120px;font-size:13px;font-family:'{constants.FONT_FAMILY}';}}QPushButton:hover{{background:{btn_hover_bg};border-color:{glass_border};}}"
+            c_btn = QPushButton(trans['copy'])
+            c_btn.setStyleSheet(btn_style)
+            c_btn.clicked.connect(lambda: self.copy_to_clipboard(self.error_text, c_btn))
+            cl_btn = QPushButton(trans['close'])
+            cl_btn.setStyleSheet(btn_style)
+            cl_btn.clicked.connect(self.close_app)
+            btns.addStretch()
+            btns.addWidget(c_btn)
+            btns.addSpacing(20)
+            btns.addWidget(cl_btn)
+            btns.addStretch()
+            self.inner.addLayout(btns)
     def close_app(self):
-        self.accept()
+        if not self._overlay_mode:
+            self.close()
         QApplication.quit()
         os._exit(0)
     def copy_to_clipboard(self, text, btn):
@@ -349,8 +397,11 @@ class ErrorDialog(QDialog):
             except:
                 pass
 def show_error_screen(error_text):
-    dialog = ErrorDialog(error_text)
-    dialog.exec()
+    for w in QApplication.topLevelWidgets():
+        if w.isVisible() and w.isWindow() and w.windowTitle() and not isinstance(w, QDialog):
+            ErrorDialog(error_text, parent=w)
+            return
+    ErrorDialog(error_text)
 def _center_message_box_on_parent(msg_box):
     parent = msg_box.parent()
     effective_parent = _get_effective_parent(parent)
